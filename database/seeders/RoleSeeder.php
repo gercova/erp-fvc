@@ -10,15 +10,66 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $superAdmin = Role::firstOrCreate(['name' => 'SUPERADMIN']);
-        $admin = Role::firstOrCreate(['name' => 'ADMIN']);
-        $vendedor = Role::firstOrCreate(['name' => 'VENDEDOR']);
-        $cajero = Role::firstOrCreate(['name' => 'CAJERO']);
-        $contabilidad = Role::firstOrCreate(['name' => 'CONTABILIDAD']);
+        $superAdmin         = Role::firstOrCreate(['name' => 'SUPERADMIN']);
+        $admin              = Role::firstOrCreate(['name' => 'ADMIN']);
+        $vendedor           = Role::firstOrCreate(['name' => 'VENDEDOR']);
+        $cajero             = Role::firstOrCreate(['name' => 'CAJERO']);
+        $contabilidad       = Role::firstOrCreate(['name' => 'CONTABILIDAD']);
+        $directorGeneral    = Role::firstOrCreate(['name' => 'DIRECTOR_GENERAL']);
+        $administracion     = Role::firstOrCreate(['name' => 'ADMINISTRACION']);
+        $jefeArea           = Role::firstOrCreate(['name' => 'JEFE_AREA']);
+        $coordinador        = Role::firstOrCreate(['name' => 'COORDINADOR']);
+        $coordPe            = Role::firstOrCreate(['name' => 'COORD_PE']);
+        $jefeInmediato      = Role::firstOrCreate(['name' => 'JEFE_INMEDIATO']);
+        $tramiteDoc         = Role::firstOrCreate(['name' => 'TRAMITE_DOCUMENTARIO']);
+        $unidadAcademica    = Role::firstOrCreate(['name' => 'UNIDAD_ACADEMICA']);
+        $chofer             = Role::firstOrCreate(['name' => 'CHOFER']);
+        $docente            = Role::firstOrCreate(['name' => 'DOCENTE']);
+        $abastecimiento     = Role::firstOrCreate(['name' => 'ABASTECIMIENTO']);
 
         $permissionsByModule = [
             'Dashboard' => [
                 'admin.home' => 'Acceder al dashboard principal',
+            ],
+            'Requerimientos' => [
+                'requisitions.index' => 'Listar y ver requerimientos',
+                'requisitions.create' => 'Crear requerimientos',
+                'requisitions.edit' => 'Editar requerimientos propios',
+                'requisitions.delete' => 'Anular/Eliminar requerimientos',
+                'requisitions.pdf' => 'Descargar e imprimir PDF de requerimiento',
+
+                'expense_declarations.index' => 'Listar declaraciones juradas de gastos',
+                'expense_declarations.create' => 'Crear declaraciones juradas de gastos',
+                'expense_declarations.edit' => 'Editar declaraciones juradas de gastos',
+                'expense_declarations.delete' => 'Anular/Eliminar declaraciones juradas de gastos',
+                'expense_declarations.pdf' => 'Descargar e imprimir PDF de declaración jurada',
+
+                'exit_slips.index' => 'Listar papeletas de salida',
+                'exit_slips.create' => 'Crear papeletas de salida',
+                'exit_slips.edit' => 'Editar papeletas de salida',
+                'exit_slips.delete' => 'Anular/Eliminar papeletas de salida',
+                'exit_slips.pdf' => 'Descargar e imprimir PDF de papeleta de salida',
+
+                'vehicle_exit_slips.index' => 'Listar papeletas de salida de vehículo',
+                'vehicle_exit_slips.create' => 'Crear papeletas de salida de vehículo',
+                'vehicle_exit_slips.edit' => 'Editar papeletas de salida de vehículo',
+                'vehicle_exit_slips.delete' => 'Anular/Eliminar papeletas de salida de vehículo',
+                'vehicle_exit_slips.pdf' => 'Descargar e imprimir PDF de papeleta de vehículo',
+
+                'vacation_exit_slips.index' => 'Listar papeletas de vacaciones',
+                'vacation_exit_slips.create' => 'Crear papeletas de vacaciones',
+                'vacation_exit_slips.edit' => 'Editar papeletas de vacaciones',
+                'vacation_exit_slips.delete' => 'Anular/Eliminar papeletas de vacaciones',
+                'vacation_exit_slips.pdf' => 'Descargar e imprimir PDF de papeleta de vacaciones',
+
+                'fuel_control_slips.index' => 'Listar vales de control de combustible',
+                'fuel_control_slips.create' => 'Crear vales de control de combustible',
+                'fuel_control_slips.edit' => 'Editar vales de control de combustible',
+                'fuel_control_slips.delete' => 'Anular/Eliminar vales de control de combustible',
+                'fuel_control_slips.pdf' => 'Descargar e imprimir PDF de vale de control',
+
+                'approvals.index' => 'Acceder a la bandeja de aprobaciones',
+                'approvals.action' => 'Firmar, aprobar, observar o rechazar documentos',
             ],
             'Ventas' => [
                 'admin.clients' => 'Gestionar clientes',
