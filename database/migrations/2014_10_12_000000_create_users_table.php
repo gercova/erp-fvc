@@ -15,11 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('nombres');
             $table->string('user')->unique();
+            $table->string('correo')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('telefono')->nullable();
             $table->integer('estado');
             $table->integer('idcaja');
             $table->integer('idalmacen');
+            $table->string('firma_digital', 255)->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
