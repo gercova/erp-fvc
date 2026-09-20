@@ -36,9 +36,11 @@
             stripeClasses: [],
             columns: [
                 { data: 'usuario_info', name: 'users.nombres', className: 'text-start' },
+                { data: 'area_cargo', name: 'primaryAreaDetail.area.name', className: 'text-start', orderable: false },
                 { data: 'caja', name: 'cashes.descripcion', className: 'text-center' },
                 { data: 'rol', name: 'roles.name', className: 'text-center', orderable: false, searchable: false },
                 { data: 'almacenes', name: 'warehouses.descripcion', className: 'text-center', orderable: false, searchable: false },
+                { data: 'firma_status', name: 'firma_status', className: 'text-center', orderable: false, searchable: false },
                 { data: 'estado_badge', name: 'users.estado', className: 'text-center', orderable: false, searchable: false },
                 { data: 'acciones', name: 'acciones', className: 'text-center', orderable: false, searchable: false }
             ],
@@ -46,6 +48,10 @@
                 $('.dataTables_paginate ul.pagination').addClass('pagination-sm');
             }
         });
+    }
+
+    function reload_table() {
+        $('#table').DataTable().ajax.reload(null, false);
     }
 
     $(document).ready(function() {
