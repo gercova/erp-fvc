@@ -28,8 +28,13 @@ use App\Http\Controllers\WarehouseSelectorController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportSalesController;
 use App\Http\Controllers\ShipmentGuideController;
-use Illuminate\Http\Request;
-
+use App\Http\Controllers\RequisitionController;
+use App\Http\Controllers\ExpenseDeclarationController;
+use App\Http\Controllers\ExitSlipController;
+use App\Http\Controllers\VehicleExitSlipController;
+use App\Http\Controllers\VacationExitSlipController;
+use App\Http\Controllers\FuelControlSlipController;
+use App\Http\Controllers\DocumentApprovalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -352,3 +357,86 @@ Route::controller(BuyController::class)->prefix('buys')->middleware(['auth', 'ca
     Route::post('/print-buy'                , 'print')->name('admin.print_buy');
     Route::get('/pdf'                       , 'test_pdf');
 });
+
+# Requerimientos y Trámites Administrativos
+Route::controller(RequisitionController::class)->prefix('requisitions')->middleware(['auth', 'can:requisitions.index'])->group(function() {
+    Route::get('/', 'index')->name('requisitions.index');
+    Route::get('/get', 'get')->name('requisitions.get');
+    Route::get('/create', 'create')->name('requisitions.create')->middleware('can:requisitions.create');
+    Route::post('/store', 'store')->name('requisitions.store')->middleware('can:requisitions.create');
+    Route::get('/{id}', 'show')->name('requisitions.show');
+    Route::get('/{id}/edit', 'edit')->name('requisitions.edit')->middleware('can:requisitions.edit');
+    Route::put('/{id}', 'update')->name('requisitions.update')->middleware('can:requisitions.edit');
+    Route::post('/delete', 'delete')->name('requisitions.delete')->middleware('can:requisitions.delete');
+    Route::get('/{id}/pdf', 'pdf')->name('requisitions.pdf');
+});
+
+Route::controller(ExpenseDeclarationController::class)->prefix('expense-declarations')->middleware(['auth', 'can:expense_declarations.index'])->group(function() {
+    Route::get('/', 'index')->name('expense-declarations.index');
+    Route::get('/get', 'get')->name('expense-declarations.get');
+    Route::get('/create', 'create')->name('expense-declarations.create')->middleware('can:expense_declarations.create');
+    Route::post('/store', 'store')->name('expense-declarations.store')->middleware('can:expense_declarations.create');
+    Route::get('/{id}', 'show')->name('expense-declarations.show');
+    Route::get('/{id}/edit', 'edit')->name('expense-declarations.edit')->middleware('can:expense_declarations.edit');
+    Route::put('/{id}', 'update')->name('expense-declarations.update')->middleware('can:expense_declarations.edit');
+    Route::post('/delete', 'delete')->name('expense-declarations.delete')->middleware('can:expense_declarations.delete');
+    Route::get('/{id}/pdf', 'pdf')->name('expense-declarations.pdf');
+});
+
+Route::controller(ExitSlipController::class)->prefix('exit-slips')->middleware(['auth', 'can:exit_slips.index'])->group(function() {
+    Route::get('/', 'index')->name('exit-slips.index');
+    Route::get('/get', 'get')->name('exit-slips.get');
+    Route::get('/create', 'create')->name('exit-slips.create')->middleware('can:exit_slips.create');
+    Route::post('/store', 'store')->name('exit-slips.store')->middleware('can:exit_slips.create');
+    Route::get('/{id}', 'show')->name('exit-slips.show');
+    Route::get('/{id}/edit', 'edit')->name('exit-slips.edit')->middleware('can:exit_slips.edit');
+    Route::put('/{id}', 'update')->name('exit-slips.update')->middleware('can:exit_slips.edit');
+    Route::post('/delete', 'delete')->name('exit-slips.delete')->middleware('can:exit_slips.delete');
+    Route::get('/{id}/pdf', 'pdf')->name('exit-slips.pdf');
+});
+
+Route::controller(VehicleExitSlipController::class)->prefix('vehicle-exit-slips')->middleware(['auth', 'can:vehicle_exit_slips.index'])->group(function() {
+    Route::get('/', 'index')->name('vehicle-exit-slips.index');
+    Route::get('/get', 'get')->name('vehicle-exit-slips.get');
+    Route::get('/create', 'create')->name('vehicle-exit-slips.create')->middleware('can:vehicle_exit_slips.create');
+    Route::post('/store', 'store')->name('vehicle-exit-slips.store')->middleware('can:vehicle_exit_slips.create');
+    Route::get('/{id}', 'show')->name('vehicle-exit-slips.show');
+    Route::get('/{id}/edit', 'edit')->name('vehicle-exit-slips.edit')->middleware('can:vehicle_exit_slips.edit');
+    Route::put('/{id}', 'update')->name('vehicle-exit-slips.update')->middleware('can:vehicle_exit_slips.edit');
+    Route::post('/delete', 'delete')->name('vehicle-exit-slips.delete')->middleware('can:vehicle_exit_slips.delete');
+    Route::get('/{id}/pdf', 'pdf')->name('vehicle-exit-slips.pdf');
+});
+
+Route::controller(VacationExitSlipController::class)->prefix('vacation-exit-slips')->middleware(['auth', 'can:vacation_exit_slips.index'])->group(function() {
+    Route::get('/', 'index')->name('vacation-exit-slips.index');
+    Route::get('/get', 'get')->name('vacation-exit-slips.get');
+    Route::get('/create', 'create')->name('vacation-exit-slips.create')->middleware('can:vacation_exit_slips.create');
+    Route::post('/store', 'store')->name('vacation-exit-slips.store')->middleware('can:vacation_exit_slips.create');
+    Route::get('/{id}', 'show')->name('vacation-exit-slips.show');
+    Route::get('/{id}/edit', 'edit')->name('vacation-exit-slips.edit')->middleware('can:vacation_exit_slips.edit');
+    Route::put('/{id}', 'update')->name('vacation-exit-slips.update')->middleware('can:vacation_exit_slips.edit');
+    Route::post('/delete', 'delete')->name('vacation-exit-slips.delete')->middleware('can:vacation_exit_slips.delete');
+    Route::get('/{id}/pdf', 'pdf')->name('vacation-exit-slips.pdf');
+});
+
+Route::controller(FuelControlSlipController::class)->prefix('fuel-control-slips')->middleware(['auth', 'can:fuel_control_slips.index'])->group(function() {
+    Route::get('/', 'index')->name('fuel-control-slips.index');
+    Route::get('/get', 'get')->name('fuel-control-slips.get');
+    Route::get('/create', 'create')->name('fuel-control-slips.create')->middleware('can:fuel_control_slips.create');
+    Route::post('/store', 'store')->name('fuel-control-slips.store')->middleware('can:fuel_control_slips.create');
+    Route::get('/{id}', 'show')->name('fuel-control-slips.show');
+    Route::get('/{id}/edit', 'edit')->name('fuel-control-slips.edit')->middleware('can:fuel_control_slips.edit');
+    Route::put('/{id}', 'update')->name('fuel-control-slips.update')->middleware('can:fuel_control_slips.edit');
+    Route::post('/delete', 'delete')->name('fuel-control-slips.delete')->middleware('can:fuel_control_slips.delete');
+    Route::get('/{id}/pdf', 'pdf')->name('fuel-control-slips.pdf');
+});
+
+# Bandeja de Aprobaciones y Firmas
+Route::controller(DocumentApprovalController::class)->prefix('approvals')->middleware(['auth', 'can:approvals.index'])->group(function() {
+    Route::get('/', 'index')->name('approvals.index');
+    Route::get('/get', 'get')->name('approvals.get');
+    Route::get('/{id}', 'show')->name('approvals.show');
+    Route::post('/approve', 'approve')->name('approvals.approve')->middleware('can:approvals.action');
+    Route::post('/reject', 'reject')->name('approvals.reject')->middleware('can:approvals.action');
+});
+
