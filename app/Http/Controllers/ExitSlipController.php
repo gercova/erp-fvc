@@ -37,7 +37,16 @@ class ExitSlipController extends Controller
                     $sub->where('correlativo', 'like', "%{$search}%")
                         ->orWhere('nombres_apellidos', 'like', "%{$search}%")
                         ->orWhere('motivo', 'like', "%{$search}%")
-                        ->orWhere('destino', 'like', "%{$search}%");
+                        ->orWhere('motivo_especificar', 'like', "%{$search}%")
+                        ->orWhere('destino', 'like', "%{$search}%")
+                        ->orWhere('lugar', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('nombres', 'like', "%{$search}%")
+                                ->orWhere('user', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('area', function ($a) use ($search) {
+                            $a->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('filter_date'), function ($q) use ($request) {
@@ -56,7 +65,7 @@ class ExitSlipController extends Controller
             ->addColumn('horario', function ($doc) {
                 $salida  = ($doc->fecha_salida ? $doc->fecha_salida->format('d/m/Y') : '') . ' ' . substr((string)$doc->hora_salida, 0, 5);
                 $retorno = $doc->fecha_retorno ? ($doc->fecha_retorno->format('d/m/Y') . ' ' . substr((string)$doc->hora_retorno, 0, 5)) : 'No definido';
-                return '<div class="small"><div><strong>Salida:</strong> ' . e($salida) . '</div><div><strong>Retorno:</strong> ' . e($retorno) . '</div></div>';
+                return '<div class="small"><div><span class="fw-semibold">Salida:</span> ' . e($salida) . '</div><div><span class="fw-semibold">Retorno:</span> ' . e($retorno) . '</div></div>';
             })
             ->editColumn('motivo', function ($doc) {
                 return '<div><div class="fw-semibold">' . e($doc->motivo) . '</div><small class="text-muted">' . e($doc->destino ?: $doc->lugar) . '</small></div>';
@@ -99,7 +108,7 @@ class ExitSlipController extends Controller
         return view('admin.documents.exit_slips.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'correlativo'       => 'required|unique:exit_slips,correlativo',
             'nombres_apellidos' => 'required|string|max:255',
@@ -143,14 +152,25 @@ class ExitSlipController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'type'      => 'success',
-                'message'   => 'Papeleta de salida registrada exitosamente.',
-                'redirect'  => route('exit-slips.index'),
-            ]);
+            $successMsg = 'Papeleta de salida registrada exitosamente.';
+
+            if ($request->expectsJson()) {
+                session()->flash('toast_success', $successMsg);
+                return response()->json([
+                    'type'      => 'success',
+                    'message'   => $successMsg,
+                    'redirect'  => route('exit-slips.index'),
+                ]);
+            }
+
+            return redirect()->route('exit-slips.index')
+                ->with('toast_success', $successMsg);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->expectsJson()) {
+                return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 

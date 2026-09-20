@@ -40,7 +40,16 @@ class ExpenseDeclarationController extends Controller
                     $sub->where('correlativo', 'like', "%{$search}%")
                         ->orWhere('servidor_nombres', 'like', "%{$search}%")
                         ->orWhere('dni', 'like', "%{$search}%")
-                        ->orWhere('conceptos', 'like', "%{$search}%");
+                        ->orWhere('cargo', 'like', "%{$search}%")
+                        ->orWhere('conceptos', 'like', "%{$search}%")
+                        ->orWhere('lugar', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('nombres', 'like', "%{$search}%")
+                                ->orWhere('user', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('area', function ($a) use ($search) {
+                            $a->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('filter_date'), function ($q) use ($request) {
@@ -57,6 +66,9 @@ class ExpenseDeclarationController extends Controller
             })
             ->addColumn('servidor', function ($doc) {
                 return '<div><div class="fw-semibold">' . e($doc->servidor_nombres) . '</div><small class="text-muted">DNI: ' . e($doc->dni) . ' - ' . e($doc->cargo) . '</small></div>';
+            })
+            ->addColumn('conceptos', function ($doc) {
+                return '<div><div class="fw-semibold text-truncate" style="max-width: 250px;">' . e($doc->conceptos) . '</div><small class="text-muted">' . e($doc->area?->name ?? 'Área no asignada') . '</small></div>';
             })
             ->editColumn('total', function ($doc) {
                 return '<span class="fw-bold">S/ ' . number_format($doc->total, 2) . '</span>';
@@ -85,7 +97,7 @@ class ExpenseDeclarationController extends Controller
                 $actions .= '</div></div>';
                 return $actions;
             })
-            ->rawColumns(['correlativo', 'servidor', 'total', 'estado_badge', 'acciones'])
+            ->rawColumns(['correlativo', 'fecha', 'servidor', 'conceptos', 'total', 'estado_badge', 'acciones'])
             ->make(true);
     }
 
@@ -99,7 +111,7 @@ class ExpenseDeclarationController extends Controller
         return view('admin.documents.expense_declarations.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'correlativo'       => 'required|unique:expense_declarations,correlativo',
             'fecha'             => 'required|date',
@@ -122,8 +134,8 @@ class ExpenseDeclarationController extends Controller
                 $total += (float) $item['importe'];
             }
 
-            $formatter = new NumeroALetras();
-            $totalLetras = $formatter->toInvoice($total, 2, 'SOLES');
+            $formatter      = new NumeroALetras();
+            $totalLetras    = $formatter->toInvoice($total, 2, 'SOLES');
 
             $user = Auth::user();
             $doc = ExpenseDeclaration::create([
@@ -155,14 +167,25 @@ class ExpenseDeclarationController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'type'      => 'success',
-                'message'   => 'Declaración Jurada registrada correctamente.',
-                'redirect'  => route('expense-declarations.index'),
-            ]);
+            $successMsg = 'Declaración Jurada registrada correctamente.';
+
+            if ($request->expectsJson()) {
+                session()->flash('toast_success', $successMsg);
+                return response()->json([
+                    'type'      => 'success',
+                    'message'   => $successMsg,
+                    'redirect'  => route('expense-declarations.index'),
+                ]);
+            }
+
+            return redirect()->route('expense-declarations.index')
+                ->with('toast_success', $successMsg);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->expectsJson()) {
+                return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 

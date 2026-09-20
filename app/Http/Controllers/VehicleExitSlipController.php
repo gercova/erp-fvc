@@ -38,7 +38,16 @@ class VehicleExitSlipController extends Controller
                         ->orWhere('vehiculo', 'like', "%{$search}%")
                         ->orWhere('solicitante_nombre', 'like', "%{$search}%")
                         ->orWhere('chofer_nombre', 'like', "%{$search}%")
-                        ->orWhere('lugar', 'like', "%{$search}%");
+                        ->orWhere('lugar', 'like', "%{$search}%")
+                        ->orWhere('motivo', 'like', "%{$search}%")
+                        ->orWhere('brevete_numero', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('nombres', 'like', "%{$search}%")
+                                ->orWhere('user', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('area', function ($a) use ($search) {
+                            $a->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('filter_date'), function ($q) use ($request) {
@@ -59,7 +68,7 @@ class VehicleExitSlipController extends Controller
             ->addColumn('horario', function ($doc) {
                 $salida = ($doc->fecha_salida ? $doc->fecha_salida->format('d/m/Y') : '') . ' ' . substr((string)$doc->hora_salida, 0, 5);
                 $retorno = $doc->fecha_retorno ? ($doc->fecha_retorno->format('d/m/Y') . ' ' . substr((string)$doc->hora_retorno, 0, 5)) : '-';
-                return '<div class="small"><div>' . e($salida) . '</div><div>' . e($retorno) . '</div></div>';
+                return '<div class="small"><div><span class="fw-semibold">Salida:</span> ' . e($salida) . '</div><div><span class="fw-semibold">Retorno:</span> ' . e($retorno) . '</div></div>';
             })
             ->addColumn('estado_badge', function ($doc) {
                 return $doc->status_badge;
@@ -100,7 +109,7 @@ class VehicleExitSlipController extends Controller
         return view('admin.documents.vehicle_exit_slips.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'correlativo'           => 'required|unique:vehicle_exit_slips,correlativo',
             'vehiculo'              => 'required|string|max:255',
@@ -143,14 +152,25 @@ class VehicleExitSlipController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'type'      => 'success',
-                'message'   => 'Papeleta de salida de vehículo creada exitosamente.',
-                'redirect'  => route('vehicle-exit-slips.index'),
-            ]);
+            $successMsg = 'Papeleta de salida de vehículo creada exitosamente.';
+
+            if ($request->expectsJson()) {
+                session()->flash('toast_success', $successMsg);
+                return response()->json([
+                    'type'      => 'success',
+                    'message'   => $successMsg,
+                    'redirect'  => route('vehicle-exit-slips.index'),
+                ]);
+            }
+
+            return redirect()->route('vehicle-exit-slips.index')
+                ->with('toast_success', $successMsg);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->expectsJson()) {
+                return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 

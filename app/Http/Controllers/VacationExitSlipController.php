@@ -38,7 +38,15 @@ class VacationExitSlipController extends Controller
                     $sub->where('correlativo', 'like', "%{$search}%")
                         ->orWhere('apellidos_nombres', 'like', "%{$search}%")
                         ->orWhere('dni', 'like', "%{$search}%")
-                        ->orWhere('area_programa_estudios', 'like', "%{$search}%");
+                        ->orWhere('area_programa_estudios', 'like', "%{$search}%")
+                        ->orWhere('cargo_especialidad', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('nombres', 'like', "%{$search}%")
+                                ->orWhere('user', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('area', function ($a) use ($search) {
+                            $a->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('filter_date'), function ($q) use ($request) {
@@ -48,29 +56,29 @@ class VacationExitSlipController extends Controller
 
         return datatables()->of($query)
             ->editColumn('correlativo', function ($doc) {
-                return '<span class="fw-bold text-primary">' . e($doc->correlativo) . '</span>';
+                return '<span class="fw-bold text-primary">N° ' . e($doc->correlativo) . '</span>';
             })
             ->addColumn('servidor', function ($doc) {
                 return '<div><div class="fw-semibold">' . e($doc->apellidos_nombres) . '</div><small class="text-muted">DNI: ' . e($doc->dni) . ' | ' . e($doc->condicion_laboral) . '</small></div>';
             })
             ->addColumn('area_cargo', function ($doc) {
-                return '<div><div>' . e($doc->area_programa_estudios) . '</div><small class="text-muted">' . e($doc->cargo_especialidad) . '</small></div>';
+                return '<div><div class="fw-semibold">' . e($doc->area_programa_estudios) . '</div><small class="text-muted">' . e($doc->cargo_especialidad) . '</small></div>';
             })
             ->addColumn('periodo', function ($doc) {
                 $desde = $doc->fecha_desde ? $doc->fecha_desde->format('d/m/Y') : '-';
                 $hasta = $doc->fecha_hasta ? $doc->fecha_hasta->format('d/m/Y') : '-';
-                return '<div><strong>' . e($doc->total_dias) . ' días</strong> <span class="text-muted">(' . e($desde) . ' al ' . e($hasta) . ')</span></div>';
+                return '<div><span class="fw-bold">' . e($doc->total_dias) . ' días</span><br><small class="text-muted">Del ' . e($desde) . ' al ' . e($hasta) . '</small></div>';
             })
             ->addColumn('estado_badge', function ($doc) {
                 return $doc->status_badge;
             })
             ->addColumn('acciones', function ($doc) {
-                $id = $doc->id;
-                $pdfUrl = route('vacation-exit-slips.pdf', $id);
-                $showUrl = route('vacation-exit-slips.show', $id);
-                $editUrl = route('vacation-exit-slips.edit', $id);
+                $id         = $doc->id;
+                $pdfUrl     = route('vacation-exit-slips.pdf', $id);
+                $showUrl    = route('vacation-exit-slips.show', $id);
+                $editUrl    = route('vacation-exit-slips.edit', $id);
 
-                $actions = '<div class="dropdown">
+                $actions    = '<div class="dropdown">
                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
@@ -101,7 +109,7 @@ class VacationExitSlipController extends Controller
         return view('admin.documents.vacation_exit_slips.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(VacationExitSlipValidate $request): JsonResponse {
+    public function store(VacationExitSlipValidate $request): JsonResponse|RedirectResponse {
         $validated = $request->validated();
 
         DB::beginTransaction();
@@ -130,14 +138,25 @@ class VacationExitSlipController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'type'      => 'success',
-                'message'   => 'Papeleta de salida por vacaciones creada exitosamente.',
-                'redirect'  => route('vacation-exit-slips.index'),
-            ]);
+            $successMsg = 'Papeleta de salida por vacaciones creada exitosamente.';
+
+            if ($request->expectsJson()) {
+                session()->flash('toast_success', $successMsg);
+                return response()->json([
+                    'type'      => 'success',
+                    'message'   => $successMsg,
+                    'redirect'  => route('vacation-exit-slips.index'),
+                ]);
+            }
+
+            return redirect()->route('vacation-exit-slips.index')
+                ->with('toast_success', $successMsg);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->expectsJson()) {
+                return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 

@@ -38,7 +38,16 @@ class RequisitionController extends Controller
                     $sub->where('correlativo', 'like', "%{$search}%")
                         ->orWhere('de', 'like', "%{$search}%")
                         ->orWhere('cargo', 'like', "%{$search}%")
-                        ->orWhere('finalidad', 'like', "%{$search}%");
+                        ->orWhere('dirigido_a', 'like', "%{$search}%")
+                        ->orWhere('finalidad', 'like', "%{$search}%")
+                        ->orWhere('justificacion', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('nombres', 'like', "%{$search}%")
+                                ->orWhere('user', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('area', function ($a) use ($search) {
+                            $a->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('filter_date'), function ($q) use ($request) {
@@ -55,6 +64,9 @@ class RequisitionController extends Controller
             })
             ->addColumn('solicitante', function ($req) {
                 return '<div><div class="fw-semibold">' . e($req->de) . '</div><small class="text-muted">' . e($req->cargo) . '</small></div>';
+            })
+            ->addColumn('finalidad', function ($req) {
+                return '<div><div class="fw-semibold text-truncate" style="max-width: 250px;">' . e($req->finalidad) . '</div><small class="text-muted">' . e($req->area?->name ?? 'Área no asignada') . '</small></div>';
             })
             ->editColumn('total', function ($req) {
                 return '<span class="fw-bold">S/ ' . number_format($req->total, 2) . '</span>';
@@ -83,7 +95,7 @@ class RequisitionController extends Controller
                 $actions .= '</div></div>';
                 return $actions;
             })
-            ->rawColumns(['correlativo', 'solicitante', 'total', 'estado_badge', 'acciones'])
+            ->rawColumns(['correlativo', 'fecha', 'solicitante', 'finalidad', 'total', 'estado_badge', 'acciones'])
             ->make(true);
     }
 
@@ -98,7 +110,7 @@ class RequisitionController extends Controller
         return view('admin.documents.requisitions.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'correlativo'               => 'required|unique:requisitions,correlativo',
             'fecha'                     => 'required|date',
@@ -113,17 +125,19 @@ class RequisitionController extends Controller
             'items'                     => 'required|array|min:1',
             'items.*.cantidad'          => 'required|numeric|min:0.01',
             'items.*.descripcion'       => 'required|string|max:500',
+            'items.*.unidad_medida'     => 'nullable|string|max:50',
             'items.*.precio_unitario'   => 'required|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
+            $user = Auth::user();
+
             $total = 0;
             foreach ($request->input('items') as $item) {
-                $total += (float) $item['cantidad'] * (float) $item['precio_unitario'];
+                $total += (float)$item['cantidad'] * (float)$item['precio_unitario'];
             }
 
-            $user = Auth::user();
             $requisition = Requisition::create([
                 'correlativo'           => $validated['correlativo'],
                 'user_id'               => $user->id,
@@ -149,6 +163,7 @@ class RequisitionController extends Controller
                     'item_number'       => $index + 1,
                     'cantidad'          => $cant,
                     'descripcion'       => $itemData['descripcion'],
+                    'unidad_medida'     => $itemData['unidad_medida'] ?? null,
                     'precio_unitario'   => $price,
                     'precio_total'      => $cant * $price,
                 ]);
@@ -159,17 +174,28 @@ class RequisitionController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'type'      => 'success',
-                'message'   => 'Requerimiento registrado con éxito y enviado a flujo de aprobación.',
-                'redirect'  => route('requisitions.index'),
-            ]);
+            $successMsg = 'Requerimiento registrado con éxito y enviado a flujo de aprobación.';
+
+            if ($request->expectsJson()) {
+                session()->flash('toast_success', $successMsg);
+                return response()->json([
+                    'type'      => 'success',
+                    'message'   => $successMsg,
+                    'redirect'  => route('requisitions.index'),
+                ]);
+            }
+
+            return redirect()->route('requisitions.index')
+                ->with('toast_success', $successMsg);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'type'      => 'error',
-                'message'   => 'Error al guardar el requerimiento: ' . $e->getMessage(),
-            ], 500);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'type'      => 'error',
+                    'message'   => 'Error al guardar el requerimiento: ' . $e->getMessage(),
+                ], 500);
+            }
+            return redirect()->back()->withInput()->with('error', 'Error al guardar el requerimiento: ' . $e->getMessage());
         }
     }
 
