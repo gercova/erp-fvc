@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="{{ asset('css/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dataTables.bootstrap5.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/buttons.bootstrap5.min.css') }}">
-
     <link rel="stylesheet" href="{{ asset('css/remixicon.css') }}">
     <link rel="stylesheet" href="{{ asset('css/jquery-ui.css') }}">
 
@@ -74,8 +73,9 @@
     <nav class="topnav navbar navbar-expand shadow justify-content-between justify-content-sm-start navbar-light bg-white"
         id="sidenavAccordion">
         <!-- Sidenav Toggle Button-->
-        <button class="btn btn-icon btn-transparent-dark order-1 order-lg-0 me-2 ms-lg-2 me-lg-0" id="sidebarToggle"><i
-                data-feather="menu"></i></button>
+        <button class="btn btn-icon btn-transparent-dark order-1 order-lg-0 me-2 ms-lg-2 me-lg-0" id="sidebarToggle">
+            <i data-feather="menu"></i>
+        </button>
         <!-- Navbar Brand-->
         <!-- * * Tip * * You can use text or an image for your navbar brand.-->
         <!-- * * * * * * When using an image, we recommend the SVG format.-->
@@ -95,6 +95,70 @@
                 <div class="input-group-text"><i data-feather="search"></i></div>
             </div>
         </form>
+        @php
+            $authUser = Auth::user();
+            $currentWarehouse = $authUser?->activeWarehouse;
+            $availableWarehousesCount = $authUser ? $authUser->warehouses()->count() : 0;
+            $primaryRole = optional($authUser?->roles?->first())->name ?: 'USUARIO';
+            $canDashboard = $authUser?->can('admin.home');
+            $canArching = $authUser?->can('admin.arching_cashes');
+            $isBillingReportScreen = request()->routeIs('report.billings.*');
+            $isCreditNoteListScreen =
+                request()->routeIs('admin.billing_credit_notes') || request()->routeIs('billings.credit_notes.get');
+            $isDebitNoteListScreen =
+                request()->routeIs('admin.billing_debit_notes') || request()->routeIs('billings.debit_notes.get');
+            $isShipmentGuideScreen = request()->is('shipment-guides') || request()->is('shipment-guides/*');
+            $isBillingScreen =
+                (request()->is('billings') ||
+                    (request()->is('billings/*') &&
+                        !request()->is('billings/reports*') &&
+                        !request()->is('billings/credit-notes*') &&
+                        !request()->is('billings/debit-notes*'))) &&
+                !$isCreditNoteListScreen &&
+                !$isDebitNoteListScreen;
+            $canVentas = $authUser?->canany([
+                'admin.clients',
+                'admin.quotes',
+                'admin.pos',
+                'admin.sale_notes',
+                'admin.billings',
+                'admin.shipment_guides',
+            ]);
+            $canCompras = $authUser?->canany(['admin.providers', 'admin.buys']);
+            $canInventario = $authUser?->canany([
+                'admin.products',
+                'admin.categories',
+                'admin.warehouses',
+                'admin.transfer_orders',
+            ]);
+            $canReportes = $authUser?->canany([
+                'report.sales.index',
+                'report.sales.by_product.index',
+                'report.payments.index',
+                'report.billings.sales_register',
+                'report.billings.billing_documents',
+                'report.billings.credit_notes',
+            ]);
+            $canConfiguracion = $authUser?->canany([
+                'admin.business',
+                'admin.paymodes',
+                'admin.cashes',
+                'admin.series',
+                'admin.users',
+                'admin.roles',
+            ]);
+            $canRequerimientos = $authUser?->canany([
+                'requisitions.index',
+                'expense_declarations.index',
+                'exit_slips.index',
+                'vehicle_exit_slips.index',
+                'vacation_exit_slips.index',
+                'fuel_control_slips.index',
+                'approvals.index',
+            ]);
+            $pendingApprovalsCount = $authUser ? $authUser->pendingApprovalsCount() : 0;
+            $totalNotificationsCount = ($productos_agotar ?? 0) + $pendingApprovalsCount;
+        @endphp
         <!-- Navbar Items-->
         <ul class="navbar-nav align-items-center ms-auto">
             <!-- * * Note: * * Visible only below the lg breakpoint-->
@@ -120,8 +184,8 @@
                     href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                     aria-expanded="false">
                     <i data-feather="bell"></i>
-                    @if ($productos_agotar > 0)
-                        <span class="badge bg-danger">{{ $productos_agotar }}</span>
+                    @if ($totalNotificationsCount > 0)
+                        <span class="badge bg-danger">{{ $totalNotificationsCount }}</span>
                     @endif
                 </a>
                 <div class="dropdown-menu dropdown-menu-end border-0 shadow animated--fade-in-up"
@@ -130,6 +194,18 @@
                         <i class="me-2" data-feather="bell"></i>
                         Notificaciones
                     </h6>
+
+                    @if ($pendingApprovalsCount > 0)
+                        <a class="dropdown-item dropdown-notifications-item" href="{{ route('approvals.index') }}">
+                            <div class="dropdown-notifications-item-icon bg-warning text-dark">
+                                <i class="fas fa-file-signature"></i>
+                            </div>
+                            <div class="dropdown-notifications-item-content">
+                                <div class="dropdown-notifications-item-content-details">Bandeja de Aprobaciones</div>
+                                <div class="dropdown-notifications-item-content-text">{{ $pendingApprovalsCount }} documento(s) pendiente(s) de tu firma</div>
+                            </div>
+                        </a>
+                    @endif
 
                     @if ($productos_agotar > 0)
                         <a class="dropdown-item dropdown-notifications-item" href="#!">
@@ -141,66 +217,15 @@
                                 <div class="dropdown-notifications-item-content-text">{{ $productos_agotar }}</div>
                             </div>
                         </a>
-                    @else
-                        <div class="dropdown-item text-center text-muted">Todo est&aacute; bien</div>
+                    @endif
+
+                    @if ($totalNotificationsCount === 0)
+                        <div class="dropdown-item text-center text-muted">Todo est&aacute; al d&iacute;a</div>
                     @endif
                 </div>
             </li>
 
             <!-- User Dropdown-->
-            @php
-                $authUser = Auth::user();
-                $currentWarehouse = $authUser?->activeWarehouse;
-                $availableWarehousesCount = $authUser ? $authUser->warehouses()->count() : 0;
-                $primaryRole = optional($authUser?->roles?->first())->name ?: 'USUARIO';
-                $canDashboard = $authUser?->can('admin.home');
-                $canArching = $authUser?->can('admin.arching_cashes');
-                $isBillingReportScreen = request()->routeIs('report.billings.*');
-                $isCreditNoteListScreen =
-                    request()->routeIs('admin.billing_credit_notes') || request()->routeIs('billings.credit_notes.get');
-                $isDebitNoteListScreen =
-                    request()->routeIs('admin.billing_debit_notes') || request()->routeIs('billings.debit_notes.get');
-                $isShipmentGuideScreen = request()->is('shipment-guides') || request()->is('shipment-guides/*');
-                $isBillingScreen =
-                    (request()->is('billings') ||
-                        (request()->is('billings/*') &&
-                            !request()->is('billings/reports*') &&
-                            !request()->is('billings/credit-notes*') &&
-                            !request()->is('billings/debit-notes*'))) &&
-                    !$isCreditNoteListScreen &&
-                    !$isDebitNoteListScreen;
-                $canVentas = $authUser?->canany([
-                    'admin.clients',
-                    'admin.quotes',
-                    'admin.pos',
-                    'admin.sale_notes',
-                    'admin.billings',
-                    'admin.shipment_guides',
-                ]);
-                $canCompras = $authUser?->canany(['admin.providers', 'admin.buys']);
-                $canInventario = $authUser?->canany([
-                    'admin.products',
-                    'admin.categories',
-                    'admin.warehouses',
-                    'admin.transfer_orders',
-                ]);
-                $canReportes = $authUser?->canany([
-                    'report.sales.index',
-                    'report.sales.by_product.index',
-                    'report.payments.index',
-                    'report.billings.sales_register',
-                    'report.billings.billing_documents',
-                    'report.billings.credit_notes',
-                ]);
-                $canConfiguracion = $authUser?->canany([
-                    'admin.business',
-                    'admin.paymodes',
-                    'admin.cashes',
-                    'admin.series',
-                    'admin.users',
-                    'admin.roles',
-                ]);
-            @endphp
             <li class="nav-item dropdown no-caret dropdown-user me-3 me-lg-4">
                 <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownUserImage"
                     href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
@@ -240,19 +265,6 @@
             <nav class="sidenav shadow-right sidenav-light">
                 <div class="sidenav-menu">
                     <div class="nav accordion" id="accordionSidenav">
-                        <!-- Sidenav Menu Heading (Account)-->
-                        <!-- * * Note: * * Visible only on and above the sm breakpoint-->
-                        {{-- <div class="sidenav-menu-heading d-sm-none">Cuenta</div> --}}
-                        <!-- Sidenav Link (Alerts)-->
-                        <!-- * * Note: * * Visible only on and above the sm breakpoint-->
-                        <!-- Sidenav Link (Messages)-->
-                        <!-- * * Note: * * Visible only on and above the sm breakpoint-->
-                        {{-- <a class="nav-link d-sm-none" href="#!">
-                                <div class="nav-link-icon"><i data-feather="mail"></i></div>
-                                Messages
-                                <span class="badge bg-success-soft text-success ms-auto">2 New!</span>
-                            </a> --}}
-                        <!-- Sidenav Menu Heading (Core)-->
                         <div class="sidenav-menu-heading">Menu</div>
                         @if ($canDashboard)
                             <a class="nav-link {{ request()->is('home') ? 'active' : '' }}"
@@ -364,6 +376,79 @@
                                         <a class="nav-link {{ request()->is('buys') ? 'active' : '' }}"
                                             href="{{ route('admin.buys') }}">
                                             Lista de compras
+                                        </a>
+                                    @endcan
+                                </nav>
+                            </div>
+                        @endif
+
+                        @if ($canRequerimientos)
+                            @php
+                                $isReqGroup = request()->is('requisitions*') ||
+                                    request()->is('expense-declarations*') ||
+                                    request()->is('exit-slips*') ||
+                                    request()->is('vehicle-exit-slips*') ||
+                                    request()->is('vacation-exit-slips*') ||
+                                    request()->is('fuel-control-slips*') ||
+                                    request()->is('approvals*');
+                            @endphp
+                            <a class="nav-link {{ $isReqGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseRequerimientos"
+                                aria-expanded="{{ $isReqGroup ? 'true' : 'false' }}" aria-controls="collapseRequerimientos">
+                                <div class="nav-link-icon"><i data-feather="file-text"></i></div>
+                                Requerimientos
+                                @if ($pendingApprovalsCount > 0)
+                                    <span class="badge bg-danger ms-1">{{ $pendingApprovalsCount }}</span>
+                                @endif
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+
+                            <div class="collapse {{ $isReqGroup ? 'show' : '' }}" id="collapseRequerimientos"
+                                data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    @can('approvals.index')
+                                        <a class="nav-link d-flex justify-content-between align-items-center {{ request()->is('approvals*') ? 'active' : '' }}"
+                                            href="{{ route('approvals.index') }}">
+                                            <span>Bandeja de Aprobaciones</span>
+                                            @if ($pendingApprovalsCount > 0)
+                                                <span class="badge bg-danger ms-auto">{{ $pendingApprovalsCount }}</span>
+                                            @endif
+                                        </a>
+                                    @endcan
+                                    @can('requisitions.index')
+                                        <a class="nav-link {{ request()->is('requisitions*') ? 'active' : '' }}"
+                                            href="{{ route('requisitions.index') }}">
+                                            Requerimientos
+                                        </a>
+                                    @endcan
+                                    @can('expense_declarations.index')
+                                        <a class="nav-link {{ request()->is('expense-declarations*') ? 'active' : '' }}"
+                                            href="{{ route('expense-declarations.index') }}">
+                                            Declaración Jurada
+                                        </a>
+                                    @endcan
+                                    @can('exit_slips.index')
+                                        <a class="nav-link {{ request()->is('exit-slips*') ? 'active' : '' }}"
+                                            href="{{ route('exit-slips.index') }}">
+                                            Papeleta de Salida
+                                        </a>
+                                    @endcan
+                                    @can('vehicle_exit_slips.index')
+                                        <a class="nav-link {{ request()->is('vehicle-exit-slips*') ? 'active' : '' }}"
+                                            href="{{ route('vehicle-exit-slips.index') }}">
+                                            Papeleta Vehículo
+                                        </a>
+                                    @endcan
+                                    @can('vacation_exit_slips.index')
+                                        <a class="nav-link {{ request()->is('vacation-exit-slips*') ? 'active' : '' }}"
+                                            href="{{ route('vacation-exit-slips.index') }}">
+                                            Papeleta Vacaciones
+                                        </a>
+                                    @endcan
+                                    @can('fuel_control_slips.index')
+                                        <a class="nav-link {{ request()->is('fuel-control-slips*') ? 'active' : '' }}"
+                                            href="{{ route('fuel-control-slips.index') }}">
+                                            Vale de Control
                                         </a>
                                     @endcan
                                 </nav>
@@ -571,4 +656,5 @@
 
     @yield('scripts')
 </body>
+
 </html>
