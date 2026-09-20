@@ -30,8 +30,8 @@ class VacationExitSlip extends Model
     ];
 
     protected $casts = [
-        'fecha_desde'   => 'date',
-        'fecha_hasta'   => 'date',
-        'total_dias'    => 'integer',
+        'fecha_desde' => 'date',
+        'fecha_hasta' => 'date',
+        'total_dias'  => 'integer',
     ];
 }
