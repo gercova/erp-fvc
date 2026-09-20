@@ -99,6 +99,7 @@ class RoleSeeder extends Seeder
                 'admin.series' => 'Gestionar series',
                 'admin.users' => 'Gestionar usuarios',
                 'admin.roles' => 'Gestionar roles y permisos',
+                'admin.areas' => 'Gestionar áreas',
             ],
             'Reportes' => [
                 'report.sales.index' => 'Ver reporte de ventas',
