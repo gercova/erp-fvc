@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\VacationExitSlipValidate;
 use App\Models\Area;
 use App\Models\Business;
 use App\Models\VacationExitSlip;
@@ -100,20 +101,8 @@ class VacationExitSlipController extends Controller
         return view('admin.documents.vacation_exit_slips.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(Request $request): JsonResponse {
-        $validated = $request->validate([
-            'correlativo'               => 'required|unique:vacation_exit_slips,correlativo',
-            'apellidos_nombres'         => 'required|string|max:255',
-            'dni'                       => 'required|string|max:20',
-            'condicion_laboral'         => 'required|string|max:100',
-            'cargo_especialidad'        => 'required|string|max:255',
-            'area_programa_estudios'    => 'required|string|max:255',
-            'area_id'                   => 'nullable|exists:areas,id',
-            'fecha_desde'               => 'required|date',
-            'fecha_hasta'               => 'required|date|after_or_equal:fecha_desde',
-            'total_dias'                => 'required|integer|min:1',
-            'resolucion_directoral'     => 'nullable|string|max:255',
-        ]);
+    public function store(VacationExitSlipValidate $request): JsonResponse {
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -168,24 +157,13 @@ class VacationExitSlipController extends Controller
         return view('admin.documents.vacation_exit_slips.edit', compact('slip', 'user', 'areas'));
     }
 
-    public function update(Request $request, int $id): JsonResponse {
+    public function update(VacationExitSlipValidate $request, int $id): JsonResponse {
         $slip = VacationExitSlip::findOrFail($id);
         if (!in_array($slip->status, ['PENDIENTE', 'OBSERVADO'])) {
             return response()->json(['type' => 'error', 'message' => 'No editable.'], 403);
         }
 
-        $validated = $request->validate([
-            'apellidos_nombres'         => 'required|string|max:255',
-            'dni'                       => 'required|string|max:20',
-            'condicion_laboral'         => 'required|string|max:100',
-            'cargo_especialidad'        => 'required|string|max:255',
-            'area_programa_estudios'    => 'required|string|max:255',
-            'area_id'                   => 'nullable|exists:areas,id',
-            'fecha_desde'               => 'required|date',
-            'fecha_hasta'               => 'required|date|after_or_equal:fecha_desde',
-            'total_dias'                => 'required|integer|min:1',
-            'resolucion_directoral'     => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $slip->update([
             'area_id'                   => $validated['area_id'] ?? $slip->area_id,
