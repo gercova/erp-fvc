@@ -23,10 +23,13 @@ class User extends Authenticatable
     protected $fillable = [
         'nombres',
         'user',
+        'correo',
+        'telefono',
         'password',
         'estado',
         'idcaja',
-        'idalmacen'
+        'idalmacen',
+        'firma_digital',
     ];
 
     protected $hidden = [
@@ -38,6 +41,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function getFirmaDigitalUrlAttribute(): ?string {
+        if (! $this->firma_digital) {
+            return null;
+        }
+        if (str_starts_with($this->firma_digital, 'http') || str_starts_with($this->firma_digital, 'data:')) {
+            return $this->firma_digital;
+        }
+        return asset($this->firma_digital);
+    }
 
     public function cash(): BelongsTo {
         return $this->belongsTo(Cash::class, 'idcaja');
