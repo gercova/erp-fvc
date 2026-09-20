@@ -209,7 +209,7 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 $(document).ready(function() {
     let rowIndex = {{ count($slip->items) }};
@@ -313,4 +313,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endpush
+@endsection

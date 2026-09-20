@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FuelControlSlipValidate;
 use App\Models\Area;
 use App\Models\Business;
 use App\Models\FuelControlSlip;
@@ -39,7 +40,14 @@ class FuelControlSlipController extends Controller
                         ->orWhere('nombre_grifo', 'like', "%{$search}%")
                         ->orWhere('vehiculo_maquina', 'like', "%{$search}%")
                         ->orWhere('placa', 'like', "%{$search}%")
-                        ->orWhere('actividad_comision', 'like', "%{$search}%");
+                        ->orWhere('actividad_comision', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('nombres', 'like', "%{$search}%")
+                                ->orWhere('user', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('area', function ($a) use ($search) {
+                            $a->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('filter_date'), function ($q) use ($request) {
@@ -53,6 +61,11 @@ class FuelControlSlipController extends Controller
             })
             ->editColumn('fecha', function ($doc) {
                 return ($doc->fecha ? $doc->fecha->format('d/m/Y') : '') . ' ' . substr((string)$doc->hora, 0, 5);
+            })
+            ->addColumn('solicitante_area', function ($doc) {
+                $userName = $doc->user ? e($doc->user->name) : 'S/N';
+                $areaName = $doc->area ? e($doc->area->name) : 'Sin Área';
+                return '<div><div class="fw-semibold">' . $userName . '</div><small class="text-muted">' . $areaName . '</small></div>';
             })
             ->addColumn('vehiculo_placa', function ($doc) {
                 return '<div><div class="fw-semibold">' . e($doc->vehiculo_maquina) . '</div><small class="text-muted">Placa: ' . e($doc->placa ?: 'S/N') . '</small></div>';
@@ -88,7 +101,7 @@ class FuelControlSlipController extends Controller
                 $actions .= '</div></div>';
                 return $actions;
             })
-            ->rawColumns(['correlativo', 'fecha', 'vehiculo_placa', 'grifo_actividad', 'total_general', 'estado_badge', 'acciones'])
+            ->rawColumns(['correlativo', 'fecha', 'solicitante_area', 'vehiculo_placa', 'grifo_actividad', 'total_general', 'estado_badge', 'acciones'])
             ->make(true);
     }
 
@@ -103,27 +116,8 @@ class FuelControlSlipController extends Controller
         return view('admin.documents.fuel_control_slips.create', compact('user', 'areas', 'userAreaDetail', 'correlativo'));
     }
 
-    public function store(Request $request): JsonResponse {
-        $validated = $request->validate([
-            'correlativo'           => 'required|unique:fuel_control_slips,correlativo',
-            'fecha'                 => 'required|date',
-            'hora'                  => 'required',
-            'requerimiento_nro'     => 'nullable|string|max:50',
-            'orden_compra_nro'      => 'nullable|string|max:50',
-            'nombre_grifo'          => 'required|string|max:255',
-            'vehiculo_maquina'      => 'required|string|max:255',
-            'placa'                 => 'nullable|string|max:50',
-            'kilometraje_horometro' => 'nullable|string|max:50',
-            'actividad_comision'    => 'required|string',
-            'facturar_a'            => 'required|string|max:255',
-            'area_id'               => 'nullable|exists:areas,id',
-            'observaciones'         => 'nullable|string',
-            'items'                 => 'required|array|min:1',
-            'items.*.cantidad'      => 'required|numeric|min:0.01',
-            'items.*.unidad_medida' => 'required|string|max:20',
-            'items.*.descripcion'       => 'required|string|max:255',
-            'items.*.precio_unitario'   => 'nullable|numeric|min:0',
-        ]);
+    public function store(FuelControlSlipValidate $request): JsonResponse|RedirectResponse {
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -170,14 +164,26 @@ class FuelControlSlipController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'type'      => 'success',
-                'message'   => 'Vale de control interno registrado exitosamente.',
-                'redirect'  => route('fuel-control-slips.index'),
-            ]);
+            $successMsg = 'Vale de control interno registrado exitosamente.';
+
+            if ($request->expectsJson()) {
+                session()->flash('toast_success', $successMsg);
+                return response()->json([
+                    'type'      => 'success',
+                    'message'   => $successMsg,
+                    'redirect'  => route('fuel-control-slips.index'),
+                ]);
+            }
+
+            return redirect()->route('fuel-control-slips.index')
+                ->with('toast_success', $successMsg);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->expectsJson()) {
+                return response()->json(['type' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 
@@ -197,7 +203,7 @@ class FuelControlSlipController extends Controller
         return view('admin.documents.fuel_control_slips.edit', compact('slip', 'user', 'areas'));
     }
 
-    public function update(Request $request, int $id): JsonResponse {
+    public function update(FuelControlSlipValidate $request, int $id): JsonResponse {
         $slip = FuelControlSlip::findOrFail($id);
         if (!in_array($slip->status, ['PENDIENTE', 'OBSERVADO'])) {
             return response()->json([
@@ -206,25 +212,7 @@ class FuelControlSlipController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'fecha'                     => 'required|date',
-            'hora'                      => 'required',
-            'requerimiento_nro'         => 'nullable|string|max:50',
-            'orden_compra_nro'          => 'nullable|string|max:50',
-            'nombre_grifo'              => 'required|string|max:255',
-            'vehiculo_maquina'          => 'required|string|max:255',
-            'placa'                     => 'nullable|string|max:50',
-            'kilometraje_horometro'     => 'nullable|string|max:50',
-            'actividad_comision'        => 'required|string',
-            'facturar_a'                => 'required|string|max:255',
-            'area_id'                   => 'nullable|exists:areas,id',
-            'observaciones'             => 'nullable|string',
-            'items'                     => 'required|array|min:1',
-            'items.*.cantidad'          => 'required|numeric|min:0.01',
-            'items.*.unidad_medida'     => 'required|string|max:20',
-            'items.*.descripcion'       => 'required|string|max:255',
-            'items.*.precio_unitario'   => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -289,7 +277,8 @@ class FuelControlSlipController extends Controller
     public function pdf(int $id) {
         $slip       = FuelControlSlip::with(['items', 'approvals', 'user', 'area'])->findOrFail($id);
         $business   = Business::find(1);
-        $pdf        = Pdf::loadView('admin.documents.pdf.fuel_control_slip', compact('slip', 'business'))->setPaper('a4', 'portrait');
+        $pdf        = Pdf::loadView('admin.documents.pdf.fuel_control_slip', compact('slip', 'business'))
+            ->setPaper('a4', 'portrait');
 
         return $pdf->stream('Vale_Control_' . $slip->correlativo . '.pdf');
     }

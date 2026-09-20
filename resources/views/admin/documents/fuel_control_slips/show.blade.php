@@ -33,9 +33,12 @@
         </div>
     </div>
 
+    <!-- Circuito de Firmas y Aprobaciones (Full Width) -->
+    @include('admin.documents.partials.workflow_timeline', ['document' => $slip])
+
     <div class="row g-4">
         <!-- Columna Principal: Detalle del Vale -->
-        <div class="col-lg-8">
+        <div class="col-lg-12">
             <!-- Tarjeta de Estado & Información Principal -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -151,11 +154,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Columna Lateral: Workflow & Firmas -->
-        <div class="col-lg-4">
-            @include('admin.documents.partials.workflow_timeline', ['approvals' => $slip->approvals])
         </div>
     </div>
 </div>

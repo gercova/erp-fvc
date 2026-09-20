@@ -655,6 +655,7 @@
     <script src="{{ asset('js/functions.js') }}"></script>
 
     @yield('scripts')
+    @stack('scripts')
 </body>
 
 </html>

@@ -246,7 +246,7 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 $(document).ready(function() {
     let rowIndex = 1;
@@ -328,14 +328,7 @@ $(document).ready(function() {
             type: 'POST',
             data: $(this).serialize(),
             success: function(resp) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Registrado!',
-                    text: resp.message || 'El vale de control fue creado exitosamente.',
-                    confirmButtonText: 'Aceptar'
-                }).then(() => {
-                    window.location.href = resp.redirect;
-                });
+                window.location.href = resp.redirect;
             },
             error: function(err) {
                 btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-2"></i> Generar Vale de Control');
@@ -350,4 +343,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endpush
+@endsection

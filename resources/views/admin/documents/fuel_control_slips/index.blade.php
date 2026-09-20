@@ -64,12 +64,13 @@
                 <table class="table table-hover align-middle w-100" id="fuelTable">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 110px;">N° Vale</th>
-                            <th style="width: 140px;">Fecha / Hora</th>
+                            <th style="width: 100px;">N° Vale</th>
+                            <th style="width: 130px;">Fecha / Hora</th>
+                            <th>Solicitante / Área</th>
                             <th>Vehículo / Maquinaria</th>
                             <th>Grifo / Actividad</th>
-                            <th style="width: 110px;">Total (S/)</th>
-                            <th style="width: 120px;">Estado</th>
+                            <th style="width: 100px;">Total (S/)</th>
+                            <th style="width: 110px;" class="text-center">Estado</th>
                             <th style="width: 70px;" class="text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -78,10 +79,24 @@
             </div>
         </div>
     </div>
+
+    @if(session('toast_success'))
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+        <div id="toastSuccess" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+            <div class="d-flex">
+                <div class="toast-body fw-semibold">
+                    <i class="fas fa-check-circle me-2"></i>
+                    {{ session('toast_success') }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 $(document).ready(function() {
     const table = $('#fuelTable').DataTable({
@@ -99,14 +114,15 @@ $(document).ready(function() {
         columns: [
             { data: 'correlativo', name: 'correlativo' },
             { data: 'fecha', name: 'fecha' },
-            { data: 'vehiculo_placa', name: 'vehiculo_placa' },
-            { data: 'grifo_actividad', name: 'grifo_actividad' },
+            { data: 'solicitante_area', name: 'user.nombres' },
+            { data: 'vehiculo_placa', name: 'vehiculo_maquina' },
+            { data: 'grifo_actividad', name: 'nombre_grifo' },
             { data: 'total_general', name: 'total_general', className: 'text-end' },
             { data: 'estado_badge', name: 'status', className: 'text-center' },
             { data: 'acciones', name: 'acciones', orderable: false, searchable: false, className: 'text-center' }
         ],
         language: {
-            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            url: "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
         },
         order: [[0, 'desc']]
     });
@@ -161,6 +177,13 @@ $(document).ready(function() {
             }
         });
     });
+
+    @if(session('toast_success'))
+    const toastEl = document.getElementById('toastSuccess');
+    if (toastEl) {
+        new bootstrap.Toast(toastEl).show();
+    }
+    @endif
 });
 </script>
-@endpush
+@endsection
