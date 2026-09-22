@@ -146,6 +146,7 @@
                 'admin.series',
                 'admin.users',
                 'admin.roles',
+                'admin.areas',
             ]);
             $canRequerimientos = $authUser?->canany([
                 'requisitions.index',
@@ -155,6 +156,13 @@
                 'vacation_exit_slips.index',
                 'fuel_control_slips.index',
                 'approvals.index',
+            ]);
+            $canAssets = $authUser?->canany([
+                'assets.index',
+                'assets.create',
+                'assets.edit',
+                'assets.qr',
+                'assets.approve',
             ]);
             $pendingApprovalsCount = $authUser ? $authUser->pendingApprovalsCount() : 0;
             $totalNotificationsCount = ($productos_agotar ?? 0) + $pendingApprovalsCount;
@@ -455,6 +463,42 @@
                             </div>
                         @endif
 
+                        @if ($canAssets)
+                            @php
+                                $isAssetGroup = request()->is('inventory*') || request()->is('asset-inventories*');
+                            @endphp
+                            <a class="nav-link {{ $isAssetGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseAssets"
+                                aria-expanded="{{ $isAssetGroup ? 'true' : 'false' }}" aria-controls="collapseAssets">
+                                <div class="nav-link-icon"><i data-feather="archive"></i></div>
+                                Bienes Patrimoniales
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse {{ $isAssetGroup ? 'show' : '' }}" id="collapseAssets"
+                                data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    @can('assets.index')
+                                        <a class="nav-link {{ request()->routeIs('inventory.index') || request()->routeIs('inventory.show') || request()->routeIs('inventory.edit') ? 'active' : '' }}"
+                                            href="{{ route('inventory.index') }}">
+                                            Inventario de Bienes
+                                        </a>
+                                    @endcan
+                                    @can('assets.create')
+                                        <a class="nav-link {{ request()->routeIs('inventory.create') ? 'active' : '' }}"
+                                            href="{{ route('inventory.create') }}">
+                                            Nuevo Registro
+                                        </a>
+                                    @endcan
+                                    @can('assets.qr')
+                                        <a class="nav-link {{ request()->routeIs('inventory.qr_labels') ? 'active' : '' }}"
+                                            href="{{ route('inventory.qr_labels') }}" target="_blank">
+                                            Rótulos QR
+                                        </a>
+                                    @endcan
+                                </nav>
+                            </div>
+                        @endif
+
                         <!-- Sidenav Accordion (Components)-->
                         @if ($canInventario)
                             <a class="nav-link {{ request()->is('products') ||
@@ -585,7 +629,8 @@
                             request()->is('series') ||
                             request()->is('countries') ||
                             request()->is('users') ||
-                            request()->is('roles')
+                            request()->is('roles') ||
+                            request()->is('areas*')
                                 ? 'show'
                                 : '' }}"
                                 id="collapseUtilities" data-bs-parent="#accordionSidenav">
@@ -613,6 +658,10 @@
                                     @can('admin.roles')
                                         <a class="nav-link {{ request()->is('roles') ? 'active' : '' }}"
                                             href="{{ route('admin.roles') }}">Roles</a>
+                                    @endcan
+                                    @can('admin.areas')
+                                        <a class="nav-link {{ request()->is('areas*') ? 'active' : '' }}"
+                                            href="{{ route('admin.areas') }}">Áreas</a>
                                     @endcan
                                 </nav>
                             </div>
