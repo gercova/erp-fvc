@@ -2,34 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\UsersTemplateExport;
+use App\Http\Requests\UserValidate;
+use App\Imports\UsersImport;
 use App\Models\ArchingCash;
+use App\Models\Area;
 use App\Models\Billing;
 use App\Models\Buy;
 use App\Models\Cash;
+use App\Models\EmployeeAreaDetail;
 use App\Models\SaleNote;
 use App\Models\TransferOrder;
 use App\Models\User;
 use App\Models\Warehouse;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
-    {
+    public function index(): View {
         return view('admin.users.list', [
-            'roles' => $this->availableRoles(),
-            'cashes' => Cash::query()->orderBy('descripcion')->get(),
-            'warehouses' => Warehouse::query()->orderBy('descripcion')->get(),
+            'roles'         => $this->availableRoles(),
+            'cashes'        => Cash::query()->orderBy('descripcion')->get(),
+            'warehouses'    => Warehouse::query()->orderBy('descripcion')->get(),
+            'areas'         => Area::query()->orderBy('name')->get(['id', 'code', 'name']),
         ]);
     }
 
-    public function get()
-    {
+    public function get(): JsonResponse {
         $users = User::query()
-            ->with(['cash:id,descripcion', 'activeWarehouse:id,descripcion', 'warehouses:id,descripcion', 'roles:id,name'])
+            ->with(['cash:id,descripcion', 'activeWarehouse:id,descripcion', 'warehouses:id,descripcion', 'roles:id,name', 'primaryAreaDetail.area:id,code,name'])
             ->where('id', '!=', 1)
             ->orderByDesc('id');
 
@@ -39,6 +47,17 @@ class UserController extends Controller
                 return '<div class="user-name-cell">'
                     . '<div class="fw-semibold">' . e((string) $user->nombres) . '</div>'
                     . '<small class="text-muted">@' . e((string) $user->user) . '</small>'
+                    . '</div>';
+            })
+            ->addColumn('area_cargo', function (User $user) {
+                $detail = $user->primaryAreaDetail;
+                if (! $detail || ! $detail->area) {
+                    return '<span class="text-muted">Sin área</span>';
+                }
+
+                return '<div>'
+                    . '<span class="fw-semibold text-dark">' . e((string) $detail->area->name) . '</span>'
+                    . ($detail->cargo ? '<small class="text-muted d-block">' . e((string) $detail->cargo) . '</small>' : '')
                     . '</div>';
             })
             ->addColumn('caja', fn (User $user) => e((string) optional($user->cash)->descripcion ?: '-'))
@@ -66,6 +85,11 @@ class UserController extends Controller
                     })
                     ->implode('');
             })
+            ->addColumn('firma_status', function (User $user) {
+                return $user->firma_digital
+                    ? '<span class="badge bg-success-subtle text-success"><i class="fas fa-signature me-1"></i>Registrada</span>'
+                    : '<span class="badge bg-light text-muted border">Sin firma</span>';
+            })
             ->addColumn('estado_badge', function (User $user) {
                 return (int) $user->estado === 1
                     ? '<span class="badge bg-success-subtle text-success">Activo</span>'
@@ -92,75 +116,103 @@ class UserController extends Controller
                             </div>
                         </div>';
             })
-            ->rawColumns(['usuario_info', 'rol', 'almacenes', 'estado_badge', 'acciones'])
+            ->rawColumns(['usuario_info', 'area_cargo', 'rol', 'almacenes', 'firma_status', 'estado_badge', 'acciones'])
             ->toJson();
     }
 
-    public function save(Request $request)
-    {
-        if (! $request->ajax()) {
+    public function save(UserValidate $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
-        $validator = $this->validateUserRequest($request);
-
-        if ($validator->fails()) {
+        if (isset($request->validator) && $request->validator->fails()) {
             return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $request->validator->errors()->first(),
+                'errors'    => $request->validator->errors(),
+                'type'      => 'warning',
             ], 422);
         }
 
-        $data = $validator->validated();
+        $data = $request->validated();
         $warehouseIds = $this->sanitizeWarehouseIds($data['warehouse_ids'] ?? []);
         $primaryWarehouseId = (int) ($warehouseIds[0] ?? 0);
 
         $user = User::create([
-            'nombres' => mb_strtoupper(trim((string) $data['nombres'])),
-            'user' => mb_strtolower(trim((string) $data['user'])),
-            'password' => trim((string) $data['password']),
-            'estado' => (int) $data['estado'],
-            'idcaja' => (int) $data['idcaja'],
+            'nombres'   => mb_strtoupper(trim((string) $data['nombres'])),
+            'user'      => mb_strtolower(trim((string) $data['user'])),
+            'password'  => trim((string) $data['password']),
+            'estado'    => (int) $data['estado'],
+            'idcaja'    => (int) $data['idcaja'],
             'idalmacen' => $primaryWarehouseId,
         ]);
+
+        if ($request->hasFile('firma_digital')) {
+            $file = $request->file('firma_digital');
+            $fileName = 'signature_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = 'files/signatures';
+            File::ensureDirectoryExists(public_path($path));
+            $file->move(public_path($path), $fileName);
+            $user->update(['firma_digital' => $path . '/' . $fileName]);
+        }
+
+        if (! empty($data['area_id'])) {
+            EmployeeAreaDetail::create([
+                'user_id'           => $user->id,
+                'area_id'           => (int) $data['area_id'],
+                'cargo'             => trim((string) ($data['cargo'] ?: ($data['role'] ?? 'Personal'))),
+                'condicion_laboral' => ! empty($data['condicion_laboral']) ? trim((string) $data['condicion_laboral']) : null,
+                'is_primary'        => true,
+            ]);
+        }
 
         $user->warehouses()->sync($warehouseIds);
         $user->syncRoles([$data['role']]);
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Usuario registrado correctamente.',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Usuario registrado correctamente.',
+            'type'      => 'success',
         ]);
     }
 
-    public function detail(Request $request)
-    {
-        if (! $request->ajax()) {
-            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+    public function detail(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'Intente de nuevo',
+                'type'   => 'warning'
+            ]);
         }
 
         $user = User::query()
-            ->with(['roles:id,name', 'warehouses:id,descripcion'])
+            ->with(['roles:id,name', 'warehouses:id,descripcion', 'primaryAreaDetail.area:id,code,name'])
             ->find((int) $request->input('id'));
 
         if (! $user) {
-            return response()->json(['status' => false, 'msg' => 'El usuario no existe.', 'type' => 'warning'], 404);
+            return response()->json([
+                'status' => false,
+                'msg'    => 'El usuario no existe.',
+                'type'   => 'warning'
+            ], 404);
         }
 
+        $primaryDetail = $user->primaryAreaDetail;
+
         return response()->json([
-            'status' => true,
-            'user' => $user,
-            'role' => optional($user->roles->first())->name,
-            'warehouse_ids' => $user->warehouses->pluck('id')->map(fn ($id) => (string) $id)->values(),
+            'status'            => true,
+            'user'              => $user,
+            'role'              => optional($user->roles->first())->name,
+            'warehouse_ids'     => $user->warehouses->pluck('id')->map(fn ($id) => (string) $id)->values(),
+            'area_id'           => $primaryDetail?->area_id ? (string) $primaryDetail->area_id : '',
+            'cargo'             => $primaryDetail?->cargo ?? '',
+            'condicion_laboral' => $primaryDetail?->condicion_laboral ?? '',
+            'firma_digital_url' => $user->firma_digital_url,
         ]);
     }
 
-    public function store(Request $request)
-    {
-        if (! $request->ajax()) {
+    public function store(UserValidate $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
@@ -170,26 +222,24 @@ class UserController extends Controller
             return response()->json(['status' => false, 'msg' => 'El usuario no existe.', 'type' => 'warning'], 404);
         }
 
-        $validator = $this->validateUserRequest($request, true, $user);
-
-        if ($validator->fails()) {
+        if (isset($request->validator) && $request->validator->fails()) {
             return response()->json([
                 'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
+                'msg'    => $request->validator->errors()->first(),
+                'errors' => $request->validator->errors(),
+                'type'   => 'warning',
             ], 422);
         }
 
-        $data = $validator->validated();
-        $warehouseIds = $this->sanitizeWarehouseIds($data['warehouse_ids'] ?? []);
+        $data               = $request->validated();
+        $warehouseIds       = $this->sanitizeWarehouseIds($data['warehouse_ids'] ?? []);
         $primaryWarehouseId = (int) ($warehouseIds[0] ?? 0);
 
         $payload = [
-            'nombres' => mb_strtoupper(trim((string) $data['nombres'])),
-            'user' => mb_strtolower(trim((string) $data['user'])),
-            'estado' => (int) $data['estado'],
-            'idcaja' => (int) $data['idcaja'],
+            'nombres'   => mb_strtoupper(trim((string) $data['nombres'])),
+            'user'      => mb_strtolower(trim((string) $data['user'])),
+            'estado'    => (int) $data['estado'],
+            'idcaja'    => (int) $data['idcaja'],
             'idalmacen' => $primaryWarehouseId,
         ];
 
@@ -197,21 +247,75 @@ class UserController extends Controller
             $payload['password'] = trim((string) $data['password']);
         }
 
+        if ($request->boolean('remove_firma_digital')) {
+            if ($user->firma_digital && File::exists(public_path($user->firma_digital))) {
+                File::delete(public_path($user->firma_digital));
+            }
+            $payload['firma_digital'] = null;
+        } elseif ($request->hasFile('firma_digital')) {
+            if ($user->firma_digital && File::exists(public_path($user->firma_digital))) {
+                File::delete(public_path($user->firma_digital));
+            }
+            $file = $request->file('firma_digital');
+            $fileName = 'signature_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = 'files/signatures';
+            File::ensureDirectoryExists(public_path($path));
+            $file->move(public_path($path), $fileName);
+            $payload['firma_digital'] = $path . '/' . $fileName;
+        }
+
         $user->update($payload);
         $user->warehouses()->sync($warehouseIds);
         $user->syncRoles([$data['role']]);
 
+        // Manage Area and EmployeeAreaDetail
+        if (! empty($data['area_id'])) {
+            $detail = EmployeeAreaDetail::where('user_id', $user->id)->where('is_primary', true)->first();
+            $effectiveCargo = trim((string) ($data['cargo'] ?: ($data['role'] ?? 'Personal')));
+            $effectiveCondicion = ! empty($data['condicion_laboral']) ? trim((string) $data['condicion_laboral']) : null;
+
+            if ($detail) {
+                $detail->update([
+                    'area_id'           => (int) $data['area_id'],
+                    'cargo'             => $effectiveCargo,
+                    'condicion_laboral' => $effectiveCondicion,
+                ]);
+            } else {
+                $existingForArea = EmployeeAreaDetail::where('user_id', $user->id)->where('area_id', (int) $data['area_id'])->first();
+                if ($existingForArea) {
+                    $existingForArea->update([
+                        'cargo'             => $effectiveCargo,
+                        'condicion_laboral' => $effectiveCondicion,
+                        'is_primary'        => true,
+                    ]);
+                } else {
+                    EmployeeAreaDetail::create([
+                        'user_id'           => $user->id,
+                        'area_id'           => (int) $data['area_id'],
+                        'cargo'             => $effectiveCargo,
+                        'condicion_laboral' => $effectiveCondicion,
+                        'is_primary'        => true,
+                    ]);
+                }
+            }
+        } else {
+            EmployeeAreaDetail::where('user_id', $user->id)->where('is_primary', true)->delete();
+        }
+
         return response()->json([
-            'status' => true,
-            'msg' => 'Usuario actualizado correctamente.',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Usuario actualizado correctamente.',
+            'type'      => 'success',
         ]);
     }
 
-    public function delete(Request $request)
-    {
-        if (! $request->ajax()) {
-            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+    public function delete(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
+            return response()->json([
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
+            ]);
         }
 
         $user = User::query()->find((int) $request->input('id'));
@@ -222,17 +326,17 @@ class UserController extends Controller
 
         if ((int) auth()->id() === (int) $user->id) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No puede eliminar su propio usuario.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No puede eliminar su propio usuario.',
+                'type'      => 'warning',
             ], 422);
         }
 
         if ($this->userHasMovements($user->id)) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El usuario tiene movimientos registrados y no se puede eliminar.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El usuario tiene movimientos registrados y no se puede eliminar.',
+                'type'      => 'warning',
             ], 422);
         }
 
@@ -240,96 +344,127 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Registro eliminado correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Registro eliminado correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function view_role(Request $request)
-    {
-        if (! $request->ajax()) {
-            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+    public function view_role(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'Intente de nuevo', 
+                'type'      => 'warning'
+            ]);
         }
 
         $user = User::query()->with('roles:id,name')->find((int) $request->input('id'));
 
         if (! $user) {
-            return response()->json(['status' => false, 'msg' => 'El usuario no existe.', 'type' => 'warning'], 404);
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'El usuario no existe.', 
+                'type'      => 'warning'
+            ], 404);
         }
 
         return response()->json([
-            'status' => true,
-            'data' => [
-                'user' => $user,
-                'roles' => $this->availableRoles()->values(),
-                'selRoles' => $user->roles->pluck('name')->values(),
+            'status'    => true,
+            'data'      => [
+                'user'      => $user,
+                'roles'     => $this->availableRoles()->values(),
+                'selRoles'  => $user->roles->pluck('name')->values(),
             ],
         ]);
     }
 
-    public function update(Request $request)
-    {
-        if (! $request->ajax()) {
-            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+    public function update(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'Intente de nuevo', 
+                'type'      => 'warning'
+            ]);
         }
 
         $user = User::query()->find((int) $request->input('id'));
 
         if (! $user) {
-            return response()->json(['status' => false, 'msg' => 'El usuario no existe.', 'type' => 'warning'], 404);
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'El usuario no existe.', 
+                'type'      => 'warning'
+            ], 404);
         }
 
         $role = (string) $request->input('roles.0', '');
 
         if ($role === '' || ! $this->availableRoles()->pluck('name')->contains($role)) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Debe seleccionar un rol valido.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Debe seleccionar un rol valido.',
+                'type'      => 'warning',
             ], 422);
         }
 
         $user->syncRoles([$role]);
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Rol asignado correctamente.',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Rol asignado correctamente.',
+            'type'      => 'success',
         ]);
     }
 
-    private function validateUserRequest(Request $request, bool $isUpdate = false, ?User $user = null)
-    {
-        $rules = [
-            'nombres' => ['required', 'string', 'max:255'],
-            'user' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('users', 'user')->ignore($user?->id),
-            ],
-            'password' => [$isUpdate ? 'nullable' : 'required', 'string', 'min:6', 'max:255'],
-            'idcaja' => ['required', 'integer', 'exists:cashes,id'],
-            'warehouse_ids' => ['required', 'array', 'min:1'],
-            'warehouse_ids.*' => ['required', 'integer', 'exists:warehouses,id'],
-            'role' => ['required', 'string', Rule::in($this->availableRoles()->pluck('name')->all())],
-            'estado' => ['required', 'integer', Rule::in([0, 1])],
-        ];
-
-        $messages = [
-            'warehouse_ids.required' => 'Debe asignar al menos un almacen.',
-            'warehouse_ids.min' => 'Debe asignar al menos un almacen.',
-            'role.required' => 'Debe seleccionar un rol.',
-            'idcaja.required' => 'Debe seleccionar una caja.',
-            'password.required' => 'Debe ingresar una contrasena.',
-        ];
-
-        return Validator::make($request->all(), $rules, $messages);
+    public function download_template() {
+        return Excel::download(new UsersTemplateExport(), 'plantilla_usuarios.xlsx');
     }
 
-    private function sanitizeWarehouseIds(array $warehouseIds): array
-    {
+    public function upload_excel(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
+            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+        }
+
+        $excel = $request->file('excel');
+
+        if (! $excel) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'Seleccione un archivo Excel.',
+                'type' => 'warning',
+            ], 422);
+        }
+
+        $extension = strtolower((string) $excel->getClientOriginalExtension());
+        if (! in_array($extension, ['xlsx', 'xls'], true)) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'El archivo debe estar en formato .xlsx o .xls.',
+                'type' => 'warning',
+            ], 422);
+        }
+
+        try {
+            $import = new UsersImport();
+            Excel::import($import, $excel);
+            $summary = $import->getSummary();
+
+            return response()->json([
+                'status' => true,
+                'msg' => "Importación completada: {$summary['created']} usuario(s) registrado(s), {$summary['updated']} actualizado(s).",
+                'type' => 'success',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'Observación en la importación: ' . $e->getMessage(),
+                'type' => 'warning',
+            ], 422);
+        }
+    }
+
+    private function sanitizeWarehouseIds(array $warehouseIds): array {
         return collect($warehouseIds)
             ->map(fn ($id) => (int) $id)
             ->filter()
@@ -338,16 +473,14 @@ class UserController extends Controller
             ->all();
     }
 
-    private function availableRoles()
-    {
+    private function availableRoles(){
         return Role::query()
             ->where('name', '!=', 'SUPERADMIN')
             ->orderByRaw("CASE name WHEN 'ADMIN' THEN 1 WHEN 'VENDEDOR' THEN 2 WHEN 'CAJERO' THEN 3 WHEN 'CONTABILIDAD' THEN 4 ELSE 5 END")
             ->get(['id', 'name']);
     }
 
-    private function userHasMovements(int $userId): bool
-    {
+    private function userHasMovements(int $userId): bool {
         return SaleNote::query()->where('idusuario', $userId)->exists()
             || Billing::query()->where('idusuario', $userId)->exists()
             || Buy::query()->where('idusuario', $userId)->exists()
