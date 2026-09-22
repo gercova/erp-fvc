@@ -9,11 +9,12 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1 small">
                         <li class="breadcrumb-item"><a href="{{ route('inventory.index') }}">Bienes Patrimoniales</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Editar Activo #{{ $asset->formatted_orden }}</li>
+                        <li class="breadcrumb-item active" aria-current="page">Editar Activo #{{ $asset->formatted_orden }}
+                        </li>
                     </ol>
                 </nav>
                 <h1 class="h3 mb-0 text-gray-900 fw-bold">
-                    <i class="fas fa-edit text-warning me-2"></i>Editar Bien Patrimonial
+                    <i class="fas fa-edit me-2"></i>Editar Bien Patrimonial
                 </h1>
                 <p class="text-muted small mb-0">Actualice los datos técnicos, condición física o reubicación del activo</p>
             </div>
@@ -48,11 +49,13 @@
                 <!-- Columna Izquierda: Identificación y Clasificación -->
                 <div class="col-lg-8">
                     <div class="card shadow-sm border-0 mb-4 bg-white">
-                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div
+                            class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                             <h6 class="m-0 fw-bold text-primary">
                                 <i class="fas fa-info-circle me-1"></i> Identificación y Clasificación del Activo
                             </h6>
-                            <span class="badge bg-light text-dark font-monospace border">UUID: {{ substr($asset->uuid, 0, 8) }}...</span>
+                            <span class="badge bg-light text-dark font-monospace border">UUID:
+                                {{ substr($asset->uuid, 0, 8) }}...</span>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
@@ -62,7 +65,8 @@
                                     </label>
                                     <select name="area_id" class="form-select" required>
                                         @foreach ($areas as $area)
-                                            <option value="{{ $area->id }}" {{ old('area_id', $asset->area_id) == $area->id ? 'selected' : '' }}>
+                                            <option value="{{ $area->id }}"
+                                                {{ old('area_id', $asset->area_id) == $area->id ? 'selected' : '' }}>
                                                 {{ $area->name }} ({{ $area->code }})
                                             </option>
                                         @endforeach
@@ -84,7 +88,8 @@
                                         Código de Producto (Catálogo SBN)
                                     </label>
                                     <input type="text" name="codigo_producto" class="form-control font-monospace"
-                                        placeholder="Ej: 74648390" value="{{ old('codigo_producto', $asset->codigo_producto) }}">
+                                        placeholder="Ej: 74648390"
+                                        value="{{ old('codigo_producto', $asset->codigo_producto) }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-dark">
@@ -148,8 +153,8 @@
                                     <label class="form-label small fw-bold text-dark">Costo Estimado (S/)</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light fw-bold">S/</span>
-                                        <input type="number" step="0.01" min="0" name="costo" class="form-control"
-                                            value="{{ old('costo', $asset->costo) }}">
+                                        <input type="number" step="0.01" min="0" name="costo"
+                                            class="form-control" value="{{ old('costo', $asset->costo) }}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -236,8 +241,10 @@
                         <div class="card-body">
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <label class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
-                                        <input type="radio" name="tipo_adquisicion" value="C" class="form-check-input me-2"
+                                    <label
+                                        class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
+                                        <input type="radio" name="tipo_adquisicion" value="C"
+                                            class="form-check-input me-2"
                                             {{ old('tipo_adquisicion', $asset->tipo_adquisicion) == 'C' ? 'checked' : '' }}>
                                         <div>
                                             <span class="badge bg-primary d-block mb-1">C</span>
@@ -246,8 +253,10 @@
                                     </label>
                                 </div>
                                 <div class="col-6">
-                                    <label class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
-                                        <input type="radio" name="tipo_adquisicion" value="D" class="form-check-input me-2"
+                                    <label
+                                        class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
+                                        <input type="radio" name="tipo_adquisicion" value="D"
+                                            class="form-check-input me-2"
                                             {{ old('tipo_adquisicion', $asset->tipo_adquisicion) == 'D' ? 'checked' : '' }}>
                                         <div>
                                             <span class="badge bg-info text-white d-block mb-1">D</span>
@@ -267,19 +276,25 @@
                             </h6>
                         </div>
                         <div class="card-body text-center">
-                            <div id="image_preview_box" class="mb-3 p-2 border rounded bg-light d-flex align-items-center justify-content-center" style="min-height: 140px;">
+                            <div id="image_preview_box"
+                                class="mb-3 p-2 border rounded bg-light d-flex align-items-center justify-content-center"
+                                style="min-height: 140px;">
                                 @if ($asset->foto_path)
-                                    <img id="image_preview" src="{{ asset($asset->foto_path) }}" alt="Foto del activo" class="img-fluid rounded" style="max-height: 180px;">
+                                    <img id="image_preview" src="{{ asset($asset->foto_path) }}" alt="Foto del activo"
+                                        class="img-fluid rounded" style="max-height: 180px;">
                                 @else
                                     <div class="text-muted small text-center" id="no_image_text">
                                         <i class="fas fa-image fs-1 d-block mb-2 text-secondary"></i>
                                         Sin imagen registrada
                                     </div>
-                                    <img id="image_preview" src="#" alt="Vista previa" class="img-fluid rounded d-none" style="max-height: 180px;">
+                                    <img id="image_preview" src="#" alt="Vista previa"
+                                        class="img-fluid rounded d-none" style="max-height: 180px;">
                                 @endif
                             </div>
-                            <input type="file" name="foto" id="form_foto" class="form-control form-control-sm" accept="image/*">
-                            <small class="text-muted d-block mt-1">Seleccione un archivo si desea reemplazar la foto actual.</small>
+                            <input type="file" name="foto" id="form_foto" class="form-control form-control-sm"
+                                accept="image/*">
+                            <small class="text-muted d-block mt-1">Seleccione un archivo si desea reemplazar la foto
+                                actual.</small>
                         </div>
                     </div>
 
@@ -288,7 +303,8 @@
                         <button type="submit" class="btn btn-warning btn-lg shadow-sm fw-bold text-dark">
                             <i class="fas fa-save me-2"></i> Guardar Cambios
                         </button>
-                        <a href="{{ route('inventory.index', ['area_id' => $asset->area_id]) }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('inventory.index', ['area_id' => $asset->area_id]) }}"
+                            class="btn btn-outline-secondary">
                             Cancelar
                         </a>
                     </div>

@@ -1,6 +1,5 @@
 @extends('admin.layout')
 @section('title', 'Registrar Nuevo Bien Patrimonial')
-
 @section('content')
     <div class="container-fluid px-4 py-4">
         <!-- Header -->
@@ -13,9 +12,10 @@
                     </ol>
                 </nav>
                 <h1 class="h3 mb-0 text-gray-900 fw-bold">
-                    <i class="fas fa-plus-circle text-primary me-2"></i>Registrar Bien Patrimonial
+                    <i class="fas fa-plus-circle me-2"></i>Registrar Bien Patrimonial
                 </h1>
-                <p class="text-muted small mb-0">Ingrese los datos técnicos del activo conforme al formato institucional único</p>
+                <p class="text-muted small mb-0">Ingrese los datos técnicos del activo conforme al formato institucional
+                    único</p>
             </div>
             <div>
                 <a href="{{ route('inventory.index', ['area_id' => $selectedAreaId]) }}" class="btn btn-outline-secondary">
@@ -60,7 +60,8 @@
                                     </label>
                                     <select name="area_id" id="form_area_id" class="form-select" required>
                                         @foreach ($areas as $area)
-                                            <option value="{{ $area->id }}" {{ old('area_id', $selectedAreaId) == $area->id ? 'selected' : '' }}>
+                                            <option value="{{ $area->id }}"
+                                                {{ old('area_id', $selectedAreaId) == $area->id ? 'selected' : '' }}>
                                                 {{ $area->name }} ({{ $area->code }})
                                             </option>
                                         @endforeach
@@ -72,8 +73,9 @@
                                     </label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light font-monospace fw-bold">#</span>
-                                        <input type="number" name="orden" id="form_orden" class="form-control font-monospace"
-                                            value="{{ old('orden', $nextOrden) }}" min="1">
+                                        <input type="number" name="orden" id="form_orden"
+                                            class="form-control font-monospace" value="{{ old('orden', $nextOrden) }}"
+                                            min="1">
                                     </div>
                                     <small class="text-muted">Calculado automáticamente</small>
                                 </div>
@@ -105,14 +107,14 @@
 
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-dark">Marca</label>
-                                    <input type="text" name="marca" class="form-control"
-                                        placeholder="SIN MARCA" value="{{ old('marca', 'SIN MARCA') }}">
+                                    <input type="text" name="marca" class="form-control" placeholder="SIN MARCA"
+                                        value="{{ old('marca', 'SIN MARCA') }}">
                                     <small class="text-muted">Si no tiene, dejar "SIN MARCA"</small>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold text-dark">Modelo</label>
-                                    <input type="text" name="modelo" class="form-control"
-                                        placeholder="SIN MODELO" value="{{ old('modelo', 'SIN MODELO') }}">
+                                    <input type="text" name="modelo" class="form-control" placeholder="SIN MODELO"
+                                        value="{{ old('modelo', 'SIN MODELO') }}">
                                     <small class="text-muted">Si no tiene, dejar "SIN MODELO"</small>
                                 </div>
                                 <div class="col-md-4">
@@ -139,7 +141,8 @@
                                         Ubicación Física <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="ubicacion" class="form-control" required
-                                        placeholder="Ej: Oficina Principal, Almacén General, Lab 01" value="{{ old('ubicacion') }}">
+                                        placeholder="Ej: Oficina Principal, Almacén General, Lab 01"
+                                        value="{{ old('ubicacion') }}">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-dark">
@@ -154,8 +157,8 @@
                                     <label class="form-label small fw-bold text-dark">Costo Estimado (S/)</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light fw-bold">S/</span>
-                                        <input type="number" step="0.01" min="0" name="costo" class="form-control"
-                                            value="{{ old('costo', '0.00') }}">
+                                        <input type="number" step="0.01" min="0" name="costo"
+                                            class="form-control" value="{{ old('costo', '0.00') }}">
                                     </div>
                                     <small class="text-muted">Si no aplica, dejar en 0.00</small>
                                 </div>
@@ -244,8 +247,10 @@
                         <div class="card-body">
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <label class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
-                                        <input type="radio" name="tipo_adquisicion" value="C" class="form-check-input me-2"
+                                    <label
+                                        class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
+                                        <input type="radio" name="tipo_adquisicion" value="C"
+                                            class="form-check-input me-2"
                                             {{ old('tipo_adquisicion', 'C') == 'C' ? 'checked' : '' }}>
                                         <div>
                                             <span class="badge bg-primary d-block mb-1">C</span>
@@ -254,8 +259,10 @@
                                     </label>
                                 </div>
                                 <div class="col-6">
-                                    <label class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
-                                        <input type="radio" name="tipo_adquisicion" value="D" class="form-check-input me-2"
+                                    <label
+                                        class="p-2 border rounded d-flex align-items-center justify-content-center cursor-pointer bg-light w-100 text-center">
+                                        <input type="radio" name="tipo_adquisicion" value="D"
+                                            class="form-check-input me-2"
                                             {{ old('tipo_adquisicion') == 'D' ? 'checked' : '' }}>
                                         <div>
                                             <span class="badge bg-info text-white d-block mb-1">D</span>
@@ -275,14 +282,18 @@
                             </h6>
                         </div>
                         <div class="card-body text-center">
-                            <div id="image_preview_box" class="mb-3 p-3 border rounded bg-light d-flex align-items-center justify-content-center" style="min-height: 140px;">
+                            <div id="image_preview_box"
+                                class="mb-3 p-3 border rounded bg-light d-flex align-items-center justify-content-center"
+                                style="min-height: 140px;">
                                 <div class="text-muted small text-center" id="no_image_text">
                                     <i class="fas fa-image fs-1 d-block mb-2 text-secondary"></i>
                                     Ninguna imagen seleccionada
                                 </div>
-                                <img id="image_preview" src="#" alt="Vista previa" class="img-fluid rounded d-none" style="max-height: 180px;">
+                                <img id="image_preview" src="#" alt="Vista previa"
+                                    class="img-fluid rounded d-none" style="max-height: 180px;">
                             </div>
-                            <input type="file" name="foto" id="form_foto" class="form-control form-control-sm" accept="image/*">
+                            <input type="file" name="foto" id="form_foto" class="form-control form-control-sm"
+                                accept="image/*">
                             <small class="text-muted d-block mt-1">Formatos: JPG, PNG, WEBP (Máx. 3MB)</small>
                         </div>
                     </div>
@@ -292,7 +303,8 @@
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm fw-bold">
                             <i class="fas fa-save me-2"></i> Registrar Activo
                         </button>
-                        <a href="{{ route('inventory.index', ['area_id' => $selectedAreaId]) }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('inventory.index', ['area_id' => $selectedAreaId]) }}"
+                            class="btn btn-outline-secondary">
                             Cancelar
                         </a>
                     </div>
