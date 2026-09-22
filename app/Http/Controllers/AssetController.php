@@ -127,9 +127,9 @@ class AssetController extends Controller
                 return e($asset->formatted_orden);
             })
             ->addColumn('codigo_col', function (Asset $asset) {
-                $codigo = $asset->codigo ? '<div class="font-monospace fw-bold text-dark">' . e($asset->codigo) . '</div>' : '';
+                $codigo = $asset->codigo ? '<div class="text-dark">' . e($asset->codigo) . '</div>' : '';
                 if ($asset->codigo_producto) {
-                    $codigo .= '<small class="text-muted font-monospace"><i class="fas fa-barcode me-1"></i>' . e($asset->codigo_producto) . '</small>';
+                    $codigo .= '<small class="text-muted"><i class="fas fa-barcode me-1"></i>' . e($asset->codigo_producto) . '</small>';
                 }
                 if (! $codigo) {
                     $codigo = '<span class="text-muted fst-italic">-</span>';
