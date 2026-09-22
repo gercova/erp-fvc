@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Area;
+use App\Models\AssetInventory;
 use App\Models\DocumentApproval;
 use App\Models\ExitSlip;
 use App\Models\ExpenseDeclaration;
@@ -119,6 +120,17 @@ class DocumentApprovalService
                 ['role_name' => 'ADMINISTRACION', 'label' => 'V° B° Administración (Autorizado)', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
                 ['role_name' => 'GRIFO', 'label' => 'Atendido por (Grifo)', 'approver_id' => null, 'approver_name' => $document->nombre_grifo],
                 ['role_name' => 'RECIBIDO_POR', 'label' => 'Recibido por', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
+            ];
+        }
+
+        if ($document instanceof AssetInventory) {
+            $areaHead = $document->area?->head;
+            return [
+                ['role_name' => 'JEFE_AREA', 'label' => 'Resp. del Área', 'approver_id' => $areaHead?->id, 'approver_name' => $document->responsable ?: $areaHead?->nombres],
+                ['role_name' => 'ABASTECIMIENTO', 'label' => 'Resp. de Abastecimiento', 'approver_id' => $abastecimientoHead?->id, 'approver_name' => $abastecimientoHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Administrador', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'UNIDAD_ADMINISTRATIVA', 'label' => 'Jefe de Unidad Administrativa', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Director General', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
             ];
         }
 
@@ -266,6 +278,9 @@ class DocumentApprovalService
         }
         if ($document instanceof FuelControlSlip) {
             return "Vale de Control N° {$document->correlativo}";
+        }
+        if ($document instanceof AssetInventory) {
+            return "Acta de Inventario - {$document->area?->name} ({$document->periodo})";
         }
 
         return "Documento N° {$document->id}";
