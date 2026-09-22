@@ -30,6 +30,10 @@
                         <i class="ri-add-circle-line align-middle"></i>
                         <span class="d-none d-sm-inline">Agregar usuario</span>
                     </button>
+                    <button class="dt-button create-new btn btn-info waves-effect waves-light btn-upload-excel mb-3 ms-2" tabindex="0">
+                        <i class="ri-upload-2-line align-middle"></i>
+                        <span class="d-none d-sm-inline">Cargar Excel</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -46,11 +50,13 @@
                             <thead>
                                 <tr>
                                     <th>Usuario</th>
-                                    <th width="14%" class="text-center">Caja</th>
-                                    <th width="14%" class="text-center">Rol</th>
-                                    <th width="28%" class="text-center">Almacenes</th>
-                                    <th width="12%" class="text-center">Estado</th>
-                                    <th width="12%" class="text-center">Acciones</th>
+                                    <th>Área / Cargo</th>
+                                    <th width="12%" class="text-center">Caja</th>
+                                    <th width="12%" class="text-center">Rol</th>
+                                    <th width="20%" class="text-center">Almacenes</th>
+                                    <th width="10%" class="text-center">Firma</th>
+                                    <th width="10%" class="text-center">Estado</th>
+                                    <th width="10%" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                         </table>
