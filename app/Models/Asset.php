@@ -57,8 +57,7 @@ class Asset extends Model
         'estado_operativo' => 'OPERATIVO',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (Asset $asset) {
             if (empty($asset->uuid)) {
                 $asset->uuid = (string) Str::uuid();
@@ -107,28 +106,23 @@ class Asset extends Model
         });
     }
 
-    public function area(): BelongsTo
-    {
+    public function area(): BelongsTo {
         return $this->belongsTo(Area::class);
     }
 
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class);
     }
 
-    public function reconciledBy(): BelongsTo
-    {
+    public function reconciledBy(): BelongsTo {
         return $this->belongsTo(User::class, 'reconciled_by');
     }
 
-    public function getFormattedOrdenAttribute(): string
-    {
+    public function getFormattedOrdenAttribute(): string {
         return str_pad((string) $this->orden, 2, '0', STR_PAD_LEFT);
     }
 
-    public function getCondicionLabelAttribute(): string
-    {
+    public function getCondicionLabelAttribute(): string {
         return match ($this->condicion) {
             'B'     => 'Bueno',
             'R'     => 'Regular',
@@ -138,19 +132,17 @@ class Asset extends Model
         };
     }
 
-    public function getCondicionBadgeAttribute(): string
-    {
+    public function getCondicionBadgeAttribute(): string {
         return match ($this->condicion) {
-            'B'     => '<span class="badge bg-success text-white px-2 py-1"><i class="fas fa-check-circle me-1"></i>Bueno (B)</span>',
-            'R'     => '<span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-exclamation-triangle me-1"></i>Regular (R)</span>',
-            'M'     => '<span class="badge bg-danger text-white px-2 py-1"><i class="fas fa-times-circle me-1"></i>Malo (M)</span>',
-            'BAJA'  => '<span class="badge bg-dark text-white px-2 py-1"><i class="fas fa-ban me-1"></i>Baja</span>',
+            'B'     => '<span class="badge bg-success text-white px-2 py-1">Bueno (B)</span>',
+            'R'     => '<span class="badge bg-warning text-dark px-2 py-1">Regular (R)</span>',
+            'M'     => '<span class="badge bg-danger text-white px-2 py-1">Malo (M)</span>',
+            'BAJA'  => '<span class="badge bg-dark text-white px-2 py-1">Baja</span>',
             default => '<span class="badge bg-light text-dark px-2 py-1">' . e($this->condicion) . '</span>',
         };
     }
 
-    public function getTipoAdquisicionLabelAttribute(): string
-    {
+    public function getTipoAdquisicionLabelAttribute(): string {
         return match ($this->tipo_adquisicion) {
             'C'     => 'Compra',
             'D'     => 'Donación',
@@ -158,22 +150,19 @@ class Asset extends Model
         };
     }
 
-    public function getTipoAdquisicionBadgeAttribute(): string
-    {
+    public function getTipoAdquisicionBadgeAttribute(): string {
         return match ($this->tipo_adquisicion) {
-            'C'     => '<span class="badge bg-primary text-white px-2 py-1"><i class="fas fa-shopping-cart me-1"></i>Compra (C)</span>',
-            'D'     => '<span class="badge bg-info text-white px-2 py-1"><i class="fas fa-hand-holding-heart me-1"></i>Donación (D)</span>',
+            'C'     => '<span class="badge bg-primary text-white px-2 py-1">Compra (C)</span>',
+            'D'     => '<span class="badge bg-info text-white px-2 py-1">Donación (D)</span>',
             default => '<span class="badge bg-light text-dark px-2 py-1">' . e($this->tipo_adquisicion) . '</span>',
         };
     }
 
-    public function getVerificationUrlAttribute(): string
-    {
+    public function getVerificationUrlAttribute(): string {
         return route('inventory.public_verify', $this->uuid);
     }
 
-    public function getFotoUrlAttribute(): ?string
-    {
+    public function getFotoUrlAttribute(): ?string {
         if (empty($this->foto_path)) {
             return null;
         }
