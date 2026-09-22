@@ -26,6 +26,7 @@ class RoleSeeder extends Seeder
         $chofer             = Role::firstOrCreate(['name' => 'CHOFER']);
         $docente            = Role::firstOrCreate(['name' => 'DOCENTE']);
         $abastecimiento     = Role::firstOrCreate(['name' => 'ABASTECIMIENTO']);
+        $patrimonio         = Role::firstOrCreate(['name' => 'PATRIMONIO']);
 
         $permissionsByModule = [
             'Dashboard' => [
@@ -109,6 +110,16 @@ class RoleSeeder extends Seeder
                 'report.billings.billing_documents' => 'Ver reporte de documentos emitidos',
                 'report.billings.credit_notes' => 'Ver reporte de notas de credito',
             ],
+            'Bienes Patrimoniales' => [
+                'assets.index' => 'Listar y consultar bienes patrimoniales',
+                'assets.create' => 'Registrar bienes patrimoniales',
+                'assets.edit' => 'Editar bienes patrimoniales',
+                'assets.delete' => 'Dar de baja o eliminar bienes patrimoniales',
+                'assets.qr' => 'Generar e imprimir etiquetas QR',
+                'assets.reconcile' => 'Conciliar y verificar inventario físico',
+                'assets.approve' => 'Aprobar y firmar actas de inventario',
+                'assets.export' => 'Exportar inventario en PDF y Excel',
+            ],
         ];
 
         $allPermissions = [];
@@ -131,6 +142,39 @@ class RoleSeeder extends Seeder
 
         $superAdmin->syncPermissions($allPermissions);
         $admin->syncPermissions($allPermissions);
+
+        $patrimonioPermissions = [
+            'admin.home',
+            'assets.index',
+            'assets.create',
+            'assets.edit',
+            'assets.delete',
+            'assets.qr',
+            'assets.reconcile',
+            'assets.approve',
+            'assets.export',
+        ];
+        $patrimonio->syncPermissions($patrimonioPermissions);
+        $abastecimiento->givePermissionTo($patrimonioPermissions);
+
+        $jefeAreaPermissions = [
+            'admin.home',
+            'assets.index',
+            'assets.create',
+            'assets.edit',
+            'assets.qr',
+            'assets.export',
+        ];
+        $jefeArea->givePermissionTo($jefeAreaPermissions);
+
+        $approverPermissions = [
+            'admin.home',
+            'assets.index',
+            'assets.approve',
+            'assets.export',
+        ];
+        $directorGeneral->givePermissionTo($approverPermissions);
+        $administracion->givePermissionTo($approverPermissions);
 
         $vendedor->syncPermissions([
             'admin.home',
