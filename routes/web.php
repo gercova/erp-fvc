@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArchingCashController; 
+use App\Http\Controllers\AreaController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BillingReportController;
@@ -35,6 +36,8 @@ use App\Http\Controllers\VehicleExitSlipController;
 use App\Http\Controllers\VacationExitSlipController;
 use App\Http\Controllers\FuelControlSlipController;
 use App\Http\Controllers\DocumentApprovalController;
+use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssetInventoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -317,6 +320,17 @@ Route::controller(UserController::class)->prefix('users')->middleware(['auth', '
     Route::post('/delete-user'                  , 'delete')->name('users.delete');
     Route::post('/view-role'                    , 'view_role')->name('users.view_role');
     Route::post('/update-role'                  , 'update')->name('users.update_role');
+    Route::get('/download-template'             , 'download_template')->name('users.download_template');
+    Route::post('/upload-excel'                 , 'upload_excel')->name('users.upload_excel');
+});
+
+Route::controller(AreaController::class)->prefix('areas')->middleware(['auth', 'can:admin.areas'])->group(function() {
+    Route::get('/'                              , 'index')->name('admin.areas');
+    Route::get('/get-areas'                     , 'get')->name('areas.get');
+    Route::post('/save-area'                    , 'save')->name('areas.save');
+    Route::post('/detail-area'                  , 'detail')->name('areas.detail');
+    Route::post('/store-area'                   , 'store')->name('areas.store');
+    Route::post('/delete-area'                  , 'delete')->name('areas.delete');
 });
 
 Route::controller(RoleController::class)->prefix('roles')->middleware(['auth', 'can:admin.roles'])->group(function() {
@@ -438,4 +452,30 @@ Route::controller(DocumentApprovalController::class)->prefix('approvals')->middl
     Route::get('/{id}',         'show')->name('approvals.show');
     Route::post('/approve',     'approve')->name('approvals.approve')->middleware('can:approvals.action');
     Route::post('/reject',      'reject')->name('approvals.reject')->middleware('can:approvals.action');
+});
+
+# Módulo de Bienes Patrimoniales y Activos Fijos
+Route::get('/inventory/verify/{uuid}',      [AssetController::class, 'publicVerify'])->name('inventory.public_verify');
+Route::get('/inventory/qr-svg/{uuid}',      [AssetController::class, 'qrSvg'])->name('inventory.qr_svg');
+
+Route::controller(AssetController::class)->prefix('inventory')->middleware(['auth', 'can:assets.index', 'asset.access'])->group(function() {
+    Route::get('/',                         'index')->name('inventory.index');
+    Route::get('/get',                      'get')->name('inventory.get');
+    Route::get('/create',                   'create')->name('inventory.create')->middleware('can:assets.create');
+    Route::post('/store',                   'store')->name('inventory.store')->middleware('can:assets.create');
+    Route::get('/download-template',        'downloadTemplate')->name('inventory.download_template')->middleware('can:assets.create');
+    Route::post('/upload-excel',            'uploadExcel')->name('inventory.upload_excel')->middleware('can:assets.create');
+    Route::get('/qr-labels',                'printQrLabels')->name('inventory.qr_labels')->middleware('can:assets.qr');
+    Route::get('/pdf',                      'printInventoryPdf')->name('inventory.pdf')->middleware('can:assets.export');
+    Route::get('/quick-detail/{id}',        'quickDetail')->name('inventory.quick_detail');
+    Route::post('/{id}/reconcile',          'toggleReconcile')->name('inventory.reconcile')->middleware('can:assets.reconcile');
+    Route::get('/{id}',                     'show')->name('inventory.show');
+    Route::get('/{id}/edit',                'edit')->name('inventory.edit')->middleware('can:assets.edit');
+    Route::put('/{id}',                     'update')->name('inventory.update')->middleware('can:assets.edit');
+    Route::post('/delete',                  'delete')->name('inventory.delete')->middleware('can:assets.delete');
+});
+
+Route::controller(AssetInventoryController::class)->prefix('asset-inventories')->middleware(['auth', 'can:assets.approve', 'asset.access'])->group(function() {
+    Route::post('/store',                   'store')->name('asset-inventories.store');
+    Route::get('/{id}',                     'show')->name('asset-inventories.show');
 });
