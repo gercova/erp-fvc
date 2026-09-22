@@ -8,7 +8,6 @@ use App\Imports\AssetsImport;
 use App\Models\Area;
 use App\Models\Asset;
 use App\Models\Business;
-use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -126,7 +124,7 @@ class AssetController extends Controller
 
         return datatables()->of($query)
             ->addColumn('orden_fmt', function (Asset $asset) {
-                return '<span class="badge bg-light text-dark border font-monospace fw-bold">' . e($asset->formatted_orden) . '</span>';
+                return e($asset->formatted_orden);
             })
             ->addColumn('codigo_col', function (Asset $asset) {
                 $codigo = $asset->codigo ? '<div class="font-monospace fw-bold text-dark">' . e($asset->codigo) . '</div>' : '';
@@ -180,12 +178,12 @@ class AssetController extends Controller
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-1">
-                            <li><a class="dropdown-item py-1" href="' . $showUrl . '"><i class="fas fa-eye text-primary me-2"></i>Ficha Técnica</a></li>
-                            <li><button class="dropdown-item py-1 btn-quick-detail" data-id="' . $asset->id . '"><i class="fas fa-info-circle text-info me-2"></i>Vista Rápida</button></li>
-                            <li><a class="dropdown-item py-1" href="' . $labelUrl . '" target="_blank"><i class="fas fa-tag text-dark me-2"></i>Imprimir Etiqueta</a></li>
-                            <li><a class="dropdown-item py-1" href="' . $editUrl . '"><i class="fas fa-edit text-warning me-2"></i>Editar</a></li>
+                            <li><a class="dropdown-item py-1" href="' . $showUrl . '"><i class="fas fa-eye me-2"></i>Ficha Técnica</a></li>
+                            <li><button class="dropdown-item py-1 btn-quick-detail" data-id="' . $asset->id . '"><i class="fas fa-info-circle me-2"></i>Vista Rápida</button></li>
+                            <li><a class="dropdown-item py-1" href="' . $labelUrl . '" target="_blank"><i class="fas fa-tag me-2"></i>Imprimir Etiqueta</a></li>
+                            <li><a class="dropdown-item py-1" href="' . $editUrl . '"><i class="fas fa-edit me-2"></i>Editar</a></li>
                             <li><hr class="dropdown-divider my-1"></li>
-                            <li><button class="dropdown-item py-1 text-danger btn-delete-asset" data-id="' . $id . '"><i class="fas fa-trash-alt me-2"></i>Dar de Baja / Eliminar</button></li>
+                            <li><button class="dropdown-item py-1 btn-delete-asset" data-id="' . $id . '"><i class="fas fa-trash-alt me-2"></i>Dar de Baja / Eliminar</button></li>
                         </ul>
                     </div>
                 </div>';
