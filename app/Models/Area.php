@@ -40,6 +40,16 @@ class Area extends Model
         return $this->hasMany(EmployeeAreaDetail::class);
     }
 
+    public function assets(): HasMany
+    {
+        return $this->hasMany(Asset::class)->orderBy('orden');
+    }
+
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(AssetInventory::class)->orderByDesc('periodo');
+    }
+
     /**
      * Sube por la jerarquía (parent_id) y arma la lista ordenada de aprobadores:
      * primero el jefe del área del solicitante, luego el de la unidad superior,
