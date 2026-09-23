@@ -20,34 +20,32 @@ class Area extends Model
         'is_advisory' => 'boolean',
     ];
 
-    public function parent(): BelongsTo
-    {
+    public function parent(): BelongsTo {
         return $this->belongsTo(Area::class, 'parent_id');
     }
 
-    public function children(): HasMany
-    {
+    public function children(): HasMany {
         return $this->hasMany(Area::class, 'parent_id');
     }
 
-    public function head(): BelongsTo
-    {
+    public function head(): BelongsTo {
         return $this->belongsTo(User::class, 'head_user_id');
     }
 
-    public function employeeDetails(): HasMany
-    {
+    public function employeeDetails(): HasMany {
         return $this->hasMany(EmployeeAreaDetail::class);
     }
 
-    public function assets(): HasMany
-    {
+    public function assets(): HasMany {
         return $this->hasMany(Asset::class)->orderBy('orden');
     }
 
-    public function inventories(): HasMany
-    {
+    public function inventories(): HasMany {
         return $this->hasMany(AssetInventory::class)->orderByDesc('periodo');
+    }
+
+    public function loans(): HasMany {
+        return $this->hasMany(AssetLoan::class)->orderByDesc('loan_date');
     }
 
     /**
@@ -61,10 +59,9 @@ class Area extends Model
      *   de Dirección, Consejo Asesor, etc.) no generan un paso de aprobación obligatorio.
      * - Un mismo jefe no se repite si encabeza más de un nivel de la cadena.
      */
-    public function approvalChain(?User $requester = null): Collection
-    {
-        $chain = collect();
-        $area = $this;
+    public function approvalChain(?User $requester = null): Collection {
+        $chain  = collect();
+        $area   = $this;
 
         while ($area) {
             $skip = $area->is_advisory
