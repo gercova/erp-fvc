@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -116,6 +118,18 @@ class Asset extends Model
 
     public function reconciledBy(): BelongsTo {
         return $this->belongsTo(User::class, 'reconciled_by');
+    }
+
+    public function loans(): HasMany {
+        return $this->hasMany(AssetLoan::class)->orderByDesc('loan_date');
+    }
+
+    public function activeLoan(): HasOne {
+        return $this->hasOne(AssetLoan::class)->where('status', 'PRESTADO');
+    }
+
+    public function getIsOnLoanAttribute(): bool {
+        return $this->activeLoan()->exists();
     }
 
     public function getFormattedOrdenAttribute(): string {
