@@ -39,8 +39,8 @@ class AssetController extends Controller
         if ($isGlobalSupervisor) {
             $areas = Area::orderBy('name')->get();
         } else {
-            $headedAreas = Area::where('head_user_id', $user->id)->pluck('id')->toArray();
-            $assignedAreas = $user->employeeAreaDetails()->pluck('area_id')->toArray();
+            $headedAreas    = Area::where('head_user_id', $user->id)->pluck('id')->toArray();
+            $assignedAreas  = $user->employeeAreaDetails()->pluck('area_id')->toArray();
             if ($user->primaryArea) {
                 $assignedAreas[] = $user->primaryArea->id;
             }
@@ -89,8 +89,7 @@ class AssetController extends Controller
 
     public function get(Request $request): JsonResponse {
         $areaId = $request->input('area_id');
-
-        $query = Asset::with(['area', 'user', 'reconciledBy'])
+        $query  = Asset::with(['area', 'user', 'reconciledBy'])
             ->when($areaId, function ($q) use ($areaId) {
                 $q->where('area_id', $areaId);
             })
@@ -144,9 +143,9 @@ class AssetController extends Controller
                 return $html;
             })
             ->addColumn('tecnico_col', function (Asset $asset) {
-                $marca = ($asset->marca && $asset->marca !== 'SIN MARCA') ? e($asset->marca) : 'SIN MARCA';
+                $marca  = ($asset->marca && $asset->marca   !== 'SIN MARCA') ? e($asset->marca) : 'SIN MARCA';
                 $modelo = ($asset->modelo && $asset->modelo !== 'SIN MODELO') ? ' / ' . e($asset->modelo) : '';
-                $serie = ($asset->serie && $asset->serie !== 'SIN SERIE') ? e($asset->serie) : 'SIN SERIE';
+                $serie  = ($asset->serie && $asset->serie   !== 'SIN SERIE') ? e($asset->serie) : 'SIN SERIE';
                 return '<div class="text-dark fw-medium small">' . $marca . $modelo . '</div><div class="small text-muted font-monospace">' . $serie . '</div>';
             })
             ->addColumn('condicion_badge', function (Asset $asset) {
@@ -166,11 +165,10 @@ class AssetController extends Controller
                 return '<button class="btn btn-sm btn-outline-warning py-0 px-2 btn-reconcile-toggle" data-id="' . $asset->id . '" title="Pendiente de verificación física"><i class="fas fa-clock me-1"></i>Pendiente</button>';
             })
             ->addColumn('acciones', function (Asset $asset) {
-                $id = $asset->id;
-                $showUrl = route('inventory.show', $id);
-                $editUrl = route('inventory.edit', $id);
-                $labelUrl = route('inventory.qr_labels', ['asset_id' => $id]);
-
+                $id         = $asset->id;
+                $showUrl    = route('inventory.show', $id);
+                $editUrl    = route('inventory.edit', $id);
+                $labelUrl   = route('inventory.qr_labels', ['asset_id' => $id]);
                 return '<div class="d-flex align-items-center justify-content-center gap-1">
                     <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2 btn-show-qr" data-id="' . $asset->id . '" data-uuid="' . $asset->uuid . '" data-codigo="' . e($asset->codigo ?? $asset->codigo_producto ?? 'ACT-' . $asset->id) . '" data-desc="' . e($asset->descripcion) . '" title="Código QR"><i class="fas fa-qrcode"></i></button>
                     <div class="dropdown">
