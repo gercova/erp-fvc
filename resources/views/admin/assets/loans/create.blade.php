@@ -1,6 +1,57 @@
 @extends('admin.layout')
 @section('title', 'Registrar Préstamo de Bien Patrimonial')
 
+@section('styles')
+    <style>
+        .role-segmented-control {
+            background-color: #f1f3f5;
+            padding: 4px;
+            border-radius: 8px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .role-segmented-control .btn-check + .btn {
+            border: 0;
+            border-radius: 6px;
+            color: #495057;
+            font-weight: 500;
+            padding: 8px 14px;
+            background: transparent;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .role-segmented-control .btn-check:checked + .btn {
+            background-color: #ffffff;
+            color: #0d6efd;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .role-segmented-control .btn:hover {
+            color: #0d6efd;
+        }
+
+        .btn-submit-loan {
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            padding: 0.625rem 1.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit-loan:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
+        }
+
+        .form-label {
+            margin-bottom: 0.35rem;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="container-fluid px-4 py-4">
         <!-- Header -->
@@ -13,14 +64,12 @@
                         <li class="breadcrumb-item active" aria-current="page">Nuevo Préstamo</li>
                     </ol>
                 </nav>
-                <h1 class="h3 mb-0 text-gray-900 fw-bold">
-                    <i class="fas fa-hand-holding me-2"></i>Registrar Préstamo de Bien
-                </h1>
-                <p class="text-muted small mb-0">Complete la información para la asignación y salida temporal del bien patrimonial</p>
+                <h1 class="h3 mb-0 text-gray-900 fw-bold">Registrar Préstamo de Bien</h1>
+                <p class="text-muted small mb-0">Complete la información requerida para registrar la salida temporal del bien patrimonial</p>
             </div>
             <div>
-                <a href="{{ route('asset_loans.index', ['area_id' => $selectedAreaId]) }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Volver a Préstamos
+                <a href="{{ route('asset_loans.index', ['area_id' => $selectedAreaId]) }}" class="btn btn-outline-secondary btn-sm px-3">
+                    Volver a Préstamos
                 </a>
             </div>
         </div>
@@ -28,7 +77,6 @@
         @if (isset($errors) && $errors->any())
             <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-exclamation-triangle fs-4 me-3"></i>
                     <div>
                         <strong class="d-block mb-1">Por favor revise los siguientes campos:</strong>
                         <ul class="mb-0 ps-3 small">
@@ -47,52 +95,36 @@
             <div class="row g-4">
                 <!-- Columna Izquierda: Solicitante y Activo -->
                 <div class="col-lg-7">
-                    <!-- Tarjeta: Perfil del Solicitante -->
+                    <!-- Tarjeta: Información del Solicitante -->
                     <div class="card shadow-sm border-0 mb-4 bg-white">
-                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 fw-bold text-primary">
-                                <i class="fas fa-user-check me-1"></i> 1. Clasificación del Solicitante / Beneficiario
-                            </h6>
-                            <span class="badge bg-light text-muted border">Paso 1 de 2</span>
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="m-0 fw-bold text-dark">Información del Solicitante</h6>
                         </div>
                         <div class="card-body">
-                            <label class="form-label small fw-bold text-dark mb-2">
+                            <label class="form-label small fw-semibold text-dark mb-2">
                                 Tipo de Solicitante <span class="text-danger">*</span>
                             </label>
-                            <div class="row g-2 mb-3">
-                                <div class="col-sm-4">
-                                    <input type="radio" class="btn-check" name="borrower_type" id="type_student"
-                                        value="STUDENT" {{ old('borrower_type', 'STUDENT') === 'STUDENT' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-info w-100 py-2 d-flex flex-column align-items-center" for="type_student">
-                                        <i class="fas fa-user-graduate fs-5 mb-1"></i>
-                                        <span class="fw-semibold">Estudiante / Alumno</span>
-                                    </label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input type="radio" class="btn-check" name="borrower_type" id="type_faculty"
-                                        value="FACULTY" {{ old('borrower_type') === 'FACULTY' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary w-100 py-2 d-flex flex-column align-items-center" for="type_faculty">
-                                        <i class="fas fa-chalkboard-teacher fs-5 mb-1"></i>
-                                        <span class="fw-semibold">Docente / Profesor</span>
-                                    </label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input type="radio" class="btn-check" name="borrower_type" id="type_administrative"
-                                        value="ADMINISTRATIVE" {{ old('borrower_type') === 'ADMINISTRATIVE' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-secondary w-100 py-2 d-flex flex-column align-items-center" for="type_administrative">
-                                        <i class="fas fa-user-tie fs-5 mb-1"></i>
-                                        <span class="fw-semibold">Personal Administrativo</span>
-                                    </label>
-                                </div>
+
+                            <!-- Selector Segmentado Limpio (Sin iconos sobrecargados) -->
+                            <div class="role-segmented-control mb-3">
+                                <input type="radio" class="btn-check" name="borrower_type" id="type_student"
+                                    value="STUDENT" {{ old('borrower_type', 'STUDENT') === 'STUDENT' ? 'checked' : '' }}>
+                                <label class="btn btn-sm" for="type_student">Estudiante / Alumno</label>
+
+                                <input type="radio" class="btn-check" name="borrower_type" id="type_faculty"
+                                    value="FACULTY" {{ old('borrower_type') === 'FACULTY' ? 'checked' : '' }}>
+                                <label class="btn btn-sm" for="type_faculty">Docente</label>
+
+                                <input type="radio" class="btn-check" name="borrower_type" id="type_administrative"
+                                    value="ADMINISTRATIVE" {{ old('borrower_type') === 'ADMINISTRATIVE' ? 'checked' : '' }}>
+                                <label class="btn btn-sm" for="type_administrative">Personal Administrativo</label>
                             </div>
 
                             <!-- Selector de usuario registrado para docentes o administrativos -->
                             <div id="user_picker_container" class="mb-3 p-3 bg-light rounded border {{ old('borrower_type', 'STUDENT') === 'STUDENT' ? 'd-none' : '' }}">
-                                <label class="form-label small fw-bold text-dark">
-                                    <i class="fas fa-search me-1"></i> Seleccionar de Personal Registrado (Opcional)
-                                </label>
-                                <select name="borrower_user_id" id="borrower_user_id" class="form-select">
-                                    <option value="">-- Seleccionar usuario o ingresar manualmente abajo --</option>
+                                <label class="form-label small fw-semibold text-dark">Personal Registrado en el Sistema (Opcional)</label>
+                                <select name="borrower_user_id" id="borrower_user_id" class="form-select form-select-sm">
+                                    <option value="">-- Seleccionar usuario o ingresar datos manualmente --</option>
                                     @foreach ($systemUsers as $u)
                                         <option value="{{ $u->id }}"
                                             data-name="{{ $u->nombres }}"
@@ -103,19 +135,19 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted">Si selecciona un usuario, sus datos se completarán automáticamente.</small>
+                                <small class="text-muted d-block mt-1">Al seleccionar un usuario, sus datos de contacto se completarán automáticamente.</small>
                             </div>
 
                             <div class="row g-3">
                                 <div class="col-md-7">
-                                    <label class="form-label small fw-bold text-dark">
-                                        Nombre Completo del Solicitante <span class="text-danger">*</span>
+                                    <label class="form-label small fw-semibold text-dark">
+                                        Nombre Completo <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="borrower_name" id="borrower_name" class="form-control"
                                         placeholder="Ej: Pérez Quispe, Juan Carlos" value="{{ old('borrower_name') }}" required>
                                 </div>
                                 <div class="col-md-5">
-                                    <label class="form-label small fw-bold text-dark">
+                                    <label class="form-label small fw-semibold text-dark">
                                         N° Documento (DNI / CE) <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="borrower_document" id="borrower_document" class="form-control font-monospace"
@@ -123,14 +155,14 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-dark" id="label_borrower_code">
-                                        Código de Estudiante / Carné
+                                    <label class="form-label small fw-semibold text-dark" id="label_borrower_code">
+                                        Código de Estudiante / Matrícula
                                     </label>
                                     <input type="text" name="borrower_code" id="borrower_code" class="form-control font-monospace"
                                         placeholder="Ej: 2024-DS-014" value="{{ old('borrower_code') }}">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-dark" id="label_borrower_career">
+                                    <label class="form-label small fw-semibold text-dark" id="label_borrower_career">
                                         Programa de Estudios / Carrera
                                     </label>
                                     <input type="text" name="borrower_career_or_area" id="borrower_career_or_area" class="form-control"
@@ -138,12 +170,12 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-dark">Teléfono / Celular</label>
+                                    <label class="form-label small fw-semibold text-dark">Teléfono / Celular</label>
                                     <input type="text" name="borrower_phone" id="borrower_phone" class="form-control"
                                         placeholder="Ej: 987654321" value="{{ old('borrower_phone') }}">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-dark">Correo Electrónico</label>
+                                    <label class="form-label small fw-semibold text-dark">Correo Electrónico</label>
                                     <input type="email" name="borrower_email" id="borrower_email" class="form-control"
                                         placeholder="Ej: alumno@instituto.edu.pe" value="{{ old('borrower_email') }}">
                                 </div>
@@ -151,18 +183,15 @@
                         </div>
                     </div>
 
-                    <!-- Tarjeta: Bien y Destino -->
+                    <!-- Tarjeta: Bien Patrimonial y Destino -->
                     <div class="card shadow-sm border-0 mb-4 bg-white">
-                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 fw-bold text-primary">
-                                <i class="fas fa-box me-1"></i> 2. Bien Patrimonial y Destino de Uso
-                            </h6>
-                            <span class="badge bg-light text-muted border">Paso 2 de 2</span>
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="m-0 fw-bold text-dark">Bien Patrimonial y Destino</h6>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-5">
-                                    <label class="form-label small fw-bold text-dark">
+                                    <label class="form-label small fw-semibold text-dark">
                                         Departamento / Área de Custodia <span class="text-danger">*</span>
                                     </label>
                                     <select name="area_id" id="area_id" class="form-select" required>
@@ -175,7 +204,7 @@
                                 </div>
 
                                 <div class="col-md-7">
-                                    <label class="form-label small fw-bold text-dark">
+                                    <label class="form-label small fw-semibold text-dark">
                                         Bien Patrimonial Disponible <span class="text-danger">*</span>
                                     </label>
                                     <select name="asset_id" id="asset_id" class="form-select" required>
@@ -185,55 +214,46 @@
                                                 data-cond="{{ $asset->condicion }}"
                                                 data-desc="{{ $asset->descripcion }}"
                                                 {{ old('asset_id') == $asset->id ? 'selected' : '' }}>
-                                                [{{ $asset->codigo ?: 'ORD #' . $asset->orden }}] {{ Str::limit($asset->descripcion, 40) }}
+                                                [{{ $asset->codigo ?: 'ORD #' . $asset->orden }}] {{ Str::limit($asset->descripcion, 42) }}
                                                 ({{ $asset->marca !== 'SIN MARCA' ? $asset->marca : 'S/M' }})
                                             </option>
                                         @endforeach
                                     </select>
-                                    <small id="asset_loading_text" class="text-muted d-none">
-                                        <i class="fas fa-spinner fa-spin me-1"></i>Cargando activos del área...
+                                    <small id="asset_loading_text" class="text-primary d-none mt-1">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span> Cargando activos del área seleccionada...
                                     </small>
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-dark">
-                                        Ambiente / Ubicación de Uso <span class="text-danger">*</span>
+                                    <label class="form-label small fw-semibold text-dark">
+                                        Ambiente / Aula de Uso <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="destination" class="form-control" required
                                         placeholder="Ej: Aula 204, Laboratorio de Cómputo B, Auditorio" value="{{ old('destination') }}">
-                                    <small class="text-muted">Lugar físico donde se utilizará el bien</small>
+                                    <small class="text-muted">Lugar donde se utilizará el bien durante el préstamo</small>
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-dark">Finalidad / Motivo del Préstamo</label>
+                                    <label class="form-label small fw-semibold text-dark">Finalidad o Motivo del Préstamo</label>
                                     <input type="text" name="purpose" class="form-control"
                                         placeholder="Ej: Clase práctica de Programación Web" value="{{ old('purpose') }}">
-                                    <small class="text-muted">Breve justificación académica o laboral</small>
+                                    <small class="text-muted">Justificación académica o institucional</small>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Columna Derecha: Plazos y Condiciones -->
+                <!-- Columna Derecha: Plazos, Condiciones y Acciones -->
                 <div class="col-lg-5">
                     <div class="card shadow-sm border-0 mb-4 bg-white">
-                        <div class="card-header bg-white py-3 border-bottom">
-                            <h6 class="m-0 fw-bold text-primary">
-                                <i class="fas fa-calendar-check me-1"></i> Plazos y Condiciones del Préstamo
-                            </h6>
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 fw-bold text-dark">Plazos y Condiciones</h6>
+                            <span class="badge bg-light text-primary border font-monospace px-2 py-1">{{ $nextCode }}</span>
                         </div>
                         <div class="card-body">
-                            <div class="p-3 bg-light rounded border mb-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small text-muted fw-bold text-uppercase">Código Folio Generado</span>
-                                    <span class="badge bg-primary font-monospace">{{ $nextCode }}</span>
-                                </div>
-                                <small class="text-muted d-block mt-1">El correlativo oficial se genera automáticamente al guardar.</small>
-                            </div>
-
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark">
+                                <label class="form-label small fw-semibold text-dark">
                                     Fecha y Hora de Entrega <span class="text-danger">*</span>
                                 </label>
                                 <input type="datetime-local" name="loan_date" class="form-control" required
@@ -241,48 +261,44 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark">
+                                <label class="form-label small fw-semibold text-dark">
                                     Fecha y Hora Estimada de Devolución <span class="text-danger">*</span>
                                 </label>
                                 <input type="datetime-local" name="expected_return_date" class="form-control" required
                                     value="{{ old('expected_return_date', date('Y-m-d\TH:i', strtotime('+4 hours'))) }}">
-                                <small class="text-muted">Si se excede esta fecha, el préstamo figurará como vencido.</small>
+                                <small class="text-muted">Si se supera esta fecha y hora, el sistema marcará el préstamo como vencido.</small>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark">
-                                    Condición Física al Momento de la Entrega <span class="text-danger">*</span>
+                                <label class="form-label small fw-semibold text-dark">
+                                    Condición Física al Entregar <span class="text-danger">*</span>
                                 </label>
                                 <select name="initial_condition" id="initial_condition" class="form-select" required>
-                                    <option value="B" {{ old('initial_condition', 'B') === 'B' ? 'selected' : '' }}>Bueno (B) - Totalmente operativo</option>
-                                    <option value="R" {{ old('initial_condition') === 'R' ? 'selected' : '' }}>Regular (R) - Operativo con desgaste</option>
-                                    <option value="M" {{ old('initial_condition') === 'M' ? 'selected' : '' }}>Malo (M) - Dañado / Para reparación</option>
+                                    <option value="B" {{ old('initial_condition', 'B') === 'B' ? 'selected' : '' }}>Bueno (B) - Conforme / Operativo</option>
+                                    <option value="R" {{ old('initial_condition') === 'R' ? 'selected' : '' }}>Regular (R) - Con desgaste de uso</option>
+                                    <option value="M" {{ old('initial_condition') === 'M' ? 'selected' : '' }}>Malo (M) - Requiere reparación</option>
                                 </select>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark">Observaciones de Salida / Accesorios</label>
+                                <label class="form-label small fw-semibold text-dark">Accesorios y Observaciones de Salida</label>
                                 <textarea name="observations" class="form-control" rows="3"
-                                    placeholder="Ej: Se entrega equipo completo con cargador, cable HDMI y funda de protección...">{{ old('observations') }}</textarea>
+                                    placeholder="Indique si se entrega con cargador, cables, adaptador, estuche u otros accesorios...">{{ old('observations') }}</textarea>
                             </div>
 
                             <div class="p-3 bg-light rounded border small text-muted">
-                                <div><i class="fas fa-user-shield me-1 text-primary"></i> <strong>Responsable que entrega:</strong></div>
+                                <div class="text-uppercase fw-bold text-secondary" style="font-size: 0.7rem; letter-spacing: 0.5px;">Responsable de Entrega</div>
                                 <div class="text-dark fw-semibold mt-1">{{ Auth::user()->nombres }}</div>
-                                <div class="text-muted small">Registrado con cuenta institucional</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Usuario autenticado en la plataforma</div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Botones de Acción -->
-                    <div class="card shadow-sm border-0 bg-white">
-                        <div class="card-body">
+                        <div class="card-footer bg-white border-top p-3">
                             <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary py-2 fw-semibold">
-                                    <i class="fas fa-check-circle me-1"></i> Registrar Préstamo de Bien
+                                <button type="submit" class="btn btn-primary btn-submit-loan">
+                                    Registrar Préstamo
                                 </button>
                                 <a href="{{ route('asset_loans.index', ['area_id' => $selectedAreaId]) }}"
-                                    class="btn btn-outline-secondary py-2">
+                                    class="btn btn-light border text-secondary py-2">
                                     Cancelar
                                 </a>
                             </div>
@@ -367,7 +383,6 @@
                     error: function() {
                         $('#asset_loading_text').addClass('d-none');
                         $('#asset_id').prop('disabled', false);
-                        Swal.fire('Error', 'No se pudieron cargar los activos del área seleccionada.', 'error');
                     }
                 });
             });

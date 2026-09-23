@@ -311,13 +311,13 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light py-2">
-                    <a href="#" id="btn_detail_pdf" target="_blank" class="btn btn-danger btn-sm">
-                        <i class="fas fa-file-pdf me-1"></i> Papeleta de Préstamo (PDF)
+                    <a href="#" id="btn_detail_pdf" target="_blank" class="btn btn-outline-danger btn-sm px-3">
+                        Papeleta (PDF)
                     </a>
-                    <a href="#" id="btn_detail_edit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-edit me-1"></i> Editar Registro
+                    <a href="#" id="btn_detail_edit" class="btn btn-primary btn-sm px-3">
+                        Editar Préstamo
                     </a>
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-light border btn-sm px-3" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -332,13 +332,13 @@
                     <input type="hidden" id="return_loan_id" name="loan_id">
                     <div class="modal-header bg-light py-3 border-bottom">
                         <h5 class="modal-title fw-bold text-dark" id="modalQuickReturnLabel">
-                            <i class="fas fa-undo-alt text-success me-2"></i>Registrar Devolución de Bien
+                            Registrar Devolución de Bien
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body p-4">
                         <div class="alert alert-info py-2 px-3 small border-0 mb-3">
-                            <i class="fas fa-info-circle me-1"></i> Registrando retorno del folio:
+                            Registrando retorno del folio:
                             <strong id="return_modal_code"></strong> (<span id="return_modal_borrower"></span>)
                         </div>
 
@@ -374,10 +374,10 @@
                         </div>
                     </div>
                     <div class="modal-footer bg-light py-2">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success btn-sm btn-submit-return">
-                            <span class="btn-return-text"><i class="fas fa-check me-1"></i>Confirmar Devolución</span>
-                            <span class="btn-return-loading d-none"><i class="fas fa-spinner fa-spin me-1"></i>Procesando...</span>
+                        <button type="button" class="btn btn-light border btn-sm px-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success btn-sm btn-submit-return px-3">
+                            <span class="btn-return-text">Confirmar Devolución</span>
+                            <span class="btn-return-loading d-none">Procesando...</span>
                         </button>
                     </div>
                 </form>
