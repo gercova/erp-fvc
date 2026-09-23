@@ -465,7 +465,7 @@
 
                         @if ($canAssets)
                             @php
-                                $isAssetGroup = request()->is('inventory*') || request()->is('asset-inventories*');
+                                $isAssetGroup = request()->is('inventory*') || request()->is('asset-inventories*') || request()->is('asset-loans*');
                             @endphp
                             <a class="nav-link {{ $isAssetGroup ? '' : 'collapsed' }}"
                                 href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseAssets"
@@ -481,6 +481,10 @@
                                         <a class="nav-link {{ request()->routeIs('inventory.index') || request()->routeIs('inventory.show') || request()->routeIs('inventory.edit') ? 'active' : '' }}"
                                             href="{{ route('inventory.index') }}">
                                             Inventario de Bienes
+                                        </a>
+                                        <a class="nav-link {{ request()->routeIs('asset_loans.*') ? 'active' : '' }}"
+                                            href="{{ route('asset_loans.index') }}">
+                                            Préstamos de Bienes
                                         </a>
                                     @endcan
                                     @can('assets.create')
