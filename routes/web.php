@@ -38,6 +38,7 @@ use App\Http\Controllers\FuelControlSlipController;
 use App\Http\Controllers\DocumentApprovalController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetInventoryController;
+use App\Http\Controllers\AssetLoanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -473,6 +474,20 @@ Route::controller(AssetController::class)->prefix('inventory')->middleware(['aut
     Route::get('/{id}/edit',                'edit')->name('inventory.edit')->middleware('can:assets.edit');
     Route::put('/{id}',                     'update')->name('inventory.update')->middleware('can:assets.edit');
     Route::post('/delete',                  'delete')->name('inventory.delete')->middleware('can:assets.delete');
+});
+
+Route::controller(AssetLoanController::class)->prefix('asset-loans')->middleware(['auth', 'can:assets.index', 'asset.access'])->group(function() {
+    Route::get('/',                         'index')->name('asset_loans.index');
+    Route::get('/get',                      'get')->name('asset_loans.get');
+    Route::get('/create',                   'create')->name('asset_loans.create')->middleware('can:assets.create');
+    Route::get('/assets-by-area',           'getAssetsByArea')->name('asset_loans.assets_by_area');
+    Route::post('/store',                   'store')->name('asset_loans.store')->middleware('can:assets.create');
+    Route::get('/quick-detail/{id}',        'quickDetail')->name('asset_loans.quick_detail');
+    Route::get('/{id}/pdf',                 'printLoanPdf')->name('asset_loans.pdf');
+    Route::get('/{id}/edit',                'edit')->name('asset_loans.edit')->middleware('can:assets.edit');
+    Route::put('/{id}',                     'update')->name('asset_loans.update')->middleware('can:assets.edit');
+    Route::post('/{id}/return',             'registerReturn')->name('asset_loans.return')->middleware('can:assets.edit');
+    Route::post('/delete',                  'delete')->name('asset_loans.delete')->middleware('can:assets.delete');
 });
 
 Route::controller(AssetInventoryController::class)->prefix('asset-inventories')->middleware(['auth', 'can:assets.approve', 'asset.access'])->group(function() {
