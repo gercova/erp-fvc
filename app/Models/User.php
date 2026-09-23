@@ -86,8 +86,8 @@ class User extends Authenticatable
     }
 
     public function pendingApprovalsCount(): int {
-        $userRoles = $this->roles->pluck('name')->toArray();
-        $isSuper = in_array('SUPERADMIN', $userRoles) || in_array('ADMIN', $userRoles);
+        $userRoles  = $this->roles->pluck('name')->toArray();
+        $isSuper    = in_array('SUPERADMIN', $userRoles) || in_array('ADMIN', $userRoles);
 
         return DocumentApproval::query()
             ->where('status', 'PENDIENTE')
