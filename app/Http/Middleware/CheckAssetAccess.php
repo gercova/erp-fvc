@@ -47,12 +47,23 @@ class CheckAssetAccess
             abort(403, 'No tiene autorización para gestionar los bienes de este departamento.');
         }
 
-        // Si la ruta hace referencia a un activo específico
-        $assetId = $request->route('id') ?? $request->route('asset');
-        if ($assetId) {
-            $asset = Asset::find($assetId);
-            if ($asset && !in_array((int)$asset->area_id, $allowedAreaIds)) {
-                abort(403, 'No tiene autorización para modificar o ver este bien patrimonial.');
+        // Si la ruta hace referencia a un préstamo de activo
+        if ($request->is('asset-loans*')) {
+            $loanId = $request->route('id') ?? $request->route('loan');
+            if ($loanId) {
+                $loan = \App\Models\AssetLoan::find($loanId);
+                if ($loan && !in_array((int)$loan->area_id, $allowedAreaIds)) {
+                    abort(403, 'No tiene autorización para gestionar este préstamo de activo.');
+                }
+            }
+        } else {
+            // Si la ruta hace referencia a un activo específico
+            $assetId = $request->route('id') ?? $request->route('asset');
+            if ($assetId) {
+                $asset = Asset::find($assetId);
+                if ($asset && !in_array((int)$asset->area_id, $allowedAreaIds)) {
+                    abort(403, 'No tiene autorización para modificar o ver este bien patrimonial.');
+                }
             }
         }
 
