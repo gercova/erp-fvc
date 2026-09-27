@@ -39,6 +39,23 @@ use App\Http\Controllers\DocumentApprovalController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetInventoryController;
 use App\Http\Controllers\AssetLoanController;
+use App\Http\Controllers\ProductionPlanController;
+use App\Http\Controllers\ProductionBatchController;
+use App\Http\Controllers\ProductionRawMaterialController;
+use App\Http\Controllers\ProductionInputMovementController;
+use App\Http\Controllers\ProducedItemController;
+use App\Http\Controllers\ProductionHarvestController;
+use App\Http\Controllers\ProductionProfitabilityController;
+use App\Http\Controllers\ActivityOrderController;
+use App\Http\Controllers\ProductiveActivityController;
+use App\Http\Controllers\ActivityTransactionController;
+use App\Http\Controllers\CostCenterDashboardController;
+use App\Http\Controllers\RdrModuleController;
+use App\Http\Controllers\AgroPlotController;
+use App\Http\Controllers\AgroNurseryController;
+use App\Http\Controllers\AgroLivestockController;
+use App\Http\Controllers\AgroHarvestQuickEntryController;
+use App\Http\Controllers\AgroReportsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -493,4 +510,177 @@ Route::controller(AssetLoanController::class)->prefix('asset-loans')->middleware
 Route::controller(AssetInventoryController::class)->prefix('asset-inventories')->middleware(['auth', 'can:assets.approve', 'asset.access'])->group(function() {
     Route::post('/store',                   'store')->name('asset-inventories.store');
     Route::get('/{id}',                     'show')->name('asset-inventories.show');
+});
+
+# Módulo de Producción y Comercialización (Actividades Productivas)
+Route::prefix('production')->middleware(['auth', 'activity.access'])->group(function() {
+    // 1. Planes y Campañas de Producción
+    Route::controller(ProductionPlanController::class)->prefix('plans')->group(function() {
+        Route::get('/',             'index')->name('production.plans.index');
+        Route::get('/get',          'get')->name('production.plans.get');
+        Route::get('/create',       'create')->name('production.plans.create');
+        Route::post('/store',       'store')->name('production.plans.store');
+        Route::get('/{id}',         'show')->name('production.plans.show');
+        Route::get('/{id}/edit',    'edit')->name('production.plans.edit');
+        Route::put('/{id}',         'update')->name('production.plans.update');
+        Route::post('/delete',      'delete')->name('production.plans.delete');
+    });
+
+    // 2. Fases / Lotes y Labores de Mano de Obra
+    Route::controller(ProductionBatchController::class)->prefix('batches')->group(function() {
+        Route::post('/store',                   'store')->name('production.batches.store');
+        Route::put('/{id}',                     'update')->name('production.batches.update');
+        Route::post('/delete',                  'delete')->name('production.batches.delete');
+        Route::post('/labor-cost/store',        'storeLaborCost')->name('production.batches.labor_cost.store');
+        Route::post('/labor-cost/delete',       'deleteLaborCost')->name('production.batches.labor_cost.delete');
+    });
+
+    // 3. Catálogo Abierto de Insumos y Materias Primas
+    Route::controller(ProductionRawMaterialController::class)->prefix('raw-materials')->group(function() {
+        Route::get('/',             'index')->name('production.raw_materials.index');
+        Route::get('/get',          'get')->name('production.raw_materials.get');
+        Route::post('/store',       'store')->name('production.raw_materials.store');
+        Route::put('/{id}',         'update')->name('production.raw_materials.update');
+        Route::post('/delete',      'delete')->name('production.raw_materials.delete');
+    });
+
+    // 4. Movimientos de Insumos (Entradas / Consumos en Campo por Proyecto)
+    Route::controller(ProductionInputMovementController::class)->prefix('input-movements')->group(function() {
+        Route::get('/',             'index')->name('production.input_movements.index');
+        Route::get('/get',          'get')->name('production.input_movements.get');
+        Route::post('/store',       'store')->name('production.input_movements.store');
+        Route::post('/delete',      'delete')->name('production.input_movements.delete');
+    });
+
+    // 5. Productos Producidos por Actividad y Publicación al Catálogo Central
+    Route::controller(ProducedItemController::class)->prefix('produced-items')->group(function() {
+        Route::get('/',             'index')->name('production.produced_items.index');
+        Route::get('/get',          'get')->name('production.produced_items.get');
+        Route::post('/store',       'store')->name('production.produced_items.store');
+        Route::post('/publish',     'publishToSalesCatalog')->name('production.produced_items.publish');
+        Route::post('/delete',      'delete')->name('production.produced_items.delete');
+    });
+
+    // 6. Registro de Cosechas y Rendimientos
+    Route::controller(ProductionHarvestController::class)->prefix('harvests')->group(function() {
+        Route::get('/',             'index')->name('production.harvests.index');
+        Route::get('/get',          'get')->name('production.harvests.get');
+        Route::post('/store',       'store')->name('production.harvests.store');
+        Route::post('/delete',      'delete')->name('production.harvests.delete');
+    });
+
+    // 7. Reporte de Rentabilidad por Producto o Actividad
+    Route::controller(ProductionProfitabilityController::class)->prefix('profitability')->group(function() {
+        Route::get('/',             'index')->name('production.profitability.index');
+    });
+});
+
+Route::prefix('commercialization')->middleware(['auth'])->group(function() {
+    // 8. Preventas y Pedidos de Actividad
+    Route::controller(ActivityOrderController::class)->prefix('orders')->group(function() {
+        Route::get('/',             'index')->name('commercialization.orders.index');
+        Route::get('/get',          'get')->name('commercialization.orders.get');
+        Route::post('/store',       'store')->name('commercialization.orders.store');
+        Route::post('/update-status','updateStatus')->name('commercialization.orders.update_status');
+        Route::post('/delete',      'delete')->name('commercialization.orders.delete');
+    });
+});
+
+# Módulo de Actividades Productivas y Empresariales (APE)
+Route::prefix('productive-activities')->middleware(['auth', 'activity.access'])->group(function() {
+    // 1. Panel de Centro de Costos (Cross-Tabulation y Exportación Excel)
+    Route::controller(CostCenterDashboardController::class)->prefix('cost-center')->group(function() {
+        Route::get('/',                 'index')->name('productive_activities.cost_center.index');
+        Route::get('/data',             'getData')->name('productive_activities.cost_center.data');
+        Route::get('/export-excel',     'exportExcel')->name('productive_activities.cost_center.export_excel');
+        Route::get('/export-detailed',  'exportDetailedExcel')->name('productive_activities.cost_center.export_detailed');
+        Route::post('/import-excel',    'importExcel')->name('productive_activities.cost_center.import_excel');
+    });
+
+    // 2. Registro y Clasificación de Movimientos (Ingresos y Egresos)
+    Route::controller(ActivityTransactionController::class)->prefix('transactions')->group(function() {
+        Route::get('/',             'index')->name('productive_activities.transactions.index');
+        Route::get('/get',          'get')->name('productive_activities.transactions.get');
+        Route::post('/store',       'store')->name('productive_activities.transactions.store');
+        Route::put('/{id}',         'update')->name('productive_activities.transactions.update');
+        Route::post('/delete',      'delete')->name('productive_activities.transactions.delete');
+        Route::get('/search-core',  'searchCoreDocuments')->name('productive_activities.transactions.search_core');
+    });
+
+    // 3. Módulo RDR (CUT, Préstamos Internos, Conciliaciones, Cierres)
+    Route::controller(RdrModuleController::class)->prefix('rdr')->group(function() {
+        Route::get('/',                             'index')->name('productive_activities.rdr.index');
+        Route::post('/cut-transfers',               'storeCutTransfer')->name('productive_activities.rdr.cut_transfers.store');
+        Route::post('/internal-loans',              'storeInternalLoan')->name('productive_activities.rdr.internal_loans.store');
+        Route::post('/internal-loans/{id}/repay',   'repayInternalLoan')->name('productive_activities.rdr.internal_loans.repay');
+        Route::post('/reconciliations',             'storeReconciliation')->name('productive_activities.rdr.reconciliations.store');
+        Route::post('/period-closures',             'storePeriodClosure')->name('productive_activities.rdr.period_closures.store');
+        Route::post('/period-closures/{id}/submit-approval', 'submitClosureApproval')->name('productive_activities.rdr.period_closures.submit_approval');
+    });
+
+    // 4. CRUD de Actividades Productivas (Estilo AssetController)
+    Route::controller(ProductiveActivityController::class)->group(function() {
+        Route::get('/',                     'index')->name('productive_activities.index');
+        Route::get('/get',                  'get')->name('productive_activities.get');
+        Route::get('/create',               'create')->name('productive_activities.create');
+        Route::post('/store',               'store')->name('productive_activities.store');
+        Route::get('/{id}',                 'show')->name('productive_activities.show');
+        Route::get('/{id}/edit',            'edit')->name('productive_activities.edit');
+        Route::put('/{id}',                 'update')->name('productive_activities.update');
+        Route::post('/delete',              'delete')->name('productive_activities.delete');
+        Route::post('/{id}/submit-approval', 'submitApproval')->name('productive_activities.submit_approval');
+        Route::post('/{id}/tracking-logs',  'storeTrackingLog')->name('productive_activities.tracking_logs.store');
+    });
+});
+
+# Módulo Agropecuario y Forestal (Parcelas, Cultivos, Viveros, Pecuario, Cosechas de Campo y Reportes)
+Route::prefix('agrolivestock')->middleware(['auth', 'activity.access'])->group(function() {
+    // 1. Parcelas y Plantaciones
+    Route::controller(AgroPlotController::class)->prefix('plots')->group(function() {
+        Route::get('/',                     'index')->name('agrolivestock.plots.index');
+        Route::get('/get',                  'get')->name('agrolivestock.plots.get');
+        Route::post('/store',               'store')->name('agrolivestock.plots.store');
+        Route::get('/{id}',                 'show')->name('agrolivestock.plots.show');
+        Route::put('/{id}',                 'update')->name('agrolivestock.plots.update');
+        Route::post('/delete',              'delete')->name('agrolivestock.plots.delete');
+        Route::post('/plantations/store',   'storePlantation')->name('agrolivestock.plots.plantations.store');
+        Route::post('/plantations/delete',  'deletePlantation')->name('agrolivestock.plots.plantations.delete');
+    });
+
+    // 2. Viveros y Producción Forestal
+    Route::controller(AgroNurseryController::class)->prefix('nurseries')->group(function() {
+        Route::get('/',         'index')->name('agrolivestock.nurseries.index');
+        Route::get('/get',      'get')->name('agrolivestock.nurseries.get');
+        Route::post('/store',   'store')->name('agrolivestock.nurseries.store');
+        Route::put('/{id}',     'update')->name('agrolivestock.nurseries.update');
+        Route::post('/delete',  'delete')->name('agrolivestock.nurseries.delete');
+    });
+
+    // 3. Manejo Pecuario (Ganado vacuno, porcino, cuyes, aves)
+    Route::controller(AgroLivestockController::class)->prefix('livestock')->group(function() {
+        Route::get('/',             'index')->name('agrolivestock.livestock.index');
+        Route::get('/get',          'get')->name('agrolivestock.livestock.get');
+        Route::post('/store',       'store')->name('agrolivestock.livestock.store');
+        Route::get('/{id}',         'show')->name('agrolivestock.livestock.show');
+        Route::put('/{id}',         'update')->name('agrolivestock.livestock.update');
+        Route::post('/delete',      'delete')->name('agrolivestock.livestock.delete');
+        Route::post('/event/store', 'storeEvent')->name('agrolivestock.livestock.event.store');
+        Route::post('/event/delete','deleteEvent')->name('agrolivestock.livestock.event.delete');
+    });
+
+    // 4. Registro Rápido de Cosechas (Alimenta Bloque C sin duplicidad)
+    Route::controller(AgroHarvestQuickEntryController::class)->prefix('harvests')->group(function() {
+        Route::get('/quick-entry',  'index')->name('agrolivestock.harvests.quick_entry');
+        Route::get('/get',          'get')->name('agrolivestock.harvests.get');
+        Route::post('/store',       'store')->name('agrolivestock.harvests.store');
+        Route::post('/delete',      'delete')->name('agrolivestock.harvests.delete');
+    });
+
+    // 5. Reportes Técnicos y de Producción
+    Route::controller(AgroReportsController::class)->prefix('reports')->group(function() {
+        Route::get('/year-over-year',       'yearOverYear')->name('agrolivestock.reports.year_over_year');
+        Route::get('/cost-breakdown',       'costBreakdown')->name('agrolivestock.reports.cost_breakdown');
+        Route::get('/reconciliation',       'reconciliation')->name('agrolivestock.reports.reconciliation');
+        Route::post('/link-invoice',        'linkInvoice')->name('agrolivestock.reports.link_invoice');
+    });
 });
