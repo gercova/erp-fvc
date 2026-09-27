@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DetailSaleNote extends Model
 {
@@ -30,4 +31,12 @@ class DetailSaleNote extends Model
         'precio_unitario' => 'decimal:2',
         'precio_total' => 'decimal:2',
     ];
+
+    public function saleNote(): BelongsTo {
+        return $this->belongsTo(SaleNote::class, 'idnotaventa');
+    }
+
+    public function product(): BelongsTo {
+        return $this->belongsTo(Product::class, 'idproducto');
+    }
 }
