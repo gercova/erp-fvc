@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html id="layout-content" lang="es">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -164,6 +163,20 @@
                 'assets.qr',
                 'assets.approve',
             ]);
+            $canProduccion = $authUser?->canany([
+                'production.plans.index',
+                'production.raw_materials.index',
+                'production.input_movements.index',
+                'production.produced_items.index',
+                'production.harvests.index',
+                'production.profitability.index',
+                'commercialization.orders.index',
+                'productive_activities.index',
+                'productive_activities.cost_center.index',
+                'productive_activities.transactions.index',
+                'productive_activities.rdr.index',
+                'agrolivestock.plots.index',
+            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'JEFE_AREA', 'ADMINISTRACION', 'CONTABILIDAD', 'RESPONSABLE_ACTIVIDAD']);
             $pendingApprovalsCount = $authUser ? $authUser->pendingApprovalsCount() : 0;
             $totalNotificationsCount = ($productos_agotar ?? 0) + $pendingApprovalsCount;
         @endphp
@@ -554,6 +567,138 @@
                                         <a class="nav-link {{ request()->is('kardex') || request()->is('kardex/*') ? 'active' : '' }}"
                                             href="{{ route('admin.kardex') }}">Kardex</a>
                                     @endcan
+                                </nav>
+                            </div>
+                        @endif
+
+                        <!-- Sidenav Accordion (Actividades Productivas y Empresariales - APE)-->
+                        @if ($canProduccion)
+                            @php
+                                $isApeGroup = request()->is('productive-activities*');
+                            @endphp
+                            <a class="nav-link {{ $isApeGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse"
+                                data-bs-target="#collapseApe" aria-expanded="{{ $isApeGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseApe">
+                                <div class="nav-link-icon"><i data-feather="briefcase"></i></div>
+                                Actividades (APE)
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse {{ $isApeGroup ? 'show' : '' }}"
+                                id="collapseApe" data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    <a class="nav-link {{ request()->routeIs('productive_activities.index') || request()->routeIs('productive_activities.create') || request()->routeIs('productive_activities.show') ? 'active' : '' }}"
+                                        href="{{ route('productive_activities.index') }}">
+                                        Catálogo APE
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('productive_activities.cost_center.*') ? 'active' : '' }}"
+                                        href="{{ route('productive_activities.cost_center.index') }}">
+                                        Centro de Costos
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('productive_activities.transactions.*') ? 'active' : '' }}"
+                                        href="{{ route('productive_activities.transactions.index') }}">
+                                        Ingresos y Egresos
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('productive_activities.rdr.*') ? 'active' : '' }}"
+                                        href="{{ route('productive_activities.rdr.index') }}">
+                                        Módulo RDR / CUT
+                                    </a>
+                                </nav>
+                            </div>
+                        @endif
+
+                        <!-- Sidenav Accordion (Producción y Comercialización)-->
+                        @if ($canProduccion)
+                            @php
+                                $isProductionGroup = request()->is('production*') || request()->is('commercialization*');
+                            @endphp
+                            <a class="nav-link {{ $isProductionGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse"
+                                data-bs-target="#collapseProduction" aria-expanded="{{ $isProductionGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseProduction">
+                                <div class="nav-link-icon"><i data-feather="layers"></i></div>
+                                Producción
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse {{ $isProductionGroup ? 'show' : '' }}"
+                                id="collapseProduction" data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    <a class="nav-link {{ request()->is('production/plans*') ? 'active' : '' }}"
+                                        href="{{ route('production.plans.index') }}">
+                                        Planes y Campañas
+                                    </a>
+                                    <a class="nav-link {{ request()->is('production/raw-materials*') ? 'active' : '' }}"
+                                        href="{{ route('production.raw_materials.index') }}">
+                                        Insumos y Materiales
+                                    </a>
+                                    <a class="nav-link {{ request()->is('production/input-movements*') ? 'active' : '' }}"
+                                        href="{{ route('production.input_movements.index') }}">
+                                        Movimientos / Consumos
+                                    </a>
+                                    <a class="nav-link {{ request()->is('production/produced-items*') ? 'active' : '' }}"
+                                        href="{{ route('production.produced_items.index') }}">
+                                        Productos Obtenidos
+                                    </a>
+                                    <a class="nav-link {{ request()->is('production/harvests*') ? 'active' : '' }}"
+                                        href="{{ route('production.harvests.index') }}">
+                                        Cosechas y Rendimiento
+                                    </a>
+                                    <a class="nav-link {{ request()->is('production/profitability*') ? 'active' : '' }}"
+                                        href="{{ route('production.profitability.index') }}">
+                                        Rentabilidad
+                                    </a>
+                                    <a class="nav-link {{ request()->is('commercialization/orders*') ? 'active' : '' }}"
+                                        href="{{ route('commercialization.orders.index') }}">
+                                        Preventas y Pedidos
+                                    </a>
+                                </nav>
+                            </div>
+                        @endif
+
+                        <!-- Sidenav Accordion (Agropecuario y Forestal)-->
+                        @if ($canProduccion)
+                            @php
+                                $isAgroGroup = request()->is('agrolivestock*');
+                            @endphp
+                            <a class="nav-link {{ $isAgroGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse"
+                                data-bs-target="#collapseAgro" aria-expanded="{{ $isAgroGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseAgro">
+                                <div class="nav-link-icon"><i data-feather="sun"></i></div>
+                                Agro y Forestal
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse {{ $isAgroGroup ? 'show' : '' }}"
+                                id="collapseAgro" data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    <a class="nav-link {{ request()->is('agrolivestock/plots*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.plots.index') }}">
+                                        Parcelas y Lotes
+                                    </a>
+                                    <a class="nav-link {{ request()->is('agrolivestock/nurseries*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.nurseries.index') }}">
+                                        Viveros Forestales
+                                    </a>
+                                    <a class="nav-link {{ request()->is('agrolivestock/livestock*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.livestock.index') }}">
+                                        Manejo Pecuario
+                                    </a>
+                                    <a class="nav-link {{ request()->is('agrolivestock/harvests/quick-entry*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.harvests.quick_entry') }}">
+                                        Carga Rápida Cosechas
+                                    </a>
+                                    <a class="nav-link {{ request()->is('agrolivestock/reports/year-over-year*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.reports.year_over_year') }}">
+                                        Comparativo Interanual
+                                    </a>
+                                    <a class="nav-link {{ request()->is('agrolivestock/reports/cost-breakdown*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.reports.cost_breakdown') }}">
+                                        Estructura de Costos
+                                    </a>
+                                    <a class="nav-link {{ request()->is('agrolivestock/reports/reconciliation*') ? 'active' : '' }}"
+                                        href="{{ route('agrolivestock.reports.reconciliation') }}">
+                                        Conciliación Balanza/Factura
+                                    </a>
                                 </nav>
                             </div>
                         @endif
