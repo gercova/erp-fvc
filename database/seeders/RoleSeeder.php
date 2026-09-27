@@ -120,6 +120,18 @@ class RoleSeeder extends Seeder
                 'assets.approve' => 'Aprobar y firmar actas de inventario',
                 'assets.export' => 'Exportar inventario en PDF y Excel',
             ],
+            'Producción y Comercialización' => [
+                'production.plans.index' => 'Listar y consultar planes y campañas de producción',
+                'production.plans.create' => 'Crear planes y campañas de producción',
+                'production.plans.edit' => 'Editar planes y campañas de producción',
+                'production.plans.delete' => 'Eliminar planes de producción',
+                'production.raw_materials.index' => 'Gestionar catálogo de insumos y materias primas',
+                'production.input_movements.index' => 'Registrar ingresos y consumos de insumos',
+                'production.produced_items.index' => 'Gestionar catálogo de productos terminados',
+                'production.harvests.index' => 'Registrar cosechas y rendimientos de producción',
+                'production.profitability.index' => 'Consultar reporte de rentabilidad',
+                'commercialization.orders.index' => 'Gestionar preventas y pedidos de actividades',
+            ],
         ];
 
         $allPermissions = [];
@@ -142,6 +154,22 @@ class RoleSeeder extends Seeder
 
         $superAdmin->syncPermissions($allPermissions);
         $admin->syncPermissions($allPermissions);
+
+        $productionPermissions = [
+            'production.plans.index',
+            'production.plans.create',
+            'production.plans.edit',
+            'production.plans.delete',
+            'production.raw_materials.index',
+            'production.input_movements.index',
+            'production.produced_items.index',
+            'production.harvests.index',
+            'production.profitability.index',
+            'commercialization.orders.index',
+        ];
+        $jefeArea->givePermissionTo($productionPermissions);
+        $directorGeneral->givePermissionTo($productionPermissions);
+        $administracion->givePermissionTo($productionPermissions);
 
         $patrimonioPermissions = [
             'admin.home',
