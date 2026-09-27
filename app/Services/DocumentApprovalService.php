@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\ActivityPeriodClosure;
 use App\Models\Area;
 use App\Models\AssetInventory;
 use App\Models\DocumentApproval;
 use App\Models\ExitSlip;
 use App\Models\ExpenseDeclaration;
 use App\Models\FuelControlSlip;
+use App\Models\ProductiveActivity;
 use App\Models\Requisition;
 use App\Models\User;
 use App\Models\VacationExitSlip;
@@ -63,10 +65,10 @@ class DocumentApprovalService
      */
     protected function getStepDefinitions(Model $document, ?Area $area, User $creator): array
     {
-        $immediateHead = $this->resolveImmediateHead($area, $creator);
-        $adminHead = $this->resolveAreaHead('ADM') ?? $this->resolveRoleUser('ADMINISTRACION');
-        $directorGeneral = $this->resolveAreaHead('DG') ?? $this->resolveRoleUser('DIRECTOR_GENERAL');
-        $academicHead = $this->resolveAreaHead('UA') ?? $this->resolveRoleUser('JEFE_AREA');
+        $immediateHead      = $this->resolveImmediateHead($area, $creator);
+        $adminHead          = $this->resolveAreaHead('ADM') ?? $this->resolveRoleUser('ADMINISTRACION');
+        $directorGeneral    = $this->resolveAreaHead('DG') ?? $this->resolveRoleUser('DIRECTOR_GENERAL');
+        $academicHead       = $this->resolveAreaHead('UA') ?? $this->resolveRoleUser('JEFE_AREA');
         $abastecimientoHead = $this->resolveAreaHead('ABASTECIMIENTO') ?? $this->resolveRoleUser('ABASTECIMIENTO');
 
         if ($document instanceof Requisition) {
@@ -134,11 +136,29 @@ class DocumentApprovalService
             ];
         }
 
+        if ($document instanceof ProductiveActivity) {
+            return [
+                ['role_name' => 'SOLICITANTE', 'label' => 'Responsable de la Actividad', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
+                ['role_name' => 'JEFE_AREA', 'label' => 'Jefe de Área / Coordinador', 'approver_id' => $immediateHead?->id, 'approver_name' => $immediateHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Administración IESTP "FVC"', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Director(a) General IESTP "FVC"', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
+
+        if ($document instanceof ActivityPeriodClosure) {
+            $contabilidadHead = $this->resolveRoleUser('CONTABILIDAD') ?? $adminHead;
+            return [
+                ['role_name' => 'SOLICITANTE', 'label' => 'Responsable del Cierre', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
+                ['role_name' => 'CONTABILIDAD', 'label' => 'Revisión Contable y Liquidación', 'approver_id' => $contabilidadHead?->id, 'approver_name' => $contabilidadHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Conformidad Administrativa', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Aprobación Final Director General', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
+
         return [];
     }
 
-    protected function resolveImmediateHead(?Area $area, User $creator): ?User
-    {
+    protected function resolveImmediateHead(?Area $area, User $creator): ?User {
         if (!$area) {
             return null;
         }
@@ -154,14 +174,12 @@ class DocumentApprovalService
         return null;
     }
 
-    protected function resolveAreaHead(string $areaCode): ?User
-    {
+    protected function resolveAreaHead(string $areaCode): ?User {
         $area = Area::where('code', $areaCode)->first();
         return $area?->head;
     }
 
-    protected function resolveRoleUser(string $roleName): ?User
-    {
+    protected function resolveRoleUser(string $roleName): ?User {
         $role = \Spatie\Permission\Models\Role::where('name', $roleName)->first();
         if (!$role) {
             return null;
@@ -172,8 +190,7 @@ class DocumentApprovalService
     /**
      * Send notification to the current approver(s).
      */
-    public function notifyApprovers(DocumentApproval $approval, Model $document, ?User $requester = null): void
-    {
+    public function notifyApprovers(DocumentApproval $approval, Model $document, ?User $requester = null): void {
         $requesterName = $requester?->nombres ?? ($document->user?->nombres ?? 'Usuario');
         $documentTitle = $this->getDocumentTitle($document);
         $url = route('approvals.show', $approval->id);
@@ -203,18 +220,17 @@ class DocumentApprovalService
     /**
      * Process digital signature & approval for a step.
      */
-    public function signAndApprove(DocumentApproval $approval, User $user, ?string $signatureData = null, ?string $observations = null): bool
-    {
+    public function signAndApprove(DocumentApproval $approval, User $user, ?string $signatureData = null, ?string $observations = null): bool {
         $approval->update([
-            'status' => 'APROBADO',
-            'approver_id' => $user->id,
-            'approver_name' => $user->nombres,
-            'approver_cargo' => $user->primaryAreaDetail?->cargo ?? optional($user->roles->first())->name,
-            'observations' => $observations,
-            'signature_token' => strtoupper(bin2hex(random_bytes(6))),
-            'signature_data' => $signatureData,
-            'signed_at' => now(),
-            'ip_address' => request()->ip(),
+            'status'            => 'APROBADO',
+            'approver_id'       => $user->id,
+            'approver_name'     => $user->nombres,
+            'approver_cargo'    => $user->primaryAreaDetail?->cargo ?? optional($user->roles->first())->name,
+            'observations'      => $observations,
+            'signature_token'   => strtoupper(bin2hex(random_bytes(6))),
+            'signature_data'    => $signatureData,
+            'signed_at'         => now(),
+            'ip_address'        => request()->ip(),
         ]);
 
         $document = $approval->document;
@@ -241,16 +257,15 @@ class DocumentApprovalService
     /**
      * Mark approval step as observed or rejected.
      */
-    public function observeOrReject(DocumentApproval $approval, User $user, string $status, string $observations): bool
-    {
+    public function observeOrReject(DocumentApproval $approval, User $user, string $status, string $observations): bool {
         $approval->update([
-            'status' => $status,
-            'approver_id' => $user->id,
-            'approver_name' => $user->nombres,
-            'approver_cargo' => $user->primaryAreaDetail?->cargo ?? optional($user->roles->first())->name,
-            'observations' => $observations,
-            'signed_at' => now(),
-            'ip_address' => request()->ip(),
+            'status'            => $status,
+            'approver_id'       => $user->id,
+            'approver_name'     => $user->nombres,
+            'approver_cargo'    => $user->primaryAreaDetail?->cargo ?? optional($user->roles->first())->name,
+            'observations'      => $observations,
+            'signed_at'         => now(),
+            'ip_address'        => request()->ip(),
         ]);
 
         $document = $approval->document;
@@ -259,8 +274,7 @@ class DocumentApprovalService
         return true;
     }
 
-    public function getDocumentTitle(Model $document): string
-    {
+    public function getDocumentTitle(Model $document): string {
         if ($document instanceof Requisition) {
             return "Requerimiento N° {$document->correlativo}";
         }
@@ -281,6 +295,12 @@ class DocumentApprovalService
         }
         if ($document instanceof AssetInventory) {
             return "Acta de Inventario - {$document->area?->name} ({$document->periodo})";
+        }
+        if ($document instanceof \App\Models\ProductiveActivity) {
+            return "Apertura de Actividad Productiva - {$document->name} ({$document->code})";
+        }
+        if ($document instanceof \App\Models\ActivityPeriodClosure) {
+            return "Cierre de Período {$document->period_month}/{$document->period_year} - {$document->activity?->name}";
         }
 
         return "Documento N° {$document->id}";
