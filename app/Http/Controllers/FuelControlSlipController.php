@@ -275,7 +275,7 @@ class FuelControlSlipController extends Controller
     }
 
     public function pdf(int $id) {
-        $slip       = FuelControlSlip::with(['items', 'approvals', 'user', 'area'])->findOrFail($id);
+        $slip       = FuelControlSlip::withTrashed()->with(['items', 'approvals', 'user', 'area'])->findOrFail($id);
         $business   = Business::find(1);
         $pdf        = Pdf::loadView('admin.documents.pdf.fuel_control_slip', compact('slip', 'business'))
             ->setPaper('a4', 'portrait');

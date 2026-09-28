@@ -296,7 +296,7 @@ class RequisitionController extends Controller
     }
 
     public function pdf(int $id) {
-        $requisition = Requisition::with([
+        $requisition = Requisition::withTrashed()->with([
             'items',
             'approvals.approver',
             'user',

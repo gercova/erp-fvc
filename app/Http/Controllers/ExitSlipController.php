@@ -246,7 +246,7 @@ class ExitSlipController extends Controller
     }
 
     public function pdf(int $id) {
-        $slip       = ExitSlip::with(['approvals', 'user', 'area'])->findOrFail($id);
+        $slip       = ExitSlip::withTrashed()->with(['approvals', 'user', 'area'])->findOrFail($id);
         $business   = Business::find(1);
         $pdf        = Pdf::loadView('admin.documents.pdf.exit_slip', compact('slip', 'business'))->setPaper('a4', 'portrait');
 

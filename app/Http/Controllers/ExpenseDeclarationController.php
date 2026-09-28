@@ -280,7 +280,7 @@ class ExpenseDeclarationController extends Controller
     }
 
     public function pdf(int $id) {
-        $declaration    = ExpenseDeclaration::with(['items', 'approvals', 'user'])->findOrFail($id);
+        $declaration    = ExpenseDeclaration::withTrashed()->with(['items', 'approvals', 'user'])->findOrFail($id);
         $business       = Business::find(1);
         $pdf            = Pdf::loadView('admin.documents.pdf.expense_declaration', compact('declaration', 'business'))->setPaper('a4', 'portrait');
 

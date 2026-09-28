@@ -213,7 +213,7 @@ class VacationExitSlipController extends Controller
     }
 
     public function pdf(int $id) {
-        $slip       = VacationExitSlip::with(['approvals', 'user', 'area'])->findOrFail($id);
+        $slip       = VacationExitSlip::withTrashed()->with(['approvals', 'user', 'area'])->findOrFail($id);
         $business   = Business::find(1);
         $pdf        = Pdf::loadView('admin.documents.pdf.vacation_exit_slip', compact('slip', 'business'))->setPaper('a4', 'portrait');
         return $pdf->stream('Papeleta_Vacaciones_' . $slip->correlativo . '.pdf');

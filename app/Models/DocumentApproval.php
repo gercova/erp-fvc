@@ -32,7 +32,7 @@ class DocumentApproval extends Model
 
     public function document(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo()->withTrashed();
     }
 
     public function approver(): BelongsTo

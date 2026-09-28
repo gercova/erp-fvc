@@ -243,7 +243,7 @@ class VehicleExitSlipController extends Controller
     }
 
     public function pdf(int $id) {
-        $slip       = VehicleExitSlip::with(['approvals', 'user', 'area'])->findOrFail($id);
+        $slip       = VehicleExitSlip::withTrashed()->with(['approvals', 'user', 'area'])->findOrFail($id);
         $business   = Business::find(1);
         $pdf        = Pdf::loadView('admin.documents.pdf.vehicle_exit_slip', compact('slip', 'business'))->setPaper('a4', 'landscape');
 

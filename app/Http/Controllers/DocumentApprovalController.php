@@ -139,8 +139,26 @@ class DocumentApprovalController extends Controller
         $userRoles  = $user->roles->pluck('name')->toArray();
         $isSuper    = in_array('SUPERADMIN', $userRoles) || in_array('ADMIN', $userRoles);
 
+        if ($document) {
+            $relationsToLoad = [];
+            if (method_exists($document, 'user')) {
+                $relationsToLoad[] = 'user';
+            }
+            if (method_exists($document, 'area')) {
+                $relationsToLoad[] = 'area';
+            }
+            if (method_exists($document, 'items')) {
+                $relationsToLoad[] = 'items';
+            }
+            if (!empty($relationsToLoad)) {
+                $document->loadMissing($relationsToLoad);
+            }
+        }
+
+        $isDocumentAnulado = !$document || ($document->status === 'ANULADO') || (method_exists($document, 'trashed') && $document->trashed());
+
         // Can this user sign this specific approval?
-        $canSign = $approval->status === 'PENDIENTE' && (
+        $canSign = $approval->status === 'PENDIENTE' && !$isDocumentAnulado && $document && (
             $approval->approver_id === $user->id ||
             in_array($approval->role_name, $userRoles) ||
             $isSuper
@@ -162,9 +180,15 @@ class DocumentApprovalController extends Controller
             default                 => null,
         };
 
-        $pdfUrl = $pdfRouteName ? route($pdfRouteName, $approval->document_id) : '#';
+        if ($pdfRouteName) {
+            $pdfUrl = route($pdfRouteName, $approval->document_id);
+        } elseif (class_basename($approval->document_type) === 'AssetInventory' && $document) {
+            $pdfUrl = route('inventory.pdf', ['area_id' => $document->area_id, 'periodo' => $document->periodo]);
+        } else {
+            $pdfUrl = '#';
+        }
 
-        return view('admin.approvals.show', compact('approval', 'document', 'canSign', 'allSteps', 'pdfUrl', 'user'));
+        return view('admin.approvals.show', compact('approval', 'document', 'canSign', 'allSteps', 'pdfUrl', 'user', 'isDocumentAnulado'));
     }
 
     public function approve(Request $request): JsonResponse {
@@ -178,6 +202,21 @@ class DocumentApprovalController extends Controller
             return response()->json([
                 'type'      => 'error', 
                 'message'   => 'Este paso ya no se encuentra pendiente de firma.'], 400);
+        }
+
+        $document = $approval->document;
+        if (!$document) {
+            return response()->json([
+                'type'    => 'error',
+                'message' => 'No se puede firmar ni aprobar este paso porque el documento original no fue encontrado.'
+            ], 422);
+        }
+
+        if ($document->status === 'ANULADO' || (method_exists($document, 'trashed') && $document->trashed())) {
+            return response()->json([
+                'type'    => 'error',
+                'message' => 'No se puede firmar ni aprobar un documento que ha sido anulado o eliminado.'
+            ], 422);
         }
 
         if ($approval->approver_id !== $user->id && !in_array($approval->role_name, $userRoles) && !$isSuper) {
@@ -216,6 +255,14 @@ class DocumentApprovalController extends Controller
                 'type'      => 'error', 
                 'message'   => 'Este paso ya fue procesado.'
             ], 400);
+        }
+
+        $document = $approval->document;
+        if (!$document) {
+            return response()->json([
+                'type'    => 'error',
+                'message' => 'No se puede procesar este paso porque el documento original no fue encontrado.'
+            ], 422);
         }
 
         if ($approval->approver_id !== $user->id && !in_array($approval->role_name, $userRoles) && !$isSuper) {
