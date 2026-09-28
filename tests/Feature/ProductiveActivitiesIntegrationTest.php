@@ -536,4 +536,24 @@ class ProductiveActivitiesIntegrationTest extends TestCase
         $readResponse = $this->actingAs($contabilidadUser)->get(route('productive_activities.cost_center.index'));
         $readResponse->assertStatus(200);
     }
+
+    public function test_productive_activity_show_with_tracking_logs_ordered_by_log_date(): void
+    {
+        $log = \App\Models\ActivityTrackingLog::create([
+            'productive_activity_id' => $this->activityGavilan->id,
+            'user_id' => $this->adminUser->id,
+            'log_date' => now()->toDateString(),
+            'progress_percent' => 50.0,
+            'status' => 'ACTIVA',
+            'comment' => 'Avance al 50% verificado',
+        ]);
+
+        $response = $this->actingAs($this->adminUser)->get(route('productive_activities.show', $this->activityGavilan->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Avance al 50% verificado');
+        $response->assertSee('50%');
+
+        $log->delete();
+    }
 }
