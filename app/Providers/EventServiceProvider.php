@@ -18,6 +18,39 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        \App\Events\SaleCompleted::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\CreditNoteIssued::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\DebitNoteIssued::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\BillingVoided::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\PurchaseRecorded::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\PaymentReceived::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\CashSessionClosed::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\CutTransferRegistered::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\InternalLoanDisbursed::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\InternalLoanRepaid::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
+        \App\Events\ActivityTransactionRecorded::class => [
+            \App\Listeners\AccountingEventListener::class,
+        ],
     ];
 
     /**

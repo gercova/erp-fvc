@@ -58,6 +58,7 @@ use App\Http\Controllers\AgroLivestockController;
 use App\Http\Controllers\AgroHarvestQuickEntryController;
 use App\Http\Controllers\AgroReportsController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\AccountingPostingFailureController;
 
 /*
 |--------------------------------------------------------------------------
@@ -756,5 +757,12 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::get('/{id}',         'show')->name('accounting.chart_of_accounts.show');
         Route::put('/{id}',         'update')->name('accounting.chart_of_accounts.update');
         Route::delete('/{id}',      'destroy')->name('accounting.chart_of_accounts.destroy');
+    });
+
+    Route::controller(AccountingPostingFailureController::class)->prefix('failures')->group(function() {
+        Route::get('/',                     'index')->name('accounting.failures.index');
+        Route::get('/data',                 'data')->name('accounting.failures.data');
+        Route::post('/{id}/reprocess',      'reprocess')->name('accounting.failures.reprocess');
+        Route::post('/reprocess-all',       'reprocessAll')->name('accounting.failures.reprocess-all');
     });
 });

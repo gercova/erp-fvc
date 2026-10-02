@@ -275,7 +275,7 @@ class AccountingService
     /**
      * Generate the next correlative entry number for the period.
      */
-    protected function generateNextEntryNumber(AccountingPeriod $period): string
+    public function generateNextEntryNumber(AccountingPeriod $period): string
     {
         $count = JournalEntry::where('accounting_period_id', $period->id)->count() + 1;
         return sprintf('%s-%06d', $period->period_code, $count);
