@@ -153,6 +153,22 @@
                 <td class="summary-value">{{ $signo }} {{ number_format((float) $summary['sales_total'], 2, '.', '') }}</td>
             </tr>
             <tr>
+                <td class="summary-label">Total recaudado</td>
+                <td class="summary-value">{{ $signo }} {{ number_format((float) ($summary['collections_total'] ?? $summary['sales_total']), 2, '.', '') }}</td>
+            </tr>
+            @if (!empty($summary['inflows_total']) && (float) $summary['inflows_total'] > 0)
+            <tr>
+                <td class="summary-label">Ingresos de caja</td>
+                <td class="summary-value">+ {{ $signo }} {{ number_format((float) $summary['inflows_total'], 2, '.', '') }}</td>
+            </tr>
+            @endif
+            @if (!empty($summary['outflows_total']) && (float) $summary['outflows_total'] > 0)
+            <tr>
+                <td class="summary-label">Egresos de caja</td>
+                <td class="summary-value">- {{ $signo }} {{ number_format((float) $summary['outflows_total'], 2, '.', '') }}</td>
+            </tr>
+            @endif
+            <tr>
                 <td class="summary-label">Total bruto</td>
                 <td class="summary-value">{{ $signo }} {{ number_format((float) $summary['gross_total'], 2, '.', '') }}</td>
             </tr>
@@ -171,9 +187,23 @@
         <div class="total-box">
             <table class="summary-row">
                 <tr>
-                    <td class="summary-label"><strong>Monto final esperado</strong></td>
-                    <td class="summary-value"><strong>{{ $signo }} {{ number_format((float) $summary['display_final'], 2, '.', '') }}</strong></td>
+                    <td class="summary-label"><strong>Monto esperado</strong></td>
+                    <td class="summary-value"><strong>{{ $signo }} {{ number_format((float) $summary['expected_final'], 2, '.', '') }}</strong></td>
                 </tr>
+                @if ((int) $archingCash->estado === 2)
+                <tr>
+                    <td class="summary-label"><strong>Monto contado</strong></td>
+                    <td class="summary-value"><strong>{{ $signo }} {{ number_format((float) ($archingCash->monto_final ?? $summary['expected_final']), 2, '.', '') }}</strong></td>
+                </tr>
+                <tr>
+                    @php
+                        $diff = (float) ($archingCash->diferencia ?? 0);
+                        $diffLabel = $diff > 0 ? 'Sobrante' : ($diff < 0 ? 'Faltante' : 'Cuadrado');
+                    @endphp
+                    <td class="summary-label"><strong>Diferencia</strong></td>
+                    <td class="summary-value"><strong>{{ $diff >= 0 ? '+' : '' }}{{ $signo }} {{ number_format($diff, 2, '.', '') }} ({{ $diffLabel }})</strong></td>
+                </tr>
+                @endif
             </table>
         </div>
     </div>

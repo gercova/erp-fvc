@@ -208,30 +208,49 @@
         printArchingTicket(id);
     });
 
+    $('body').on('click', '.btn-print-pdf-report', function (event) {
+        event.preventDefault();
+        const id = $(this).data('id');
+        window.open(`{{ url('archingcash/report-pdf') }}/${id}`, '_blank');
+    });
+
     $('body').on('click', '.btn-close-arching', function (event) {
         event.preventDefault();
         const id = $(this).data('id');
 
         Swal.fire({
-            title: 'Confirmar cierre de caja',
-            text: 'Se cerrara la caja usando el total acumulado del arqueo actual.',
-            icon: 'warning',
+            title: 'Cierre y Arqueo de Caja',
+            text: 'Ingrese el monto contado (arqueado en caja) para calcular sobrante o faltante:',
+            input: 'number',
+            inputAttributes: {
+                step: '0.01',
+                min: '0',
+                placeholder: '0.00'
+            },
             showCancelButton: true,
             confirmButtonColor: '#198754',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Si, cerrar caja',
-            cancelButtonText: 'Cancelar'
+            confirmButtonText: 'Cerrar caja',
+            cancelButtonText: 'Cancelar',
+            inputValidator: (value) => {
+                if (value !== '' && (isNaN(value) || Number(value) < 0)) {
+                    return 'Debe ingresar un monto valido mayor o igual a 0.';
+                }
+            }
         }).then((result) => {
             if (!result.isConfirmed) {
                 return;
             }
+
+            const countedAmount = result.value !== undefined && result.value !== '' ? result.value : null;
 
             $.ajax({
                 url: "{{ route('admin.close_cash') }}",
                 method: 'POST',
                 data: {
                     _token: "{{ csrf_token() }}",
-                    id: id
+                    id: id,
+                    monto_final: countedAmount
                 },
                 beforeSend: function () {
                     Swal.fire({

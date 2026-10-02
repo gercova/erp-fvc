@@ -333,6 +333,8 @@ Route::controller(ArchingCashController::class)->prefix('archingcash')->middlewa
     Route::post('/save-withdrawal'    , 'save_withdrawal')->name('admin.save_withdrawal');
     Route::post('/print-resumen'      , 'print_resumen')->name('admin.print_resumen_archingcash');
     Route::post('/print-summary'      , 'print_summary')->name('admin.print_summary');
+    Route::get('/report-pdf/{id?}'    , 'pdf_report')->name('admin.arching_cash.report_pdf');
+    Route::post('/report-pdf/{id?}'   , 'pdf_report')->name('admin.arching_cash.report_pdf_post');
 });
 
 Route::controller(UserController::class)->prefix('users')->middleware(['auth', 'can:admin.users'])->group(function() {

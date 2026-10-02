@@ -23,6 +23,10 @@ class ArchingCash extends Model
         'monto_final',
         'total_ventas',
         'estado',
+        'monto_estimado',
+        'diferencia',
+        'total_ingresos',
+        'total_egresos',
     ];
 
     protected $casts = [
@@ -30,6 +34,10 @@ class ArchingCash extends Model
         'fecha_fin' => 'date',
         'monto_inicial' => 'decimal:2',
         'monto_final' => 'decimal:2',
+        'monto_estimado' => 'decimal:2',
+        'diferencia' => 'decimal:2',
+        'total_ingresos' => 'decimal:2',
+        'total_egresos' => 'decimal:2',
     ];
 
     public function cash()
@@ -40,5 +48,25 @@ class ArchingCash extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'idusuario');
+    }
+
+    public function movements()
+    {
+        return $this->hasMany(CashMovement::class, 'idarqueocaja');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(DetailPayment::class, 'idarqueocaja');
+    }
+
+    public function saleNotes()
+    {
+        return $this->hasMany(SaleNote::class, 'idarqueocaja');
+    }
+
+    public function billings()
+    {
+        return $this->hasMany(Billing::class, 'idarqueocaja');
     }
 }
