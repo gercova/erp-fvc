@@ -5,9 +5,15 @@
     let allClients = [];
     let reopenConfirmAfterClientModal = false;
     let paymentCondition = 'contado';
+    let availableSeries = [];
+    let boletaAnonymousLimit = 700.00;
     let posTotals = {
         signo: 'S/',
         subtotal: 0,
+        gravada: 0,
+        exonerada: 0,
+        inafecta: 0,
+        gratuita: 0,
         igv: 0,
         total: 0
     };
@@ -58,6 +64,9 @@
         const documentCode = getSelectedDocumentCode();
         const clientDocCode = getSelectedClientDocumentCode();
         const clientDocNumber = getSelectedClientDocumentNumber();
+        const clientOption = getSelectedClientOption();
+        const clientName = clientOption ? String(clientOption.text() || '').toUpperCase() : '';
+        const state = typeof getSummaryState === 'function' ? getSummaryState() : { finalTotal: toNumber(posTotals.total) };
 
         if (!$('#select-client').val()) {
             return false;
@@ -72,6 +81,19 @@
         }
 
         if (documentCode === '03') {
+            const isAnonymous = (
+                clientDocNumber === '00000000' ||
+                clientDocNumber === '' ||
+                clientDocCode === '0' ||
+                clientName.includes('VARIOS') ||
+                clientName.includes('ANONIMO') ||
+                clientName.includes('GENERAL')
+            );
+
+            if (isAnonymous && state.finalTotal > boletaAnonymousLimit) {
+                return false;
+            }
+
             return clientDocCode !== '' && clientDocNumber !== '';
         }
 
@@ -186,6 +208,25 @@
 
         $('#select-document-type').val(defaultDocument);
         syncDocumentChoiceButtons();
+        fillSeriesOptions();
+    }
+
+    function fillSeriesOptions(selectedId = null) {
+        const documentTypeId = $('#select-document-type').val();
+        const filtered = availableSeries.filter((s) => String(s.idtipo_documento) === String(documentTypeId));
+        let html = '';
+        filtered.forEach((serie) => {
+            html += `<option value="${serie.id}">${serie.serie} - ${serie.correlativo}</option>`;
+        });
+
+        if (filtered.length === 0) {
+            html = '<option value="">Sin serie configurada</option>';
+        }
+
+        $('#select-serie').html(html);
+        if (selectedId && $('#select-serie option[value="' + selectedId + '"]').length) {
+            $('#select-serie').val(selectedId);
+        }
     }
 
     function paymentSelectOptionsHtml() {
@@ -304,17 +345,34 @@
 
     function syncDocumentTypeHelper() {
         const documentCode = getSelectedDocumentCode();
+        const clientDocNumber = getSelectedClientDocumentNumber();
+        const clientDocCode = getSelectedClientDocumentCode();
+        const clientOption = getSelectedClientOption();
+        const clientName = clientOption ? String(clientOption.text() || '').toUpperCase() : '';
+        const state = typeof getSummaryState === 'function' ? getSummaryState() : { finalTotal: toNumber(posTotals.total) };
         let helper = 'El ticket se abrira automaticamente al confirmar la venta.';
 
         if (documentCode === '01') {
-            helper = 'Factura requiere cliente con RUC valido.';
+            helper = 'Factura requiere cliente con RUC valido (11 digitos).';
         } else if (documentCode === '03') {
-            helper = 'Boleta lista para cliente documentado.';
+            const isAnonymous = (
+                clientDocNumber === '00000000' ||
+                clientDocNumber === '' ||
+                clientDocCode === '0' ||
+                clientName.includes('VARIOS') ||
+                clientName.includes('ANONIMO') ||
+                clientName.includes('GENERAL')
+            );
+            if (isAnonymous && state.finalTotal > boletaAnonymousLimit) {
+                helper = `<span class="text-danger fw-bold"><i class="ri-alert-line"></i> Boleta mayor a ${money(boletaAnonymousLimit)} exige cliente identificado (DNI o RUC).</span>`;
+            } else {
+                helper = `Boleta. Limite anonimo: ${money(boletaAnonymousLimit)}.`;
+            }
         } else if (documentCode === '02') {
-            helper = 'Nota de venta habilitada.';
+            helper = 'Nota de venta (sin reglas tributarias ni SUNAT).';
         }
 
-        $('#document-type-helper').text(helper);
+        $('#document-type-helper').html(helper);
     }
 
     function syncClientRuleBadge() {
@@ -323,10 +381,13 @@
 
     function syncSummary() {
         const state = getSummaryState();
+        const ratio = posTotals.total > 0 ? (state.finalTotal / posTotals.total) : 1;
 
-        $('#summary-subtotal').text(money(posTotals.subtotal));
+        $('#summary-gravada').text(money(posTotals.gravada * ratio));
+        $('#summary-exonerada').text(money(posTotals.exonerada * ratio));
+        $('#summary-inafecta').text(money(posTotals.inafecta * ratio));
+        $('#summary-gratuita').text(money(posTotals.gratuita));
         $('#summary-discount').text(money(state.discount));
-        $('#summary-net-subtotal').text(money(state.netSubtotal));
         $('#summary-igv').text(money(state.netIgv));
         $('#summary-total').text(money(state.finalTotal));
         $('#summary-paid').text(money(state.coveredAmount));
@@ -757,15 +818,22 @@
 
                 payModes = r.pay_modes || [];
                 saleDocumentTypes = r.document_types || [];
+                availableSeries = r.series || [];
+                boletaAnonymousLimit = toNumber(r.boleta_anonymous_limit || 700);
                 posTotals = {
                     signo: r.signo || 'S/',
                     subtotal: toNumber(r.subtotal),
+                    gravada: toNumber(r.gravada),
+                    exonerada: toNumber(r.exonerada),
+                    inafecta: toNumber(r.inafecta),
+                    gratuita: toNumber(r.gratuita),
                     igv: toNumber(r.igv),
                     total: toNumber(r.total)
                 };
 
                 paymentCondition = 'contado';
                 fillDocumentTypeOptions(r.default_document_type_id || null);
+                fillSeriesOptions();
                 resetPaymentRows();
                 resetInstallmentRows();
                 $('#global-discount').val('0.00');
@@ -810,6 +878,7 @@
         }
 
         $('#select-document-type').val(String(target.id));
+        fillSeriesOptions();
         renderClients();
         syncCheckoutUI();
     });
@@ -860,7 +929,7 @@
         syncSummary();
     });
 
-    $('body').on('change input', '#select-document-type, #select-client, .payment-method, .payment-amount, .installment-amount, .installment-date, #global-discount', function() {
+    $('body').on('change input', '#select-document-type, #select-serie, #select-client, .payment-method, .payment-amount, .installment-amount, .installment-date, #global-discount', function() {
         syncCheckoutUI();
     });
 
@@ -869,6 +938,7 @@
 
         const clientId = $('#select-client').val();
         const documentTypeId = $('#select-document-type').val();
+        const serieId = $('#select-serie').val();
         const paymentsPayload = buildPaymentsPayload();
         const installmentsPayload = buildInstallmentsPayload();
 
@@ -911,6 +981,7 @@
                 _token: "{{ csrf_token() }}",
                 client_id: clientId,
                 document_type_id: documentTypeId,
+                serie_id: serieId,
                 payment_condition: paymentCondition,
                 global_discount: toNumber($('#global-discount').val()).toFixed(2),
                 payments: paymentCondition === 'contado' ? paymentsPayload.payments : [],

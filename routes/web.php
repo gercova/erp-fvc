@@ -257,6 +257,7 @@ Route::controller(PosController::class)->prefix('pos')->middleware(['auth', 'can
     Route::post('/clear-cart'         , 'clear_cart')->name('admin.clear_cart_pos');
     Route::post('/store-product'      , 'store_product')->name('admin.store_product_pos');
     Route::post('/open-modal'         , 'open_modal')->name('pos.open_modal_confirm');
+    Route::post('/get-series'         , 'get_series')->name('pos.get_series');
     Route::post('/save-sale'          , 'save_sale')->name('pos.save_sale');
 });
 
@@ -283,6 +284,7 @@ Route::controller(BillingController::class)->prefix('billings')->middleware(['au
     Route::get('/{id}/xml'                  , 'download_xml')->name('admin.billing_xml');
     Route::get('/{id}/cdr'                  , 'download_cdr')->name('admin.billing_cdr');
     Route::post('/{id}/dispatch'            , 'dispatch')->name('admin.dispatch_billing');
+    Route::post('/{id}/cancel'              , 'cancel')->name('admin.cancel_billing');
 });
 
 Route::controller(ShipmentGuideController::class)->prefix('shipment-guides')->middleware(['auth', 'can:admin.shipment_guides'])->group(function() {

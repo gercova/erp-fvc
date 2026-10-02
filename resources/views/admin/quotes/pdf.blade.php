@@ -378,6 +378,9 @@
                 </div>
             </td>
             <td class="data-ruc">
+                @if (!empty($business->ruc))
+                    <div class="ruc">R.U.C. {{ $business->ruc }}</div>
+                @endif
                 <div class="name">{{ $documentTitle }}</div>
                 <div class="number">{{ $quote->serie . '-' . $quote->correlativo }}</div>
             </td>
@@ -441,14 +444,13 @@
                     </td>
                     <td style="border: 0.05px solid #ccc; padding: 8px; text-align: center;">
                         {{ intval($item['cantidad']) }}</td>
-                    <td style="border: 0.05px solid #ccc; padding: 8px; text-align: center;">{{ $item['unidad'] }}</td>
+                    <td style="border: 0.05px solid #ccc; padding: 8px; text-align: center;">{{ $item['unidad'] ?? 'NIU' }}</td>
                     <td style="border: 0.05px solid #ccc; padding: 8px; text-align: center;">
                         {{ number_format($item['precio_unitario'], 2, '.', '') }}</td>
                     <td style="border: 0.05px solid #ccc; padding: 8px; text-align: center;">
                         {{ number_format($item['precio_total'], 2, '.', '') }}</td>
                 </tr>
             @endforeach
-        </tbody>
         </tbody>
     </table>
 
@@ -460,22 +462,46 @@
 
     <table class="all" style="table-layout: fixed; width: 100%;">
         <tr>
-            <td class="observation" style="width: 60%; overflow: auto; max-height: 100px;">
-                <b>OBSERVACIONES:</b>
-                <span>{{ $quote->observaciones }}</span>
+            <td class="observation" style="width: 58%; overflow: auto; vertical-align: top;">
+                @if (!empty($quote->observaciones))
+                    <b>OBSERVACIONES:</b>
+                    <span>{{ $quote->observaciones }}</span><br>
+                @endif
+                @if (!empty($leyenda_tributaria))
+                    <div style="margin-top: 6px; font-weight: bold; font-size: 9px; color: #333;">
+                        {{ $leyenda_tributaria }}
+                    </div>
+                @endif
+                @if (!empty($show_qr) && !empty($qr_image_path))
+                    <div style="margin-top: 8px;">
+                        <img src="{{ $qr_image_path }}" alt="QR" style="width: 80px; height: 80px; display: inline-block;">
+                        <div style="font-size: 8px; color: #666; margin-top: 2px;">Representación impresa del Comprobante Electrónico</div>
+                    </div>
+                @endif
             </td>
-            <td class="all-pay" style="width: 40%; border-left: 1px solid #ccc;">
-                <div class="item">
-                    <div class="left">OP. GRAVADAS: {{ $signo }}</div>
-                    <div class="right">{{ number_format($quote->subtotal, 2, '.', '') }}</div>
-                </div>
-                <div class="item">
-                    <div class="left">IGV: {{ $signo }}</div>
-                    <div class="right">{{ $quote->igv }}</div>
-                </div>
+            <td class="all-pay" style="width: 42%; border: 1px solid #ccc; padding: 6px; border-radius: 5px; vertical-align: top;">
+                @if (!empty($cobrar_igv))
+                    <div class="item">
+                        <div class="left">OP. GRAVADAS: {{ $signo }}</div>
+                        <div class="right">{{ number_format($quote->subtotal, 2, '.', '') }}</div>
+                    </div>
+                    <div class="item">
+                        <div class="left">IGV (18%): {{ $signo }}</div>
+                        <div class="right">{{ number_format((float) $quote->igv, 2, '.', '') }}</div>
+                    </div>
+                @else
+                    <div class="item">
+                        <div class="left">OP. EXONERADAS: {{ $signo }}</div>
+                        <div class="right">{{ number_format($quote->subtotal, 2, '.', '') }}</div>
+                    </div>
+                    <div class="item">
+                        <div class="left">IGV: {{ $signo }}</div>
+                        <div class="right">0.00</div>
+                    </div>
+                @endif
                 <div class="item bold">
                     <div class="left">TOTAL A PAGAR: {{ $signo }}</div>
-                    <div class="right">{{ $quote->total }}</div>
+                    <div class="right">{{ number_format((float) $quote->total, 2, '.', '') }}</div>
                 </div>
             </td>
         </tr>

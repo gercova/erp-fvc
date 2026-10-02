@@ -134,40 +134,111 @@ class BillingController extends Controller
 
     protected function billingDatatableResponse($billings, bool $allowCreditNoteAction = true, bool $allowDebitNoteAction = true)
     {
-        if (request()->has('columns')) {
-            $dateSearch = trim((string) request()->input('columns.0.search.value'));
-            $voucherSearch = trim((string) request()->input('columns.1.search.value'));
-            $customerSearch = trim((string) request()->input('columns.2.search.value'));
-            $totalSearch = trim((string) request()->input('columns.4.search.value'));
+        $dateSearch = trim((string) (
+            request()->input('date')
+            ?? request()->input('fecha')
+            ?? request()->input('fecha_emision')
+            ?? request()->input('columns.0.search.value')
+        ));
+        $serieSearch = trim((string) (
+            request()->input('serie')
+            ?? request()->input('series')
+        ));
+        $correlativoSearch = trim((string) (
+            request()->input('correlativo')
+            ?? request()->input('sequence')
+            ?? request()->input('numero')
+        ));
+        $voucherSearch = trim((string) (
+            request()->input('voucher')
+            ?? request()->input('comprobante')
+            ?? request()->input('columns.1.search.value')
+        ));
+        $customerSearch = trim((string) (
+            request()->input('customer')
+            ?? request()->input('cliente')
+            ?? request()->input('customer_id')
+            ?? request()->input('columns.2.search.value')
+        ));
+        $totalSearch = trim((string) (
+            request()->input('total')
+            ?? request()->input('columns.4.search.value')
+        ));
+        $statusSearch = strtolower(trim((string) (
+            request()->input('status')
+            ?? request()->input('sunat_status')
+            ?? request()->input('estado_sunat')
+            ?? request()->input('columns.7.search.value')
+        )));
 
-            if ($voucherSearch !== '') {
-                if (strpos($voucherSearch, '-') !== false) {
-                    [$serie, $correlativo] = array_pad(explode('-', $voucherSearch, 2), 2, '');
-                    $billings->where('billings.serie', 'like', '%' . trim($serie) . '%')
-                        ->where('billings.correlativo', 'like', '%' . trim($correlativo) . '%');
-                } else {
-                    $billings->where(function ($query) use ($voucherSearch) {
-                        $query->where('billings.serie', 'like', '%' . $voucherSearch . '%')
-                            ->orWhere('billings.correlativo', 'like', '%' . $voucherSearch . '%')
-                            ->orWhere('type_documents.descripcion', 'like', '%' . $voucherSearch . '%');
+        if ($dateSearch !== '') {
+            $billings->whereDate('billings.fecha_emision', $dateSearch);
+        }
+
+        if ($serieSearch !== '') {
+            $billings->where('billings.serie', 'like', '%' . $serieSearch . '%');
+        }
+
+        if ($correlativoSearch !== '') {
+            $billings->where(function ($query) use ($correlativoSearch) {
+                $query->where('billings.correlativo', 'like', '%' . $correlativoSearch . '%')
+                    ->orWhere('billings.correlativo', str_pad($correlativoSearch, 8, '0', STR_PAD_LEFT));
+            });
+        }
+
+        if ($voucherSearch !== '' && $serieSearch === '' && $correlativoSearch === '') {
+            if (strpos($voucherSearch, '-') !== false) {
+                [$serie, $correlativo] = array_pad(explode('-', $voucherSearch, 2), 2, '');
+                $serie = trim($serie);
+                $correlativo = trim($correlativo);
+                if ($serie !== '') {
+                    $billings->where('billings.serie', 'like', '%' . $serie . '%');
+                }
+                if ($correlativo !== '') {
+                    $billings->where(function ($query) use ($correlativo) {
+                        $query->where('billings.correlativo', 'like', '%' . $correlativo . '%')
+                            ->orWhere('billings.correlativo', str_pad($correlativo, 8, '0', STR_PAD_LEFT));
                     });
                 }
-            }
-
-            if ($dateSearch !== '') {
-                $billings->whereDate('billings.fecha_emision', $dateSearch);
-            }
-
-            if ($customerSearch !== '') {
-                $billings->where(function ($query) use ($customerSearch) {
-                    $query->where('clients.nombres', 'like', '%' . $customerSearch . '%')
-                        ->orWhere('clients.nro_documento', 'like', '%' . $customerSearch . '%');
+            } else {
+                $billings->where(function ($query) use ($voucherSearch) {
+                    $query->where('billings.serie', 'like', '%' . $voucherSearch . '%')
+                        ->orWhere('billings.correlativo', 'like', '%' . $voucherSearch . '%')
+                        ->orWhere('billings.correlativo', str_pad($voucherSearch, 8, '0', STR_PAD_LEFT))
+                        ->orWhere('type_documents.descripcion', 'like', '%' . $voucherSearch . '%');
                 });
             }
+        }
 
-            if ($totalSearch !== '') {
-                $normalizedTotal = str_replace(',', '.', $totalSearch);
-                $billings->where('billings.total', 'like', '%' . $normalizedTotal . '%');
+        if ($customerSearch !== '') {
+            $billings->where(function ($query) use ($customerSearch) {
+                $query->where('clients.nombres', 'like', '%' . $customerSearch . '%')
+                    ->orWhere('clients.nro_documento', 'like', '%' . $customerSearch . '%');
+            });
+        }
+
+        if ($totalSearch !== '') {
+            $normalizedTotal = str_replace(',', '.', $totalSearch);
+            $billings->where('billings.total', 'like', '%' . $normalizedTotal . '%');
+        }
+
+        if ($statusSearch !== '' && $statusSearch !== 'all' && $statusSearch !== 'todos') {
+            if (in_array($statusSearch, ['accepted', 'aceptado', '0'], true)) {
+                $billings->where('billings.cdr', 1)
+                    ->where('billings.estado_cpe', 0)
+                    ->where(function ($q) {
+                        $q->where('billings.anulado', 0)->orWhereNull('billings.anulado');
+                    });
+            } elseif (in_array($statusSearch, ['rejected', 'rechazado', 'rechazada'], true)) {
+                $billings->where('billings.cdr', 1)
+                    ->where('billings.estado_cpe', '!=', 0);
+            } elseif (in_array($statusSearch, ['pending', 'pendiente'], true)) {
+                $billings->whereNull('billings.cdr')
+                    ->where(function ($q) {
+                        $q->where('billings.anulado', 0)->orWhereNull('billings.anulado');
+                    });
+            } elseif (in_array($statusSearch, ['anulado', 'annulled', 'voided'], true)) {
+                $billings->where('billings.anulado', 1);
             }
         }
 
@@ -259,6 +330,13 @@ class BillingController extends Controller
                                 </a>';
                 }
 
+                if (! (bool) $billing->anulado) {
+                    $menu .= '<a class="dropdown-item btn-cancel-billing text-danger" data-id="' . (int) $billing->id . '" data-document="' . e(trim($billing->serie . '-' . $billing->correlativo)) . '" href="javascript:void(0);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" class="menu-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20ZM12 10.5858L14.8284 7.75736L16.2426 9.17157L13.4142 12L16.2426 14.8284L14.8284 16.2426L12 13.4142L9.17157 16.2426L7.75736 14.8284L10.5858 12L7.75736 9.17157L9.17157 7.75736L12 10.5858Z"></path></svg>
+                                    <span> Anular comprobante</span>
+                                </a>';
+                }
+
                 if ((int) $billing->cdr === 1 && (int) $billing->estado_cpe === 0 && ! (bool) $billing->anulado) {
                     if ($allowCreditNoteAction && in_array((string) $billing->tipo_comprobante_codigo, ['01', '03'], true)) {
                         $menu .= '<a class="dropdown-item btn-credit-note-billing" data-id="' . (int) $billing->id . '" data-document="' . e(trim($billing->serie . '-' . $billing->correlativo)) . '" href="javascript:void(0);">
@@ -285,7 +363,7 @@ class BillingController extends Controller
 
     public function print_ticket(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->expectsJson() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -302,7 +380,7 @@ class BillingController extends Controller
                 'status' => false,
                 'msg' => 'El comprobante no existe.',
                 'type' => 'warning',
-            ]);
+            ], 404);
         }
 
         $baseName = trim((string) ($billing->nticket ?: $billing->typeDocument?->codigo . '-' . $billing->serie . '-' . $billing->correlativo));
@@ -311,12 +389,13 @@ class BillingController extends Controller
         return response()->json([
             'status' => true,
             'pdf' => basename($ticket['path']),
+            'url' => $ticket['url'] ?? asset('files/billings/ticket/' . basename($ticket['path'])),
         ]);
     }
 
     public function print_a4(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->expectsJson() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -333,7 +412,7 @@ class BillingController extends Controller
                 'status' => false,
                 'msg' => 'El comprobante no existe.',
                 'type' => 'warning',
-            ]);
+            ], 404);
         }
 
         $baseName = trim((string) ($billing->nticket ?: $billing->typeDocument?->codigo . '-' . $billing->serie . '-' . $billing->correlativo));
@@ -342,6 +421,7 @@ class BillingController extends Controller
         return response()->json([
             'status' => true,
             'pdf' => basename($pdf['path']),
+            'url' => $pdf['url'] ?? asset('files/billings/a4/' . basename($pdf['path'])),
         ]);
     }
 
@@ -352,7 +432,15 @@ class BillingController extends Controller
 
         abort_unless(is_file($xmlPath), 404);
 
-        return response()->file($xmlPath);
+        if (request()->has('download')) {
+            return response()->download($xmlPath, basename($xmlPath), [
+                'Content-Type' => 'application/xml',
+            ]);
+        }
+
+        return response()->file($xmlPath, [
+            'Content-Type' => 'application/xml',
+        ]);
     }
 
     public function download_cdr(int $id)
@@ -362,7 +450,18 @@ class BillingController extends Controller
 
         abort_unless(is_file($cdrPath), 404);
 
-        return response()->file($cdrPath);
+        $extension = strtolower(pathinfo($cdrPath, PATHINFO_EXTENSION));
+        $contentType = $extension === 'zip' ? 'application/zip' : 'application/xml';
+
+        if (request()->has('download')) {
+            return response()->download($cdrPath, basename($cdrPath), [
+                'Content-Type' => $contentType,
+            ]);
+        }
+
+        return response()->file($cdrPath, [
+            'Content-Type' => $contentType,
+        ]);
     }
 
     public function dispatch(int $id)
@@ -373,6 +472,14 @@ class BillingController extends Controller
             return response()->json([
                 'status' => false,
                 'msg' => 'No se puede enviar a SUNAT un comprobante anulado.',
+                'type' => 'warning',
+            ], 422);
+        }
+
+        if ((int) $billing->cdr === 1 && (int) $billing->estado_cpe === 0) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'El comprobante ya fue aceptado por SUNAT y no puede ser reenviado.',
                 'type' => 'warning',
             ], 422);
         }
@@ -404,9 +511,37 @@ class BillingController extends Controller
         ], (bool) ($result['ok'] ?? false) ? 200 : 422);
     }
 
+    public function cancel(Request $request, int $id)
+    {
+        $billing = $this->findBillingOrFail($id);
+
+        if ((bool) $billing->anulado) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'El comprobante ya se encuentra anulado.',
+                'type' => 'warning',
+            ], 422);
+        }
+
+        $reason = trim((string) ($request->input('reason') ?: $request->input('motivo') ?: 'Anulación de comprobante'));
+
+        $billing->forceFill([
+            'anulado' => true,
+            'motivo' => $reason,
+        ])->save();
+
+        return response()->json([
+            'status' => true,
+            'msg' => 'El comprobante fue anulado correctamente.',
+            'type' => 'success',
+            'documento' => trim((string) ($billing->serie . '-' . $billing->correlativo)),
+            'hook' => 'cancellation_registered',
+        ]);
+    }
+
     public function create_credit_note(Request $request, int $id)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->expectsJson() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo.',
@@ -540,7 +675,7 @@ class BillingController extends Controller
 
     public function create_debit_note(Request $request, int $id)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->expectsJson() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo.',
@@ -651,7 +786,7 @@ class BillingController extends Controller
     {
         $billing->loadMissing(['customer.tipoDocumento', 'user', 'currency', 'typeDocument', 'warehouse']);
 
-        $business = $this->resolveBusinessForWarehouse(Business::find(1), $billing->warehouse);
+        $business = $this->resolveBusinessForWarehouse(Business::first() ?: Business::find(1), $billing->warehouse);
         $payments = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
             ->join('pay_modes', 'detail_payments.idpago', '=', 'pay_modes.id')
             ->where('idfactura', $billing->id)
@@ -664,6 +799,7 @@ class BillingController extends Controller
 
         $formatter = new NumeroALetras();
         $qrImage = $this->ensureBillingQrImage($billing);
+        $subtotal = (float) ($billing->gravada > 0 ? $billing->gravada : ($billing->exonerada > 0 ? $billing->exonerada : $billing->inafecta));
         $data = [
             'name' => $name,
             'business' => $business,
@@ -676,9 +812,12 @@ class BillingController extends Controller
             'issued_at' => date('d/m/Y', strtotime((string) $billing->fecha_emision)) . ' ' . $billing->hora,
             'seller' => mb_strtoupper((string) ($billing->user->user ?? '')),
             'items' => $details,
-            'subtotal' => $billing->gravada,
-            'igv' => $billing->igv,
-            'total' => $billing->total,
+            'subtotal' => $subtotal,
+            'gravada' => (float) $billing->gravada,
+            'exonerada' => (float) $billing->exonerada,
+            'inafecta' => (float) $billing->inafecta,
+            'igv' => (float) $billing->igv,
+            'total' => (float) $billing->total,
             'amount_in_words' => $formatter->toWords((float) $billing->total, 2),
             'payment_modes' => $payments,
             'count_payment' => $payments->count(),
@@ -686,6 +825,9 @@ class BillingController extends Controller
             'moneda' => $this->moneda_pais(),
             'qr_image_path' => $qrImage,
             'show_qr' => true,
+            'cobrar_igv' => (bool) ($business?->cobrar_igv ?? false),
+            'regimen_tributario' => ($business?->cobrar_igv ?? false) ? 'Régimen General (18%)' : 'Exonerado (Ley Amazonía)',
+            'leyenda_tributaria' => ($business?->cobrar_igv ?? false) ? null : 'BIENES TRANSFERIDOS EN LA AMAZONÍA PARA SER CONSUMIDOS EN LA MISMA',
         ];
 
         $path = public_path('files/billings/ticket');
@@ -705,24 +847,30 @@ class BillingController extends Controller
     {
         $billing->loadMissing(['customer.tipoDocumento', 'user', 'currency', 'typeDocument', 'warehouse']);
 
-        $business = $this->resolveBusinessForWarehouse(Business::find(1), $billing->warehouse);
+        $business = $this->resolveBusinessForWarehouse(Business::first() ?: Business::find(1), $billing->warehouse);
         $payments = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
             ->join('pay_modes', 'detail_payments.idpago', '=', 'pay_modes.id')
             ->where('idfactura', $billing->id)
             ->where('idtipo_comprobante', $billing->idtipo_comprobante)
             ->get();
-        $details = DetailBilling::select('detail_billings.*', 'products.descripcion as producto')
+        $details = DetailBilling::select('detail_billings.*', 'products.descripcion as producto', 'units.codigo as unidad')
             ->join('products', 'detail_billings.idproducto', '=', 'products.id')
+            ->leftJoin('units', 'products.idunidad', '=', 'units.id')
             ->where('idfacturacion', $billing->id)
             ->get();
 
         $formatter = new NumeroALetras();
+        $qrImage = $this->ensureBillingQrImage($billing);
+        $subtotal = (float) ($billing->gravada > 0 ? $billing->gravada : ($billing->exonerada > 0 ? $billing->exonerada : $billing->inafecta));
         $data = [
             'quote' => (object) [
                 'serie' => $billing->serie,
                 'correlativo' => $billing->correlativo,
                 'total' => $billing->total,
-                'subtotal' => $billing->gravada,
+                'subtotal' => $subtotal,
+                'gravada' => (float) $billing->gravada,
+                'exonerada' => (float) $billing->exonerada,
+                'inafecta' => (float) $billing->inafecta,
                 'igv' => $billing->igv,
                 'observaciones' => $billing->observaciones,
             ],
@@ -736,6 +884,11 @@ class BillingController extends Controller
             'numero_letras' => $formatter->toWords((float) $billing->total, 2),
             'detail' => $details,
             'payment_modes' => $payments,
+            'qr_image_path' => $qrImage,
+            'show_qr' => true,
+            'cobrar_igv' => (bool) ($business?->cobrar_igv ?? false),
+            'regimen_tributario' => ($business?->cobrar_igv ?? false) ? 'Régimen General (18%)' : 'Exonerado (Ley Amazonía)',
+            'leyenda_tributaria' => ($business?->cobrar_igv ?? false) ? null : 'BIENES TRANSFERIDOS EN LA AMAZONÍA PARA SER CONSUMIDOS EN LA MISMA',
         ];
 
         $path = public_path('files/billings/a4');
@@ -753,15 +906,30 @@ class BillingController extends Controller
 
     protected function ensureBillingQrImage(Billing $billing): ?string
     {
-        try {
-            $payload = $this->payloadBuilder->build($billing);
-        } catch (\Throwable $exception) {
+        $business = Business::first() ?: Business::find(1);
+        if (! $business) {
             return null;
         }
 
-        $business = Business::find(1);
-        if (! $business) {
-            return null;
+        try {
+            $payload = $this->payloadBuilder->build($billing);
+            $docType = (string) ($payload['documento']['tipo'] ?? $billing->typeDocument?->codigo ?? '03');
+            $serie = (string) ($payload['documento']['serie'] ?? $billing->serie);
+            $correlativo = (string) ($payload['documento']['correlativo'] ?? $billing->correlativo);
+            $igv = number_format((float) ($payload['totales']['igv'] ?? $billing->igv ?? 0), 2, '.', '');
+            $total = number_format((float) ($payload['totales']['importe_total'] ?? $billing->total ?? 0), 2, '.', '');
+            $fecha = (string) ($payload['documento']['fecha_emision'] ?? optional($billing->fecha_emision)->format('Y-m-d'));
+            $docClienteTipo = (string) ($payload['cliente']['tipo_documento'] ?? $billing->customer?->tipoDocumento?->codigo ?? '1');
+            $docClienteNumero = (string) ($payload['cliente']['numero_documento'] ?? $billing->customer?->nro_documento ?? '');
+        } catch (\Throwable $exception) {
+            $docType = (string) ($billing->typeDocument?->codigo ?? '03');
+            $serie = (string) $billing->serie;
+            $correlativo = (string) $billing->correlativo;
+            $igv = number_format((float) ($billing->igv ?? 0), 2, '.', '');
+            $total = number_format((float) ($billing->total ?? 0), 2, '.', '');
+            $fecha = optional($billing->fecha_emision)->format('Y-m-d') ?: date('Y-m-d');
+            $docClienteTipo = (string) ($billing->customer?->tipoDocumento?->codigo ?? '1');
+            $docClienteNumero = (string) ($billing->customer?->nro_documento ?? '');
         }
 
         $filename = trim((string) ($billing->serie . '-' . $billing->correlativo)) . '.png';
@@ -773,14 +941,14 @@ class BillingController extends Controller
 
             $qrText = implode('|', [
                 (string) ($business->ruc ?? ''),
-                (string) ($payload['documento']['tipo'] ?? ''),
-                (string) ($payload['documento']['serie'] ?? ''),
-                (string) ($payload['documento']['correlativo'] ?? ''),
-                number_format((float) ($payload['totales']['igv'] ?? 0), 2, '.', ''),
-                number_format((float) ($payload['totales']['importe_total'] ?? 0), 2, '.', ''),
-                (string) ($payload['documento']['fecha_emision'] ?? ''),
-                (string) ($payload['cliente']['tipo_documento'] ?? ''),
-                (string) ($payload['cliente']['numero_documento'] ?? ''),
+                $docType,
+                $serie,
+                $correlativo,
+                $igv,
+                $total,
+                $fecha,
+                $docClienteTipo,
+                $docClienteNumero,
                 '',
             ]);
 
@@ -846,25 +1014,29 @@ class BillingController extends Controller
 
     protected function billingXmlPath($billing): string
     {
-        $business = Business::findOrFail(1);
+        $business = Business::first() ?: Business::findOrFail(1);
         $typeCode = trim((string) ($billing->tipo_comprobante_codigo ?? $billing->typeDocument?->codigo ?? ''));
         $baseName = $business->ruc . '-' . $typeCode . '-' . $billing->serie . '-' . $billing->correlativo;
+        $upper = $this->storagePath->xmlDirectory($business) . DIRECTORY_SEPARATOR . $baseName . '.XML';
+        $lower = $this->storagePath->xmlDirectory($business) . DIRECTORY_SEPARATOR . $baseName . '.xml';
 
-        return $this->storagePath->xmlDirectory($business) . DIRECTORY_SEPARATOR . $baseName . '.XML';
+        return is_file($upper) ? $upper : (is_file($lower) ? $lower : $upper);
     }
 
     protected function billingCdrZipPath($billing): string
     {
-        $business = Business::findOrFail(1);
+        $business = Business::first() ?: Business::findOrFail(1);
         $typeCode = trim((string) ($billing->tipo_comprobante_codigo ?? $billing->typeDocument?->codigo ?? ''));
         $baseName = $business->ruc . '-' . $typeCode . '-' . $billing->serie . '-' . $billing->correlativo;
+        $upper = $this->storagePath->cdrDirectory($business) . DIRECTORY_SEPARATOR . 'R-' . $baseName . '.ZIP';
+        $lower = $this->storagePath->cdrDirectory($business) . DIRECTORY_SEPARATOR . 'R-' . $baseName . '.zip';
 
-        return $this->storagePath->cdrDirectory($business) . DIRECTORY_SEPARATOR . 'R-' . $baseName . '.ZIP';
+        return is_file($upper) ? $upper : (is_file($lower) ? $lower : $upper);
     }
 
     protected function billingCdrXmlPath($billing): string
     {
-        $business = Business::findOrFail(1);
+        $business = Business::first() ?: Business::findOrFail(1);
         $typeCode = trim((string) ($billing->tipo_comprobante_codigo ?? $billing->typeDocument?->codigo ?? ''));
         $baseName = $business->ruc . '-' . $typeCode . '-' . $billing->serie . '-' . $billing->correlativo;
         $folder = $this->storagePath->cdrDirectory($business) . DIRECTORY_SEPARATOR . 'R-' . $baseName;
@@ -903,6 +1075,10 @@ class BillingController extends Controller
 
     protected function resolveBusinessForWarehouse(?Business $business, ?Warehouse $warehouse): ?Business
     {
+        if (! $business) {
+            $business = Business::first() ?: Business::find(1);
+        }
+
         if (! $business) {
             return null;
         }

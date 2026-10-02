@@ -17,7 +17,23 @@ class Serie extends Model
         'idtipo_documento',
         'idtipo_documento_relacionado',
         'idcaja',
+        'idalmacen',
         'direccion',
         'estado'
     ];
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class, 'idalmacen');
+    }
+
+    public function typeDocument()
+    {
+        return $this->belongsTo(TypeDocument::class, 'idtipo_documento');
+    }
+
+    public function cash()
+    {
+        return $this->belongsTo(Cash::class, 'idcaja');
+    }
 }

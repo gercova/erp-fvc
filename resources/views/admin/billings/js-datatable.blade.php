@@ -33,7 +33,17 @@
                     previous: "Anterior"
                 }
             },
-            ajax: "{{ route('billings.get') }}",
+            ajax: {
+                url: "{{ route('billings.get') }}",
+                data: function(d) {
+                    d.date = $('#date-filter').val();
+                    d.serie = $('#serie-filter').val();
+                    d.correlativo = $('#correlativo-filter').val();
+                    d.customer = $('#customer-filter').val();
+                    d.total = $('#total-filter').val();
+                    d.status = $('#status-filter').val();
+                }
+            },
             stripeClasses: [],
             columns: [
                 { data: 'fecha_emision', name: 'billings.fecha_emision', className: 'text-center' },
@@ -57,19 +67,25 @@
         let datatable = load_datatable();
 
         $('#date-filter').on('change', function() {
-            datatable.column(0).search(this.value).draw();
+            datatable.draw();
         });
 
-        $('#voucher-filter').on('keyup change', function() {
-            datatable.column(1).search(this.value).draw();
+        $('#serie-filter, #correlativo-filter, #customer-filter, #total-filter').on('keyup change', function() {
+            datatable.draw();
         });
 
-        $('#reason-filter').on('keyup change', function() {
-            datatable.column(2).search(this.value).draw();
+        $('#status-filter').on('change', function() {
+            datatable.draw();
         });
 
-        $('#total-filter').on('keyup change', function() {
-            datatable.column(4).search(this.value).draw();
+        $('#btn-reset-filters').on('click', function() {
+            $('#date-filter').val('');
+            $('#serie-filter').val('');
+            $('#correlativo-filter').val('');
+            $('#customer-filter').val('');
+            $('#total-filter').val('');
+            $('#status-filter').val('');
+            datatable.search('').columns().search('').draw();
         });
     });
 </script>

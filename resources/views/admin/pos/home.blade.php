@@ -428,7 +428,15 @@
                                         </button>
                                     </div>
                                     <select id="select-document-type" class="form-select d-none"></select>
-                                    <div id="document-type-helper" class="helper-note text-muted mt-2"></div>
+                                    <div class="row g-2 mt-2 align-items-center">
+                                        <div class="col-sm-5">
+                                            <label class="form-label small text-muted mb-1 fw-bold">Serie</label>
+                                            <select id="select-serie" class="form-select"></select>
+                                        </div>
+                                        <div class="col-sm-7">
+                                            <div id="document-type-helper" class="helper-note text-muted pt-3"></div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="checkout-section">
@@ -510,19 +518,27 @@
                                 </div>
 
                                 <div class="checkout-summary-row">
-                                    <span>Subtotal</span>
-                                    <strong id="summary-subtotal"></strong>
+                                    <span>Gravada</span>
+                                    <strong id="summary-gravada"></strong>
+                                </div>
+                                <div class="checkout-summary-row">
+                                    <span>Exonerada</span>
+                                    <strong id="summary-exonerada"></strong>
+                                </div>
+                                <div class="checkout-summary-row">
+                                    <span>Inafecta</span>
+                                    <strong id="summary-inafecta"></strong>
+                                </div>
+                                <div class="checkout-summary-row">
+                                    <span>Gratuita</span>
+                                    <strong id="summary-gratuita"></strong>
                                 </div>
                                 <div class="checkout-summary-row">
                                     <span>Descuento</span>
                                     <strong id="summary-discount"></strong>
                                 </div>
                                 <div class="checkout-summary-row">
-                                    <span>Subtotal sin IGV</span>
-                                    <strong id="summary-net-subtotal"></strong>
-                                </div>
-                                <div class="checkout-summary-row">
-                                    <span>Impuesto</span>
+                                    <span>IGV (18%)</span>
                                     <strong id="summary-igv"></strong>
                                 </div>
                                 <div class="checkout-summary-row total">

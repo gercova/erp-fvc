@@ -152,20 +152,39 @@
                                 <input type="date" id="date-filter" class="form-control form-control-sm text-center" max="{{ date('Y-m-d') }}">
                             </th>
                             <th>
-                                <input type="text" id="voucher-filter" class="form-control form-control-sm text-center" placeholder="Serie o correlativo">
+                                <div class="row g-1">
+                                    <div class="col-6">
+                                        <input type="text" id="serie-filter" class="form-control form-control-sm text-center" placeholder="Serie">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" id="correlativo-filter" class="form-control form-control-sm text-center" placeholder="Número">
+                                    </div>
+                                </div>
                             </th>
                             <th>
-                                <input type="text" id="reason-filter" class="form-control form-control-sm" placeholder="Buscar cliente">
+                                <input type="text" id="customer-filter" class="form-control form-control-sm" placeholder="Buscar cliente o DNI/RUC">
                             </th>
                             <th></th>
                             <th>
-                                <input type="text" id="total-filter" class="form-control form-control-sm" placeholder="Buscar total">
+                                <input type="text" id="total-filter" class="form-control form-control-sm text-center" placeholder="Total">
                             </th>
                             <th></th>
                             <th></th>
+                            <th>
+                                <select id="status-filter" class="form-select form-select-sm text-center">
+                                    <option value="">Todos</option>
+                                    <option value="pending">Pendiente</option>
+                                    <option value="accepted">Aceptado</option>
+                                    <option value="rejected">Rechazado</option>
+                                    <option value="anulado">Anulado</option>
+                                </select>
+                            </th>
                             <th></th>
-                            <th></th>
-                            <th></th>
+                            <th class="text-center">
+                                <button type="button" id="btn-reset-filters" class="btn btn-sm btn-outline-secondary" title="Limpiar filtros">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                 </table>

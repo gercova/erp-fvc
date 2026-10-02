@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\SaleCompleted;
 use App\Models\ArchingCash;
 use App\Models\Billing;
 use App\Models\Business;
@@ -10,6 +11,7 @@ use App\Models\DetailBilling;
 use App\Models\DetailPayment;
 use App\Models\DetailSaleNote;
 use App\Models\IdentityDocumentType;
+use App\Models\IgvTypeAffection;
 use App\Models\PayMode;
 use App\Models\Product;
 use App\Models\SaleNote;
@@ -19,8 +21,12 @@ use App\Models\TypeDocument;
 use App\Models\Warehouse;
 use App\Services\Ebilling\Payload\BillingPayloadBuilder;
 use App\Services\Ebilling\SunatDispatchService;
+use App\Services\StockService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,8 +37,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class PosController extends Controller
 {
-    public function index()
-    {
+    public function index(): View {
         $billingSummary = $this->billingsByCurrentWarehouse()
             ->join('type_documents', 'billings.idtipo_comprobante', '=', 'type_documents.id')
             ->whereIn('type_documents.codigo', ['01', '03']);
@@ -40,26 +45,25 @@ class PosController extends Controller
         $saleNoteSummary = $this->saleNotesByCurrentWarehouse();
 
         return view('admin.pos.list', [
-            'kpi_boletas_count' => (clone $billingSummary)->where('type_documents.codigo', '03')->whereDate('billings.fecha_emision', Carbon::today())->count(),
-            'kpi_boletas_total' => (clone $billingSummary)->where('type_documents.codigo', '03')->whereDate('billings.fecha_emision', Carbon::today())->sum('billings.total'),
-            'kpi_facturas_count' => (clone $billingSummary)->where('type_documents.codigo', '01')->whereDate('billings.fecha_emision', Carbon::today())->count(),
-            'kpi_facturas_total' => (clone $billingSummary)->where('type_documents.codigo', '01')->whereDate('billings.fecha_emision', Carbon::today())->sum('billings.total'),
-            'kpi_sale_notes_count' => (clone $saleNoteSummary)->whereDate('fecha_emision', Carbon::today())->count(),
-            'kpi_sale_notes_total' => (clone $saleNoteSummary)->whereDate('fecha_emision', Carbon::today())->sum('total'),
-            'signo' => $this->signo_pais(),
+            'kpi_boletas_count'     => (clone $billingSummary)->where('type_documents.codigo', '03')->whereDate('billings.fecha_emision', Carbon::today())->count(),
+            'kpi_boletas_total'     => (clone $billingSummary)->where('type_documents.codigo', '03')->whereDate('billings.fecha_emision', Carbon::today())->sum('billings.total'),
+            'kpi_facturas_count'    => (clone $billingSummary)->where('type_documents.codigo', '01')->whereDate('billings.fecha_emision', Carbon::today())->count(),
+            'kpi_facturas_total'    => (clone $billingSummary)->where('type_documents.codigo', '01')->whereDate('billings.fecha_emision', Carbon::today())->sum('billings.total'),
+            'kpi_sale_notes_count'  => (clone $saleNoteSummary)->whereDate('fecha_emision', Carbon::today())->count(),
+            'kpi_sale_notes_total'  => (clone $saleNoteSummary)->whereDate('fecha_emision', Carbon::today())->sum('total'),
+            'signo'                 => $this->signo_pais(),
         ]);
     }
 
-    public function create()
-    {
-        $data['signo'] = $this->signo_pais();
-        $data['typeDocuments'] = IdentityDocumentType::query()
+    public function create(): View|RedirectResponse {
+        $data['signo']          = $this->signo_pais();
+        $data['typeDocuments']  = IdentityDocumentType::query()
             ->where('estado', 1)
             ->orderBy('descripcion')
             ->get(['id', 'codigo', 'descripcion']);
 
-        $idusuario = (int) Auth::user()['id'];
-        $idcaja = (int) Auth::user()['idcaja'];
+        $idusuario      = (int) Auth::user()['id'];
+        $idcaja         = (int) Auth::user()['idcaja'];
         $siExisteArqueo = ArchingCash::where('idcaja', $idcaja)
             ->where('idusuario', $idusuario)
             ->latest('id')
@@ -73,12 +77,10 @@ class PosController extends Controller
         }
 
         $this->destroy_cart();
-
         return view('admin.pos.home', $data);
     }
 
-    public function get()
-    {
+    public function get(): JsonResponse {
         $billingDocuments = $this->billingsByCurrentWarehouse()
             ->selectRaw("
                 billings.id as record_id,
@@ -164,8 +166,8 @@ class PosController extends Controller
             ->editColumn('issue_date', fn ($document) => Carbon::parse((string) $document->issue_date)->format('Y-m-d'))
             ->addColumn('document_type_badge', function ($document) {
                 $class = match ((string) $document->document_code) {
-                    '01' => 'bg-info-subtle text-info',
-                    '03' => 'bg-primary-subtle text-primary',
+                    '01'    => 'bg-info-subtle text-info',
+                    '03'    => 'bg-primary-subtle text-primary',
                     default => 'bg-success-subtle text-success',
                 };
 
@@ -195,29 +197,27 @@ class PosController extends Controller
             ->toJson();
     }
 
-    public function load_cart(Request $request)
-    {
+    public function load_cart(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
-        $cart = $this->create_cart();
-        $html_cart = '';
-        $html_totales = '';
-        $contador = 0;
-        $signo = $this->signo_pais();
+        $cart           = $this->create_cart();
+        $html_cart      = '';
+        $html_totales   = '';
+        $contador       = 0;
+        $signo          = $this->signo_pais();
 
         if (! empty($cart['products'])) {
             foreach ($cart['products'] as $product) {
                 $contador++;
-                $subtotal = number_format(((float) $product['precio_venta'] * (float) $product['cantidad']), 2, '.', '');
-                $precioVenta = number_format((float) $product['precio_venta'], 2, '.', '');
-
-                $html_cart .= '<tr id="row-' . $contador . '">
+                $subtotal       = number_format(((float) $product['precio_venta'] * (float) $product['cantidad']), 2, '.', '');
+                $precioVenta    = number_format((float) $product['precio_venta'], 2, '.', '');
+                $html_cart      .= '<tr id="row-' . $contador . '">
                     <td class="align-middle">' . e((string) $product['descripcion']) . '</td>
                     <td class="text-center align-middle">
                         <input type="text" class="form-control form-control-sm text-center input-update"
@@ -283,20 +283,18 @@ class PosController extends Controller
         ]);
     }
 
-    public function search_product(Request $request)
-    {
+    public function search_product(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
-        $value = trim((string) $request->input('search'));
-        $idalmacen = (int) $request->input('idalmacen');
-
-        $productos = Product::select(
+        $value      = trim((string) $request->input('search'));
+        $idalmacen  = (int) $request->input('idalmacen');
+        $productos  = Product::select(
             'products.*',
             'units.codigo as unidad',
             'stock_products.stock_actual as stock',
@@ -322,40 +320,39 @@ class PosController extends Controller
             $precio = $signo . number_format((float) $producto->precio_venta, 2);
 
             return [
-                'label' => $producto->descripcion,
-                'nombre' => $producto->descripcion,
-                'codigo' => $producto->codigo_barras,
-                'marca' => $producto->marca,
-                'precio' => $precio,
-                'stock' => $producto->stock,
-                'idproducto' => $producto->id,
-                'idalmacen' => $producto->idalmacen,
-                'texto_limpio' => $producto->descripcion,
-                'opcion' => $producto->opcion,
+                'label'         => $producto->descripcion,
+                'nombre'        => $producto->descripcion,
+                'codigo'        => $producto->codigo_barras,
+                'marca'         => $producto->marca,
+                'precio'        => $precio,
+                'stock'         => $producto->stock,
+                'idproducto'    => $producto->id,
+                'idalmacen'     => $producto->idalmacen,
+                'texto_limpio'  => $producto->descripcion,
+                'opcion'        => $producto->opcion,
             ];
         });
 
         return response()->json($datos);
     }
 
-    public function add_product_search(Request $request)
-    {
+    public function add_product_search(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         $idproducto = (int) $request->input('idproducto');
-        $producto = Product::where('id', $idproducto)->first();
+        $producto   = Product::where('id', $idproducto)->first();
 
         if (! $producto) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no se encuentra en el almacen.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no se encuentra en el almacen.',
+                'type'      => 'warning',
             ]);
         }
 
@@ -366,9 +363,9 @@ class PosController extends Controller
 
         if (! $stockProducto) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no se encuentra en el almacen seleccionado.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no se encuentra en el almacen seleccionado.',
+                'type'      => 'warning',
             ]);
         }
 
@@ -382,9 +379,9 @@ class PosController extends Controller
 
         if (! $agregar['status']) {
             return response()->json([
-                'status' => false,
-                'msg' => $agregar['msg'],
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $agregar['msg'],
+                'type'      => 'warning',
             ]);
         }
 
@@ -395,13 +392,12 @@ class PosController extends Controller
         ]);
     }
 
-    public function delete_product(Request $request)
-    {
+    public function delete_product(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
@@ -410,61 +406,59 @@ class PosController extends Controller
 
         if (! $producto) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no existe.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no existe.',
+                'type'      => 'warning',
             ]);
         }
 
         if (! $this->delete_product_cart($id, (int) $producto->opcion)) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No se pudo eliminar el producto',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No se pudo eliminar el producto',
+                'type'      => 'warning',
             ]);
         }
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Registro eliminado correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Registro eliminado correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function clear_cart(Request $request)
-    {
+    public function clear_cart(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         if (! session()->has('pos')) {
             return response()->json([
-                'status' => true,
-                'msg' => 'El carrito ya esta vacio.',
-                'type' => 'info',
+                'status'    => true,
+                'msg'       => 'El carrito ya esta vacio.',
+                'type'      => 'info',
             ]);
         }
 
         $this->destroy_cart();
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Carrito vaciado correctamente.',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Carrito vaciado correctamente.',
+            'type'      => 'success',
         ]);
     }
 
-    public function store_product(Request $request)
-    {
+    public function store_product(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
@@ -473,61 +467,60 @@ class PosController extends Controller
 
         if (! $producto) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no existe.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no existe.',
+                'type'      => 'warning',
             ]);
         }
 
         $cantidad = (int) $request->input('cantidad');
-        $precio = number_format((float) $request->input('precio'), 2, '.', '');
+        $precio   = number_format((float) $request->input('precio'), 2, '.', '');
 
         if (! $this->update_quantity($id, $cantidad, $precio, (int) $producto->opcion)) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Stock insuficiente',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Stock insuficiente',
+                'type'      => 'warning',
             ]);
         }
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Actualizado correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Actualizado correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function add_product_barcode(Request $request)
-    {
+    public function add_product_barcode(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
-        $barcode = trim((string) $request->input('barcode'));
-        $producto = Product::where('codigo_barras', $barcode)->first();
+        $barcode    = trim((string) $request->input('barcode'));
+        $producto   = Product::where('codigo_barras', $barcode)->first();
 
         if (! $producto) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no se encuentra en el inventario',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no se encuentra en el inventario',
+                'type'      => 'warning',
             ]);
         }
 
-        $idalmacen = (int) $request->input('idalmacen');
-        $stockProducto = StockProduct::where('idalmacen', $idalmacen)
+        $idalmacen      = (int) $request->input('idalmacen');
+        $stockProducto  = StockProduct::where('idalmacen', $idalmacen)
             ->where('idproducto', $producto->id)
             ->first();
 
         if (! $stockProducto) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no se encuentra en el almacen',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no se encuentra en el almacen',
+                'type'      => 'warning',
             ]);
         }
 
@@ -541,397 +534,134 @@ class PosController extends Controller
 
         if (! $agregar['status']) {
             return response()->json([
-                'status' => false,
-                'msg' => $agregar['msg'],
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $agregar['msg'],
+                'type'      => 'warning',
             ]);
         }
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Producto agregado correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Producto agregado correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function open_modal(Request $request)
-    {
-        if (! $request->ajax()) {
+    public function open_modal(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
-        $signo = $this->signo_pais();
-        $cart = $this->create_cart();
-        $subtotal = number_format((float) $cart['subtotal'], 2, '.', '');
-        $igv = number_format((float) $cart['igv'], 2, '.', '');
-        $total = number_format((float) $cart['total'], 2, '.', '');
-        $payModes = PayMode::orderBy('descripcion')->get();
-        $documentTypes = $this->getPosDocumentTypes();
-        $defaultDocumentType = $documentTypes->firstWhere('codigo', '03') ?? $documentTypes->first();
+        $signo                  = $this->signo_pais();
+        $cart                   = $this->create_cart();
+        $saleBreakdown          = $this->buildDiscountedSaleBreakdown($cart, 0);
+
+        $payModes               = PayMode::orderBy('id')->get();
+        $documentTypes          = $this->getPosDocumentTypes();
+        $defaultDocumentType    = $documentTypes->firstWhere('codigo', '03') ?? $documentTypes->first();
+
+        $warehouseId            = (int) (Auth::user()['idalmacen'] ?? 1);
+        $cashId                 = (int) (Auth::user()['idcaja'] ?? 1);
+
+        $availableSeries = Serie::query()
+            ->where('estado', 1)
+            ->whereIn('idtipo_documento', $documentTypes->pluck('id'))
+            ->where(function ($q) use ($warehouseId, $cashId) {
+                $q->where('idalmacen', $warehouseId)
+                    ->orWhere(function ($sub) use ($cashId) {
+                        $sub->whereNull('idalmacen')->where('idcaja', $cashId);
+                    });
+            })
+            ->orderBy('serie')
+            ->get(['id', 'serie', 'correlativo', 'idtipo_documento', 'idcaja', 'idalmacen']);
 
         return response()->json([
-            'status' => true,
-            'subtotal' => $subtotal,
-            'igv' => $igv,
-            'total' => $total,
-            'pay_modes' => $payModes,
-            'document_types' => $documentTypes->values(),
-            'default_document_type_id' => $defaultDocumentType?->id,
-            'signo' => $signo,
+            'status'                    => true,
+            'subtotal'                  => $saleBreakdown['subtotal'],
+            'gravada'                   => $saleBreakdown['gravada'],
+            'exonerada'                 => $saleBreakdown['exonerada'],
+            'inafecta'                  => $saleBreakdown['inafecta'],
+            'gratuita'                  => $saleBreakdown['gratuita'],
+            'igv'                       => $saleBreakdown['igv'],
+            'total'                     => $saleBreakdown['total'],
+            'pay_modes'                 => $payModes,
+            'document_types'            => $documentTypes->values(),
+            'default_document_type_id'  => $defaultDocumentType?->id,
+            'series'                    => $availableSeries,
+            'signo'                     => $signo,
+            'boleta_anonymous_limit'    => (float) config('inventory.pos_boleta_anonymous_limit', 700.00),
         ]);
     }
 
-    public function save_sale(Request $request)
-    {
-        if (! $request->ajax()) {
+    public function get_series(Request $request): JsonResponse {
+        $warehouseId = (int) ($request->input('warehouse_id') ?: Auth::user()['idalmacen']);
+        $cashId = (int) ($request->input('cash_id') ?: Auth::user()['idcaja']);
+        $documentTypeId = (int) $request->input('document_type_id');
+
+        $series = Serie::query()
+            ->where('estado', 1)
+            ->when($documentTypeId > 0, fn ($q) => $q->where('idtipo_documento', $documentTypeId))
+            ->where(function ($q) use ($warehouseId, $cashId) {
+                $q->where('idalmacen', $warehouseId)
+                    ->orWhere(function ($sub) use ($cashId) {
+                        $sub->whereNull('idalmacen')->where('idcaja', $cashId);
+                    });
+            })
+            ->orderBy('serie')
+            ->get(['id', 'serie', 'correlativo', 'idtipo_documento', 'idcaja', 'idalmacen']);
+
+        return response()->json([
+            'status'    => true,
+            'series'    => $series,
+        ]);
+    }
+
+    public function save_sale(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         return $this->saveSaleModern($request);
-
-        $validator = Validator::make($request->all(), [
-            'client_id' => 'required|integer|exists:clients,id',
-            'document_type_id' => 'required|integer|exists:type_documents,id',
-            'payment_condition' => 'required|string|in:contado,credito',
-            'global_discount' => 'nullable|numeric|min:0',
-            'payments' => 'nullable|array',
-            'payments.*.method_id' => 'required_with:payments|integer|exists:pay_modes,id',
-            'payments.*.amount' => 'required_with:payments|numeric|min:0.01',
-            'installments' => 'nullable|array',
-            'installments.*.amount' => 'required_with:installments|numeric|min:0.01',
-            'installments.*.due_date' => 'required_with:installments|date',
-        ], [
-            'client_id.required' => 'Debe seleccionar un cliente.',
-            'document_type_id.required' => 'Debe seleccionar el tipo de comprobante.',
-            'payments.required' => 'Debe agregar al menos un método de pago.',
-            'payments.min' => 'Debe agregar al menos un método de pago.',
-            'payments.*.method_id.required' => 'Debe seleccionar un método de pago válido.',
-            'payments.*.amount.required' => 'Debe ingresar un monto válido en los pagos.',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $data = $validator->validated();
-        $cart = $this->create_cart();
-
-        if (empty($cart['products'])) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'Ingrese al menos 1 producto',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        foreach ($cart['products'] as $product) {
-            if ((float) $product['precio_venta'] <= 0) {
-                return response()->json([
-                    'status' => false,
-                    'msg' => 'Ingrese un precio válido para ' . $product['descripcion'],
-                    'type' => 'warning',
-                ], 422);
-            }
-        }
-
-        $documentType = $this->getPosDocumentTypes()->firstWhere('id', (int) $data['document_type_id']);
-        if (! $documentType) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'El tipo de comprobante no está permitido en POS.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $client = Client::with('tipoDocumento')->find((int) $data['client_id']);
-        $clientDocumentCode = trim((string) optional($client?->tipoDocumento)->codigo);
-        if ((string) $documentType->codigo === '01' && $clientDocumentCode !== '6') {
-            return response()->json([
-                'status' => false,
-                'msg' => 'Para emitir factura, el cliente debe tener RUC.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $totalPaid = round((float) collect($data['payments'])->sum(function ($payment) {
-            return (float) $payment['amount'];
-        }), 2);
-        $cartTotal = round((float) $cart['total'], 2);
-
-        if ($totalPaid + 0.009 < $cartTotal) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'El total pagado no puede ser menor al total de la venta.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $idusuario = (int) Auth::user()['id'];
-        $idcaja = (int) Auth::user()['idcaja'];
-        $idalmacen = (int) Auth::user()['idalmacen'];
-        $fechaEmision = date('Y-m-d');
-        $fechaVencimiento = $fechaEmision;
-        $hora = date('H:i:s');
-        $arqueo = ArchingCash::where('idcaja', $idcaja)
-            ->where('idusuario', $idusuario)
-            ->where('estado', 1)
-            ->latest('id')
-            ->first();
-
-        if (! $arqueo) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'No se encontró una caja abierta para registrar la venta.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $serieModel = Serie::where('idtipo_documento', (int) $documentType->id)
-            ->where('idcaja', $idcaja)
-            ->where('estado', 1)
-            ->orderBy('id')
-            ->first();
-
-        if (! $serieModel) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'No existe una serie configurada para ese comprobante en la caja actual.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $paymentBreakdown = $this->buildPaymentBreakdown($data['payments']);
-        $firstPayMethodId = (int) ($paymentBreakdown[0]['id'] ?? $data['payments'][0]['method_id']);
-        $change = max(0, round($totalPaid - $cartTotal, 2));
-        $baseName = $documentType->codigo . '-' . $serieModel->serie . '-' . $serieModel->correlativo;
-
-        try {
-            $result = DB::transaction(function () use (
-                $documentType,
-                $client,
-                $cart,
-                $fechaEmision,
-                $fechaVencimiento,
-                $hora,
-                $idusuario,
-                $arqueo,
-                $serieModel,
-                $paymentBreakdown,
-                $firstPayMethodId,
-                $change,
-                $idalmacen,
-                $baseName
-            ) {
-                $this->validateStockBeforeSale($cart);
-
-                if ((string) $documentType->codigo === '02') {
-                    $document = SaleNote::create([
-                        'idtipo_comprobante' => (int) $documentType->id,
-                        'serie' => $serieModel->serie,
-                        'correlativo' => $serieModel->correlativo,
-                        'fecha_emision' => $fechaEmision,
-                        'fecha_vencimiento' => $fechaVencimiento,
-                        'hora' => $hora,
-                        'idcliente' => (int) $client->id,
-                        'subtotal' => $cart['subtotal'],
-                        'igv' => $cart['igv'],
-                        'total' => $cart['total'],
-                        'observaciones' => '',
-                        'estado' => 1,
-                        'idusuario' => $idusuario,
-                        'idarqueocaja' => $arqueo->id,
-                        'vuelto' => $change,
-                    ]);
-
-                    foreach ($cart['products'] as $product) {
-                        DetailSaleNote::create([
-                            'idnotaventa' => $document->id,
-                            'idproducto' => $product['id'],
-                            'cantidad' => $product['cantidad'],
-                            'igv' => $product['igv'],
-                            'precio_unitario' => $product['precio_venta'],
-                            'precio_total' => ((float) $product['precio_venta'] * (float) $product['cantidad']),
-                            'opcion' => $product['opcion'],
-                            'idalmacen' => $product['idalmacen'],
-                        ]);
-                    }
-
-                    $documentId = $document->id;
-                    $documentKind = 'sale_note';
-                } else {
-                    $document = Billing::create([
-                        'idtipo_comprobante' => (int) $documentType->id,
-                        'serie' => $serieModel->serie,
-                        'correlativo' => $serieModel->correlativo,
-                        'fecha_emision' => $fechaEmision,
-                        'fecha_vencimiento' => $fechaVencimiento,
-                        'hora' => $hora,
-                        'idcliente' => (int) $client->id,
-                        'idmoneda' => 1,
-                        'idpago' => $firstPayMethodId,
-                        'modo_pago' => $firstPayMethodId,
-                        'sunat_forma_pago' => 'Contado',
-                        'exonerada' => 0,
-                        'inafecta' => 0,
-                        'gravada' => $cart['subtotal'],
-                        'anticipo' => 0,
-                        'igv' => $cart['igv'],
-                        'icbper' => 0,
-                        'gratuita' => 0,
-                        'otros_cargos' => 0,
-                        'total' => $cart['total'],
-                        'monto_credito' => 0,
-                        'cuotas' => null,
-                        'payment_breakdown' => $paymentBreakdown,
-                        'observaciones' => '',
-                        'cdr' => null,
-                        'anulado' => false,
-                        'id_tipo_nota_credito' => null,
-                        'idfactura_anular' => null,
-                        'motivo' => null,
-                        'estado_cpe' => null,
-                        'errores' => null,
-                        'nticket' => $baseName,
-                        'idusuario' => $idusuario,
-                        'idarqueocaja' => $arqueo->id,
-                        'vuelto' => $change,
-                        'qr' => null,
-                        'idalmacen' => $idalmacen,
-                    ]);
-
-                    foreach ($cart['products'] as $product) {
-                        $igvFactor = $this->resolveIgvFactor((int) $product['igv']);
-                        $valorUnitario = $igvFactor > 0 ? round(((float) $product['precio_venta'] / $igvFactor), 10) : (float) $product['precio_venta'];
-                        $valorTotal = round($valorUnitario * (float) $product['cantidad'], 2);
-                        $precioTotal = round((float) $product['precio_venta'] * (float) $product['cantidad'], 2);
-                        $igvAmount = round($precioTotal - $valorTotal, 2);
-
-                        DetailBilling::create([
-                            'idfacturacion' => $document->id,
-                            'idproducto' => $product['id'],
-                            'cantidad' => $product['cantidad'],
-                            'descuento' => 0,
-                            'igv' => $igvAmount,
-                            'icbper' => 0,
-                            'factor_icbper' => null,
-                            'cantidad_bolsas' => 0,
-                            'id_afectacion_igv' => (int) ($product['idcodigo_igv'] ?? 1),
-                            'precio_unitario' => $product['precio_venta'],
-                            'valor_unitario' => $valorUnitario,
-                            'valor_total' => $valorTotal,
-                            'precio_total' => $precioTotal,
-                        ]);
-                    }
-
-                    $documentId = $document->id;
-                    $documentKind = 'billing';
-                }
-
-                foreach ($cart['products'] as $product) {
-                    if ((int) $product['opcion'] !== 1) {
-                        continue;
-                    }
-
-                    app(\App\Services\StockService::class)->decrease(
-                        (int) $product['idalmacen'],
-                        (int) $product['id'],
-                        (float) $product['cantidad']
-                    );
-                }
-
-                foreach ($paymentBreakdown as $payment) {
-                    DetailPayment::create([
-                        'idtipo_comprobante' => (int) $documentType->id,
-                        'idfactura' => $documentId,
-                        'idpago' => (int) $payment['id'],
-                        'monto' => number_format((float) $payment['monto'], 2, '.', ''),
-                        'idarqueocaja' => $arqueo->id,
-                        'estado' => 1,
-                    ]);
-                }
-
-                $this->advanceSerieCorrelative($serieModel);
-
-                if ($documentKind === 'billing') {
-                    $this->attemptSunatDispatch($document);
-                }
-
-                if ($documentKind === 'sale_note') {
-                    $ticketUrl = $this->generateSaleNoteTicket($documentId, $baseName);
-                } else {
-                    $ticketUrl = $this->generateBillingTicket($documentId, $baseName);
-                }
-
-                return [
-                    'document_id' => $documentId,
-                    'document_kind' => $documentKind,
-                    'ticket_url' => $ticketUrl,
-                    'base_name' => $baseName,
-                ];
-            });
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => false,
-                'msg' => $e->getMessage() ?: 'No se pudo registrar la venta.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $this->destroy_cart();
-
-        return response()->json([
-            'status' => true,
-            'id' => $result['document_id'],
-            'document_kind' => $result['document_kind'],
-            'ticket_url' => $result['ticket_url'],
-            'pdf' => $result['base_name'] . '.pdf',
-            'type_document' => (int) $documentType->id,
-        ]);
     }
 
-    protected function saveSaleModern(Request $request)
-    {
+    protected function saveSaleModern(Request $request): JsonResponse {
         $validator = Validator::make($request->all(), [
-            'client_id' => 'required|integer|exists:clients,id',
-            'document_type_id' => 'required|integer|exists:type_documents,id',
+            'client_id'         => 'required|integer|exists:clients,id',
+            'document_type_id'  => 'required|integer|exists:type_documents,id',
+            'serie_id'          => 'nullable|integer|exists:series,id',
             'payment_condition' => 'required|string|in:contado,credito',
-            'global_discount' => 'nullable|numeric|min:0',
-            'payments' => 'nullable|array',
-            'payments.*.method_id' => 'required_with:payments|integer|exists:pay_modes,id',
-            'payments.*.amount' => 'required_with:payments|numeric|min:0.01',
-            'installments' => 'nullable|array',
-            'installments.*.amount' => 'required_with:installments|numeric|min:0.01',
-            'installments.*.due_date' => 'required_with:installments|date',
+            'global_discount'   => 'nullable|numeric|min:0',
+            'payments'          => 'nullable|array',
+            'payments.*.method_id'  => 'required_with:payments|integer|exists:pay_modes,id',
+            'payments.*.amount'     => 'required_with:payments|numeric|min:0.01',
+            'installments'          => 'nullable|array',
+            'installments.*.amount'     => 'required_with:installments|numeric|min:0.01',
+            'installments.*.due_date'   => 'required_with:installments|date',
         ], [
-            'client_id.required' => 'Debe seleccionar un cliente.',
-            'document_type_id.required' => 'Debe seleccionar el tipo de comprobante.',
-            'payment_condition.required' => 'Debe seleccionar la condicion de pago.',
-            'payment_condition.in' => 'La condicion de pago no es valida.',
-            'payments.*.method_id.required_with' => 'Debe seleccionar un metodo de pago valido.',
-            'payments.*.amount.required_with' => 'Debe ingresar un monto valido en los pagos.',
-            'installments.*.amount.required_with' => 'Debe ingresar un monto valido para cada cuota.',
+            'client_id.required'                    => 'Debe seleccionar un cliente.',
+            'document_type_id.required'             => 'Debe seleccionar el tipo de comprobante.',
+            'payment_condition.required'            => 'Debe seleccionar la condicion de pago.',
+            'payment_condition.in'                  => 'La condicion de pago no es valida.',
+            'payments.*.method_id.required_with'    => 'Debe seleccionar un metodo de pago valido.',
+            'payments.*.amount.required_with'       => 'Debe ingresar un monto valido en los pagos.',
+            'installments.*.amount.required_with'   => 'Debe ingresar un monto valido para cada cuota.',
             'installments.*.due_date.required_with' => 'Debe indicar el vencimiento de cada cuota.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $validator->errors()->first(),
+                'errors'    => $validator->errors(),
+                'type'      => 'warning',
             ], 422);
         }
 
@@ -940,18 +670,18 @@ class PosController extends Controller
 
         if (empty($cart['products'])) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Ingrese al menos un producto.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Ingrese al menos un producto.',
+                'type'      => 'warning',
             ], 422);
         }
 
         foreach ($cart['products'] as $product) {
             if ((float) $product['precio_venta'] <= 0) {
                 return response()->json([
-                    'status' => false,
-                    'msg' => 'Ingrese un precio valido para ' . $product['descripcion'] . '.',
-                    'type' => 'warning',
+                    'status'    => false,
+                    'msg'       => 'Ingrese un precio valido para ' . $product['descripcion'] . '.',
+                    'type'      => 'warning',
                 ], 422);
             }
         }
@@ -959,39 +689,40 @@ class PosController extends Controller
         $documentType = $this->getPosDocumentTypes()->firstWhere('id', (int) $data['document_type_id']);
         if (! $documentType) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El tipo de comprobante no esta permitido en POS.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El tipo de comprobante no esta permitido en POS.',
+                'type'      => 'warning',
             ], 422);
         }
 
-        $client = Client::with('tipoDocumento')->find((int) $data['client_id']);
-        $clientValidation = $this->validateClientForPosDocument($client, $documentType);
+        $saleBreakdown = $this->buildDiscountedSaleBreakdown($cart, round((float) ($data['global_discount'] ?? 0), 2));
+        $finalTotal = round((float) $saleBreakdown['total'], 2);
+
+        $client             = Client::with('tipoDocumento')->find((int) $data['client_id']);
+        $clientValidation   = $this->validateClientForPosDocument($client, $documentType, $finalTotal);
         if (! $clientValidation['status']) {
             return response()->json([
-                'status' => false,
-                'msg' => $clientValidation['msg'],
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $clientValidation['msg'],
+                'type'      => 'warning',
             ], 422);
         }
 
         $paymentCondition = (string) $data['payment_condition'];
-        $saleBreakdown = $this->buildDiscountedSaleBreakdown($cart, round((float) ($data['global_discount'] ?? 0), 2));
-        $finalTotal = round((float) $saleBreakdown['total'], 2);
 
-        if ($finalTotal <= 0) {
+        if ($finalTotal <= 0 && (float) ($saleBreakdown['gratuita'] ?? 0) <= 0) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El total final de la venta debe ser mayor a cero.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El total final de la venta debe ser mayor a cero.',
+                'type'      => 'warning',
             ], 422);
         }
 
-        $paymentBreakdown = [];
-        $installments = [];
-        $change = 0.00;
-        $creditAmount = 0.00;
-        $firstPayMethodId = 1;
+        $paymentBreakdown   = [];
+        $installments       = [];
+        $change             = 0.00;
+        $creditAmount       = 0.00;
+        $firstPayMethodId   = 1;
 
         if ($paymentCondition === 'contado') {
             $payments = collect($data['payments'] ?? [])->filter(function ($payment) {
@@ -1000,9 +731,9 @@ class PosController extends Controller
 
             if (count($payments) < 1) {
                 return response()->json([
-                    'status' => false,
-                    'msg' => 'Debe agregar al menos un metodo de pago valido.',
-                    'type' => 'warning',
+                    'status'    => false,
+                    'msg'       => 'Debe agregar al menos un metodo de pago valido.',
+                    'type'      => 'warning',
                 ], 422);
             }
 
@@ -1011,9 +742,9 @@ class PosController extends Controller
 
             if ($totalPaid + 0.009 < $finalTotal) {
                 return response()->json([
-                    'status' => false,
-                    'msg' => 'El total pagado no puede ser menor al total de la venta.',
-                    'type' => 'warning',
+                    'status'    => false,
+                    'msg'       => 'El total pagado no puede ser menor al total de la venta.',
+                    'type'      => 'warning',
                 ], 422);
             }
 
@@ -1024,35 +755,35 @@ class PosController extends Controller
 
             if (count($installments) < 1) {
                 return response()->json([
-                    'status' => false,
-                    'msg' => 'Debe registrar al menos una cuota para la venta al credito.',
-                    'type' => 'warning',
+                    'status'    => false,
+                    'msg'       => 'Debe registrar al menos una cuota para la venta al credito.',
+                    'type'      => 'warning',
                 ], 422);
             }
 
             $creditAmount = round((float) collect($installments)->sum('monto'), 2);
             if (abs($creditAmount - $finalTotal) > 0.01) {
                 return response()->json([
-                    'status' => false,
-                    'msg' => 'La suma de cuotas debe coincidir con el total final de la venta.',
-                    'type' => 'warning',
+                    'status'    => false,
+                    'msg'       => 'La suma de cuotas debe coincidir con el total final de la venta.',
+                    'type'      => 'warning',
                 ], 422);
             }
 
             $paymentBreakdown = collect($installments)->map(function ($installment, $index) {
                 return [
-                    'id' => 0,
-                    'descripcion' => 'Cuota ' . ($index + 1),
-                    'monto' => number_format((float) $installment['monto'], 2, '.', ''),
+                    'id'            => 0,
+                    'descripcion'   => 'Cuota ' . ($index + 1),
+                    'monto'         => number_format((float) $installment['monto'], 2, '.', ''),
                 ];
             })->values()->all();
         }
 
-        $idusuario = (int) Auth::user()['id'];
-        $idcaja = (int) Auth::user()['idcaja'];
-        $idalmacen = (int) Auth::user()['idalmacen'];
-        $fechaEmision = date('Y-m-d');
-        $fechaVencimiento = $paymentCondition === 'credito'
+        $idusuario          = (int) Auth::user()['id'];
+        $idcaja             = (int) Auth::user()['idcaja'];
+        $idalmacen          = (int) Auth::user()['idalmacen'];
+        $fechaEmision       = date('Y-m-d');
+        $fechaVencimiento   = $paymentCondition === 'credito'
             ? (collect($installments)->pluck('fecha_vencimiento')->filter()->sort()->first() ?: $fechaEmision)
             : $fechaEmision;
         $hora = date('H:i:s');
@@ -1064,23 +795,45 @@ class PosController extends Controller
 
         if (! $arqueo) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No se encontro una caja abierta para registrar la venta.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No se encontro una caja abierta para registrar la venta.',
+                'type'      => 'warning',
             ], 422);
         }
 
-        $serieModel = Serie::where('idtipo_documento', (int) $documentType->id)
-            ->where('idcaja', $idcaja)
-            ->where('estado', 1)
-            ->orderBy('id')
-            ->first();
+        $serieModel = null;
+        if (! empty($data['serie_id'])) {
+            $serieModel = Serie::where('id', (int) $data['serie_id'])
+                ->where('idtipo_documento', (int) $documentType->id)
+                ->where('estado', 1)
+                ->first();
+        }
+
+        if (! $serieModel) {
+            $serieModel = Serie::where('idtipo_documento', (int) $documentType->id)
+                ->where('estado', 1)
+                ->where(function ($q) use ($idalmacen, $idcaja) {
+                    $q->where('idalmacen', $idalmacen)
+                        ->orWhere(function ($sub) use ($idcaja) {
+                            $sub->whereNull('idalmacen')->where('idcaja', $idcaja);
+                        });
+                })
+                ->orderBy('id')
+                ->first();
+        }
+
+        if (! $serieModel) {
+            $serieModel = Serie::where('idtipo_documento', (int) $documentType->id)
+                ->where('estado', 1)
+                ->orderBy('id')
+                ->first();
+        }
 
         if (! $serieModel) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No existe una serie configurada para ese comprobante en la caja actual.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No existe una serie configurada para ese comprobante en el almacén o caja actual.',
+                'type'      => 'warning',
             ], 422);
         }
 
@@ -1111,38 +864,38 @@ class PosController extends Controller
 
                 if ((string) $documentType->codigo === '02') {
                     $document = SaleNote::create([
-                        'idtipo_comprobante' => (int) $documentType->id,
-                        'serie' => $serieModel->serie,
-                        'correlativo' => $serieModel->correlativo,
-                        'fecha_emision' => $fechaEmision,
-                        'fecha_vencimiento' => $fechaVencimiento,
-                        'hora' => $hora,
-                        'idcliente' => (int) $client->id,
-                        'modo_pago' => $paymentCondition === 'credito' ? 2 : 1,
-                        'subtotal' => $saleBreakdown['subtotal'],
-                        'igv' => $saleBreakdown['igv'],
-                        'total' => $saleBreakdown['total'],
-                        'monto_credito' => $paymentCondition === 'credito' ? $creditAmount : 0,
-                        'cuotas' => $paymentCondition === 'credito' ? $installments : null,
-                        'payment_breakdown' => $paymentBreakdown,
-                        'observaciones' => '',
-                        'estado' => $paymentCondition === 'credito' ? 0 : 1,
-                        'idusuario' => $idusuario,
-                        'idarqueocaja' => $arqueo->id,
-                        'vuelto' => $change,
+                        'idtipo_comprobante'    => (int) $documentType->id,
+                        'serie'                 => $serieModel->serie,
+                        'correlativo'           => $serieModel->correlativo,
+                        'fecha_emision'         => $fechaEmision,
+                        'fecha_vencimiento'     => $fechaVencimiento,
+                        'hora'                  => $hora,
+                        'idcliente'             => (int) $client->id,
+                        'modo_pago'             => $paymentCondition === 'credito' ? 2 : 1,
+                        'subtotal'              => $saleBreakdown['subtotal'],
+                        'igv'                   => $saleBreakdown['igv'],
+                        'total'                 => $saleBreakdown['total'],
+                        'monto_credito'         => $paymentCondition === 'credito' ? $creditAmount : 0,
+                        'cuotas'                => $paymentCondition === 'credito' ? $installments : null,
+                        'payment_breakdown'     => $paymentBreakdown,
+                        'observaciones'         => '',
+                        'estado'                => $paymentCondition === 'credito' ? 0 : 1,
+                        'idusuario'             => $idusuario,
+                        'idarqueocaja'          => $arqueo->id,
+                        'vuelto'                => $change,
                     ]);
 
                     foreach ($saleBreakdown['items'] as $product) {
                         DetailSaleNote::create([
-                            'idnotaventa' => $document->id,
-                            'idproducto' => $product['id'],
-                            'cantidad' => $product['cantidad'],
-                            'igv' => $product['igv'],
-                            'precio_unitario' => $product['precio_unitario_descuento'],
-                            'precio_total' => $product['precio_total_descuento'],
-                            'descuento' => $product['descuento'],
-                            'opcion' => $product['opcion'],
-                            'idalmacen' => $product['idalmacen'],
+                            'idnotaventa'       => $document->id,
+                            'idproducto'        => $product['id'],
+                            'cantidad'          => $product['cantidad'],
+                            'igv'               => $product['igv_monto'] ?? 0,
+                            'precio_unitario'   => $product['precio_unitario_descuento'],
+                            'precio_total'      => $product['precio_total_descuento'],
+                            'descuento'         => $product['descuento'],
+                            'opcion'            => $product['opcion'],
+                            'idalmacen'         => $product['idalmacen'] ?? $idalmacen,
                         ]);
                     }
 
@@ -1150,65 +903,65 @@ class PosController extends Controller
                     $documentKind = 'sale_note';
                 } else {
                     $document = Billing::create([
-                        'idtipo_comprobante' => (int) $documentType->id,
-                        'serie' => $serieModel->serie,
-                        'correlativo' => $serieModel->correlativo,
-                        'fecha_emision' => $fechaEmision,
-                        'fecha_vencimiento' => $fechaVencimiento,
-                        'hora' => $hora,
-                        'idcliente' => (int) $client->id,
-                        'idmoneda' => 1,
-                        'idpago' => $firstPayMethodId,
-                        'modo_pago' => $paymentCondition === 'credito' ? 2 : 1,
-                        'sunat_forma_pago' => $paymentCondition === 'credito' ? 'Credito' : 'Contado',
-                        'exonerada' => 0,
-                        'inafecta' => 0,
-                        'gravada' => $saleBreakdown['subtotal'],
-                        'anticipo' => 0,
-                        'igv' => $saleBreakdown['igv'],
-                        'icbper' => 0,
-                        'gratuita' => 0,
-                        'otros_cargos' => 0,
-                        'total' => $saleBreakdown['total'],
-                        'monto_credito' => $paymentCondition === 'credito' ? $creditAmount : 0,
-                        'cuotas' => $paymentCondition === 'credito' ? $installments : null,
-                        'payment_breakdown' => $paymentBreakdown,
-                        'observaciones' => '',
-                        'cdr' => null,
-                        'anulado' => false,
-                        'id_tipo_nota_credito' => null,
-                        'idfactura_anular' => null,
-                        'motivo' => null,
-                        'estado_cpe' => null,
-                        'errores' => null,
-                        'nticket' => $baseName,
-                        'idusuario' => $idusuario,
-                        'idarqueocaja' => $arqueo->id,
-                        'vuelto' => $change,
-                        'qr' => null,
-                        'idalmacen' => $idalmacen,
+                        'idtipo_comprobante'    => (int) $documentType->id,
+                        'serie'                 => $serieModel->serie,
+                        'correlativo'           => $serieModel->correlativo,
+                        'fecha_emision'         => $fechaEmision,
+                        'fecha_vencimiento'     => $fechaVencimiento,
+                        'hora'                  => $hora,
+                        'idcliente'             => (int) $client->id,
+                        'idmoneda'              => 1,
+                        'idpago'                => $firstPayMethodId,
+                        'modo_pago'             => $paymentCondition === 'credito' ? 2 : 1,
+                        'sunat_forma_pago'      => $paymentCondition === 'credito' ? 'Credito' : 'Contado',
+                        'exonerada'             => $saleBreakdown['exonerada'] ?? 0,
+                        'inafecta'              => $saleBreakdown['inafecta'] ?? 0,
+                        'gravada'               => $saleBreakdown['gravada'] ?? $saleBreakdown['subtotal'],
+                        'anticipo'              => 0,
+                        'igv'                   => $saleBreakdown['igv'],
+                        'icbper'                => 0,
+                        'gratuita'              => $saleBreakdown['gratuita'] ?? 0,
+                        'otros_cargos'          => 0,
+                        'total'                 => $saleBreakdown['total'],
+                        'monto_credito'         => $paymentCondition === 'credito' ? $creditAmount : 0,
+                        'cuotas'                => $paymentCondition === 'credito' ? $installments : null,
+                        'payment_breakdown'     => $paymentBreakdown,
+                        'observaciones'         => '',
+                        'cdr'                   => null,
+                        'anulado'               => false,
+                        'id_tipo_nota_credito'  => null,
+                        'idfactura_anular'      => null,
+                        'motivo'                => null,
+                        'estado_cpe'            => null,
+                        'errores'               => null,
+                        'nticket'               => $baseName,
+                        'idusuario'             => $idusuario,
+                        'idarqueocaja'          => $arqueo->id,
+                        'vuelto'                => $change,
+                        'qr'                    => null,
+                        'idalmacen'             => $idalmacen,
                     ]);
 
                     foreach ($saleBreakdown['items'] as $product) {
                         DetailBilling::create([
-                            'idfacturacion' => $document->id,
-                            'idproducto' => $product['id'],
-                            'cantidad' => $product['cantidad'],
-                            'descuento' => $product['descuento'],
-                            'igv' => $product['igv_monto'],
-                            'icbper' => 0,
-                            'factor_icbper' => null,
-                            'cantidad_bolsas' => 0,
-                            'id_afectacion_igv' => (int) ($product['idcodigo_igv'] ?? 1),
-                            'precio_unitario' => $product['precio_unitario_descuento'],
-                            'valor_unitario' => $product['valor_unitario_descuento'],
-                            'valor_total' => $product['valor_total_descuento'],
-                            'precio_total' => $product['precio_total_descuento'],
+                            'idfacturacion'     => $document->id,
+                            'idproducto'        => $product['id'],
+                            'cantidad'          => $product['cantidad'],
+                            'descuento'         => $product['descuento'],
+                            'igv'               => $product['igv_monto'],
+                            'icbper'            => 0,
+                            'factor_icbper'     => null,
+                            'cantidad_bolsas'   => 0,
+                            'id_afectacion_igv' => (int) ($product['id_afectacion_igv'] ?? $product['idcodigo_igv'] ?? 1),
+                            'precio_unitario'   => $product['precio_unitario_descuento'],
+                            'valor_unitario'    => $product['valor_unitario_descuento'],
+                            'valor_total'       => $product['valor_total_descuento'],
+                            'precio_total'      => $product['precio_total_descuento'],
                         ]);
                     }
 
-                    $documentId = $document->id;
-                    $documentKind = 'billing';
+                    $documentId     = $document->id;
+                    $documentKind   = 'billing';
                 }
 
                 foreach ($cart['products'] as $product) {
@@ -1216,10 +969,13 @@ class PosController extends Controller
                         continue;
                     }
 
-                    app(\App\Services\StockService::class)->decrease(
-                        (int) $product['idalmacen'],
+                    $itemWarehouseId = ! empty($product['idalmacen']) ? (int) $product['idalmacen'] : $idalmacen;
+
+                    app(StockService::class)->decrease(
+                        $itemWarehouseId,
                         (int) $product['id'],
-                        (float) $product['cantidad']
+                        (float) $product['cantidad'],
+                        ['prevent_negative' => true]
                     );
                 }
 
@@ -1227,11 +983,11 @@ class PosController extends Controller
                     foreach ($paymentBreakdown as $payment) {
                         DetailPayment::create([
                             'idtipo_comprobante' => (int) $documentType->id,
-                            'idfactura' => $documentId,
-                            'idpago' => (int) $payment['id'],
-                            'monto' => number_format((float) $payment['monto'], 2, '.', ''),
-                            'idarqueocaja' => $arqueo->id,
-                            'estado' => 1,
+                            'idfactura'          => $documentId,
+                            'idpago'             => (int) $payment['id'],
+                            'monto'              => number_format((float) $payment['monto'], 2, '.', ''),
+                            'idarqueocaja'       => $arqueo->id,
+                            'estado'             => 1,
                         ]);
                     }
                 }
@@ -1248,63 +1004,151 @@ class PosController extends Controller
                     : $this->resolveBillingSuccessMessage($document);
 
                 return [
-                    'document_id' => $documentId,
-                    'document_kind' => $documentKind,
-                    'ticket_url' => $documentKind === 'sale_note'
+                    'document'          => $document,
+                    'document_id'       => $documentId,
+                    'document_kind'     => $documentKind,
+                    'payment_breakdown' => $paymentBreakdown,
+                    'ticket_url'        => $documentKind === 'sale_note'
                         ? $this->generateSaleNoteTicket($documentId, $baseName)
                         : $this->generateBillingTicket($documentId, $baseName),
-                    'base_name' => $baseName,
-                    'msg' => $successMessage,
+                    'base_name'         => $baseName,
+                    'msg'               => $successMessage,
                 ];
             });
         } catch (\Throwable $e) {
             return response()->json([
-                'status' => false,
-                'msg' => $e->getMessage() ?: 'No se pudo registrar la venta.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $e->getMessage() ?: 'No se pudo registrar la venta.',
+                'type'      => 'warning',
             ], 422);
         }
+
+        event(new SaleCompleted(
+            sale: $result['document'],
+            documentKind: $result['document_kind'],
+            paymentBreakdown: $result['payment_breakdown'],
+            warehouseId: $idalmacen,
+            archingCashId: (int) $arqueo->id,
+            extra: [
+                'user_id'           => $idusuario,
+                'cash_id'           => $idcaja,
+                'payment_condition' => $paymentCondition,
+            ]
+        ));
 
         $this->destroy_cart();
 
         return response()->json([
-            'status' => true,
-            'id' => $result['document_id'],
+            'status'        => true,
+            'id'            => $result['document_id'],
             'document_kind' => $result['document_kind'],
-            'ticket_url' => $result['ticket_url'],
-            'pdf' => $result['base_name'] . '.pdf',
-            'msg' => $result['msg'] ?? 'Venta registrada correctamente.',
+            'ticket_url'    => $result['ticket_url'],
+            'pdf'           => $result['base_name'] . '.pdf',
+            'msg'           => $result['msg'] ?? 'Venta registrada correctamente.',
             'type_document' => (int) $documentType->id,
         ]);
     }
 
-    protected function validateClientForPosDocument(?Client $client, TypeDocument $documentType): array
-    {
+    protected function validateClientForPosDocument(?Client $client, TypeDocument $documentType, float $total = 0.0): array {
         if (! $client) {
             return ['status' => false, 'msg' => 'Debe seleccionar un cliente valido.'];
         }
 
-        $documentCode = trim((string) $documentType->codigo);
+        $documentCode       = trim((string) $documentType->codigo);
         $clientDocumentCode = trim((string) optional($client->tipoDocumento)->codigo);
-        $documentNumber = preg_replace('/\s+/', '', (string) $client->nro_documento);
+        $documentNumber     = preg_replace('/\s+/', '', (string) $client->nro_documento);
 
         if ($documentCode === '02') {
             return ['status' => true];
         }
 
-        if ($documentCode === '01' && ($clientDocumentCode !== '6' || ! preg_match('/^\d{11}$/', $documentNumber))) {
-            return ['status' => false, 'msg' => 'Para emitir factura, el cliente debe tener RUC valido.'];
+        if ($documentCode === '01') {
+            if ($clientDocumentCode !== '6' || ! preg_match('/^\d{11}$/', $documentNumber)) {
+                return ['status' => false, 'msg' => 'Para emitir factura, el cliente debe tener RUC valido (11 dígitos).'];
+            }
+
+            if (empty(trim((string) $client->nombres))) {
+                return ['status' => false, 'msg' => 'Para emitir factura, el cliente debe tener registrada su razón social.'];
+            }
+
+            return ['status' => true];
         }
 
-        if ($documentCode === '03' && ($documentNumber === '' || $clientDocumentCode === '')) {
-            return ['status' => false, 'msg' => 'Para emitir boleta, el cliente debe tener un documento registrado.'];
+        if ($documentCode === '03') {
+            $isAnonymous = $this->isAnonymousClient($client);
+            $anonymousLimit = (float) config('inventory.pos_boleta_anonymous_limit', 700.00);
+
+            if ($isAnonymous) {
+                if ($total > $anonymousLimit) {
+                    return [
+                        'status' => false,
+                        'msg' => 'Para boletas con importe mayor a ' . number_format($anonymousLimit, 2) . ', debe identificar al cliente con su documento de identidad (DNI o RUC).',
+                    ];
+                }
+
+                return ['status' => true];
+            }
+
+            if ($documentNumber === '' || $clientDocumentCode === '') {
+                return ['status' => false, 'msg' => 'Para emitir boleta, el cliente debe tener un documento registrado.'];
+            }
+
+            return ['status' => true];
         }
 
         return ['status' => true];
     }
 
-    protected function buildInstallmentsBreakdown(array $installments): array
-    {
+    protected function isAnonymousClient(?Client $client): bool {
+        if (! $client) {
+            return true;
+        }
+
+        $docNumber = preg_replace('/\s+/', '', (string) $client->nro_documento);
+        $docCode = trim((string) optional($client->tipoDocumento)->codigo);
+        $clientName = mb_strtoupper(trim((string) $client->nombres));
+
+        if ($docNumber === '00000000' || $docNumber === '' || $docNumber === '0') {
+            return true;
+        }
+
+        if ($docCode === '0' || (int) $client->iddoc === 4) {
+            return true;
+        }
+
+        if (str_contains($clientName, 'VARIOS') || str_contains($clientName, 'ANONIMO') || str_contains($clientName, 'GENERAL')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function resolveTaxAffection(mixed $idcodigoIgv): array {
+        static $affections = null;
+        static $affectionsByCode = null;
+
+        if ($affections === null) {
+            $all = IgvTypeAffection::all();
+            $affections = $all->keyBy('id');
+            $affectionsByCode = $all->keyBy('codigo');
+        }
+
+        $affection = null;
+        if (! empty($idcodigoIgv)) {
+            $affection = $affections->get($idcodigoIgv) ?? $affectionsByCode->get((string) $idcodigoIgv);
+        }
+
+        $code = $affection ? trim((string) $affection->codigo) : '10';
+        $id = $affection ? (int) $affection->id : ($affectionsByCode->get('10')?->id ?? 1);
+
+        return [
+            'id' => $id,
+            'codigo' => $code,
+            'affection' => $affection,
+        ];
+    }
+
+    protected function buildInstallmentsBreakdown(array $installments): array {
         return collect($installments)->map(function ($installment, $index) {
             return [
                 'nro' => $index + 1,
@@ -1316,11 +1160,10 @@ class PosController extends Controller
         })->values()->all();
     }
 
-    protected function buildDiscountedSaleBreakdown(array $cart, float $globalDiscount): array
-    {
-        $items = collect($cart['products'])->map(function ($product) {
-            $quantity = max(1, (float) $product['cantidad']);
-            $baseTotal = round((float) $product['precio_venta'] * $quantity, 2);
+    protected function buildDiscountedSaleBreakdown(array $cart, float $globalDiscount): array {
+        $items  = collect($cart['products'])->map(function ($product) {
+            $quantity   = max(1, (float) $product['cantidad']);
+            $baseTotal  = round((float) $product['precio_venta'] * $quantity, 2);
 
             return array_merge($product, [
                 'cantidad' => $quantity,
@@ -1328,9 +1171,9 @@ class PosController extends Controller
             ]);
         })->values();
 
-        $grossTotal = round((float) $items->sum('precio_total_base'), 2);
-        $discountToApply = round(min(max($globalDiscount, 0), $grossTotal), 2);
-        $runningDiscount = $discountToApply;
+        $grossTotal         = round((float) $items->sum('precio_total_base'), 2);
+        $discountToApply    = round(min(max($globalDiscount, 0), $grossTotal), 2);
+        $runningDiscount    = $discountToApply;
 
         $mapped = $items->map(function ($product, $index) use ($items, $grossTotal, $discountToApply, &$runningDiscount) {
             $isLast = $index === ($items->count() - 1);
@@ -1339,38 +1182,98 @@ class PosController extends Controller
                 ? round($runningDiscount, 2)
                 : round(($grossTotal > 0 ? ($baseTotal / $grossTotal) : 0) * $discountToApply, 2);
 
-            $runningDiscount = round($runningDiscount - $lineDiscount, 2);
-            $lineTotal = round(max($baseTotal - $lineDiscount, 0), 2);
-            $igvFactor = $this->resolveIgvFactor((int) $product['igv']);
-            $valorTotal = $igvFactor > 0 ? round($lineTotal / $igvFactor, 2) : $lineTotal;
-            $igvAmount = round($lineTotal - $valorTotal, 2);
-            $unitGross = round($lineTotal / max((float) $product['cantidad'], 1), 2);
-            $unitNet = $igvFactor > 0 ? round($unitGross / $igvFactor, 10) : $unitGross;
+            $runningDiscount    = round($runningDiscount - $lineDiscount, 2);
+            $lineTotal          = round(max($baseTotal - $lineDiscount, 0), 2);
+            $quantity           = max((float) $product['cantidad'], 1);
+
+            $taxAffection   = $this->resolveTaxAffection($product['idcodigo_igv'] ?? null);
+            $code           = $taxAffection['codigo'];
+            $affectionId    = $taxAffection['id'];
+
+            // 10: Gravado (18% IGV)
+            // 20: Exonerado (0% IGV)
+            // 30: Inafecto (0% IGV)
+            // 40: Exportacion (0% IGV)
+            // 11-16, 21, 31-37: Gratuita (0 costo al cliente, valor referencial)
+            $isGratuita     = in_array($code, ['11', '12', '13', '14', '15', '16', '21', '31', '32', '33', '34', '35', '36', '37'], true);
+            $isExonerada    = ($code === '20');
+            $isInafecta     = in_array($code, ['30', '40'], true);
+
+            if ($isGratuita) {
+                $taxStatus          = 'gratuita';
+                $valorReferencial   = $lineTotal;
+                $lineTotalFinal     = 0.00;
+                $valorTotal         = 0.00;
+                $igvAmount          = 0.00;
+                $unitGross          = 0.00;
+                $unitNet            = 0.00;
+            } elseif ($isExonerada) {
+                $taxStatus          = 'exonerada';
+                $valorReferencial   = 0.00;
+                $lineTotalFinal     = $lineTotal;
+                $valorTotal         = $lineTotal;
+                $igvAmount          = 0.00;
+                $unitGross          = round($lineTotal / $quantity, 2);
+                $unitNet            = $unitGross;
+            } elseif ($isInafecta) {
+                $taxStatus          = 'inafecta';
+                $valorReferencial   = 0.00;
+                $lineTotalFinal     = $lineTotal;
+                $valorTotal         = $lineTotal;
+                $igvAmount          = 0.00;
+                $unitGross          = round($lineTotal / $quantity, 2);
+                $unitNet            = $unitGross;
+            } else {
+                // Default: 10 Gravado
+                $taxStatus          = 'gravada';
+                $valorReferencial   = 0.00;
+                $lineTotalFinal     = $lineTotal;
+                $igvFactor          = 1.18;
+                $valorTotal         = round($lineTotal / $igvFactor, 2);
+                $igvAmount          = round($lineTotal - $valorTotal, 2);
+                $unitGross          = round($lineTotal / $quantity, 2);
+                $unitNet            = round($unitGross / $igvFactor, 10);
+            }
 
             return array_merge($product, [
-                'descuento' => number_format($lineDiscount, 2, '.', ''),
-                'precio_total_descuento' => number_format($lineTotal, 2, '.', ''),
+                'id_afectacion_igv'         => $affectionId,
+                'codigo_afectacion'         => $code,
+                'tax_status'                => $taxStatus,
+                'valor_referencial'         => $valorReferencial,
+                'descuento'                 => number_format($lineDiscount, 2, '.', ''),
+                'precio_total_descuento'    => number_format($lineTotalFinal, 2, '.', ''),
                 'precio_unitario_descuento' => number_format($unitGross, 2, '.', ''),
-                'valor_total_descuento' => number_format($valorTotal, 2, '.', ''),
-                'valor_unitario_descuento' => number_format($unitNet, 10, '.', ''),
-                'igv_monto' => number_format($igvAmount, 2, '.', ''),
+                'valor_total_descuento'     => number_format($valorTotal, 2, '.', ''),
+                'valor_unitario_descuento'  => number_format($unitNet, 10, '.', ''),
+                'igv_monto'                 => number_format($igvAmount, 2, '.', ''),
             ]);
         });
 
+        $gravada    = round((float) $mapped->where('tax_status', 'gravada')->sum('valor_total_descuento'), 2);
+        $exonerada  = round((float) $mapped->where('tax_status', 'exonerada')->sum('valor_total_descuento'), 2);
+        $inafecta   = round((float) $mapped->where('tax_status', 'inafecta')->sum('valor_total_descuento'), 2);
+        $gratuita   = round((float) $mapped->where('tax_status', 'gratuita')->sum('valor_referencial'), 2);
+        $igv        = round((float) $mapped->sum('igv_monto'), 2);
+        $total      = round((float) $mapped->sum('precio_total_descuento'), 2);
+        $subtotal   = round($gravada + $exonerada + $inafecta, 2);
+
         return [
-            'discount' => number_format($discountToApply, 2, '.', ''),
-            'subtotal' => number_format((float) $mapped->sum('valor_total_descuento'), 2, '.', ''),
-            'igv' => number_format((float) $mapped->sum('igv_monto'), 2, '.', ''),
-            'total' => number_format((float) $mapped->sum('precio_total_descuento'), 2, '.', ''),
-            'items' => $mapped->all(),
+            'discount'  => number_format($discountToApply, 2, '.', ''),
+            'subtotal'  => number_format($subtotal, 2, '.', ''),
+            'gravada'   => number_format($gravada, 2, '.', ''),
+            'exonerada' => number_format($exonerada, 2, '.', ''),
+            'inafecta'  => number_format($inafecta, 2, '.', ''),
+            'gratuita'  => number_format($gratuita, 2, '.', ''),
+            'igv'       => number_format($igv, 2, '.', ''),
+            'total'     => number_format($total, 2, '.', ''),
+            'items'     => $mapped->all(),
         ];
     }
 
-    protected function resolveBillingSuccessMessage(Billing $billing): string
-    {
+    protected function resolveBillingSuccessMessage(Billing $billing): string {
         $label = match ((string) optional($billing->typeDocument)->codigo) {
-            '01' => 'La factura',
-            '03' => 'La boleta',
+            '01'    => 'La factura',
+            '03'    => 'La boleta',
             default => 'El comprobante',
         };
 
@@ -1387,8 +1290,7 @@ class PosController extends Controller
         return $label . ' ' . $document . ' ha sido registrada correctamente.';
     }
 
-    protected function getPosDocumentTypes()
-    {
+    protected function getPosDocumentTypes() {
         return TypeDocument::query()
             ->where('estado', 1)
             ->whereIn('codigo', ['02', '03', '01'])
@@ -1396,8 +1298,7 @@ class PosController extends Controller
             ->get(['id', 'codigo', 'descripcion']);
     }
 
-    protected function buildPaymentBreakdown(array $payments): array
-    {
+    protected function buildPaymentBreakdown(array $payments): array {
         $payModes = PayMode::query()
             ->whereIn('id', collect($payments)->pluck('method_id')->map(fn ($id) => (int) $id)->all())
             ->get(['id', 'descripcion'])
@@ -1407,22 +1308,25 @@ class PosController extends Controller
             $payMode = $payModes->get((int) $payment['method_id']);
 
             return [
-                'id' => (int) $payment['method_id'],
-                'descripcion' => (string) ($payMode->descripcion ?? 'Pago'),
-                'monto' => number_format((float) $payment['amount'], 2, '.', ''),
+                'id'            => (int) $payment['method_id'],
+                'descripcion'   => (string) ($payMode->descripcion ?? 'Pago'),
+                'monto'         => number_format((float) $payment['amount'], 2, '.', ''),
             ];
         })->values()->all();
     }
 
-    protected function validateStockBeforeSale(array $cart): void
-    {
+    protected function validateStockBeforeSale(array $cart): void {
+        $defaultWarehouseId = (int) (Auth::user()['idalmacen'] ?? 1);
+
         foreach ($cart['products'] as $product) {
             if ((int) $product['opcion'] !== 1) {
                 continue;
             }
 
+            $warehouseId = ! empty($product['idalmacen']) ? (int) $product['idalmacen'] : $defaultWarehouseId;
+
             $registro = StockProduct::where('idproducto', $product['id'])
-                ->where('idalmacen', $product['idalmacen'])
+                ->where('idalmacen', $warehouseId)
                 ->lockForUpdate()
                 ->first();
 
@@ -1436,8 +1340,7 @@ class PosController extends Controller
         }
     }
 
-    protected function advanceSerieCorrelative(Serie $serieModel): void
-    {
+    protected function advanceSerieCorrelative(Serie $serieModel): void {
         $ultimoCorrelativo = (int) $serieModel->correlativo + 1;
         $serieModel->update([
             'correlativo' => str_pad((string) $ultimoCorrelativo, 8, '0', STR_PAD_LEFT),
@@ -1453,12 +1356,11 @@ class PosController extends Controller
         };
     }
 
-    protected function generateSaleNoteTicket(int $id, string $name): string
-    {
-        $saleNote = SaleNote::with(['cliente.tipoDocumento', 'usuario'])->findOrFail($id);
-        $typeDocument = TypeDocument::find($saleNote->idtipo_comprobante);
-        $business = Business::find(1);
-        $payments = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
+    protected function generateSaleNoteTicket(int $id, string $name): string {
+        $saleNote       = SaleNote::with(['cliente.tipoDocumento', 'usuario'])->findOrFail($id);
+        $typeDocument   = TypeDocument::find($saleNote->idtipo_comprobante);
+        $business       = Business::find(1);
+        $payments       = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
             ->join('pay_modes', 'detail_payments.idpago', '=', 'pay_modes.id')
             ->where('idfactura', $saleNote->id)
             ->where('idtipo_comprobante', $saleNote->idtipo_comprobante)
@@ -1468,31 +1370,31 @@ class PosController extends Controller
             ->where('idnotaventa', $saleNote->id)
             ->get();
 
-        $warehouse = Warehouse::find((int) Auth::user()->idalmacen);
-        $formatter = new NumeroALetras();
-        $data = [
-            'name' => $name,
-            'business' => $this->resolveBusinessForWarehouse($business, $warehouse),
-            'document_label' => $typeDocument?->descripcion ?? 'NOTA DE VENTA',
-            'document_number' => $saleNote->serie . ' - ' . $saleNote->correlativo,
-            'customer_name' => $saleNote->cliente?->nombres ?? 'Cliente',
-            'customer_document_label' => $saleNote->cliente?->tipoDocumento?->descripcion ?? 'Documento',
-            'customer_document_value' => $saleNote->cliente?->nro_documento ?? '-',
-            'customer_address' => $saleNote->cliente?->direccion ?? '-',
-            'issued_at' => date('d/m/Y', strtotime((string) $saleNote->fecha_emision)) . ' ' . $saleNote->hora,
-            'seller' => mb_strtoupper((string) ($saleNote->usuario->user ?? '')),
-            'items' => $details,
-            'subtotal' => $saleNote->subtotal,
-            'igv' => $saleNote->igv,
-            'total' => $saleNote->total,
-            'discount_total' => $details->sum('descuento'),
-            'amount_in_words' => $formatter->toWords((float) $saleNote->total, 2),
-            'payment_modes' => $payments->count() ? $payments : collect($saleNote->payment_breakdown ?? []),
-            'count_payment' => $payments->count() ?: count($saleNote->payment_breakdown ?? []),
-            'signo' => $this->signo_pais(),
-            'moneda' => $this->moneda_pais(),
-            'payment_condition_label' => (int) ($saleNote->modo_pago ?? 1) === 2 ? 'Credito' : 'Contado',
-            'installments' => collect($saleNote->cuotas ?? []),
+        $warehouse  = Warehouse::find((int) Auth::user()->idalmacen);
+        $formatter  = new NumeroALetras();
+        $data       = [
+            'name'                      => $name,
+            'business'                  => $this->resolveBusinessForWarehouse($business, $warehouse),
+            'document_label'            => $typeDocument?->descripcion ?? 'NOTA DE VENTA',
+            'document_number'           => $saleNote->serie . ' - ' . $saleNote->correlativo,
+            'customer_name'             => $saleNote->cliente?->nombres ?? 'Cliente',
+            'customer_document_label'   => $saleNote->cliente?->tipoDocumento?->descripcion ?? 'Documento',
+            'customer_document_value'   => $saleNote->cliente?->nro_documento ?? '-',
+            'customer_address'          => $saleNote->cliente?->direccion ?? '-',
+            'issued_at'                 => date('d/m/Y', strtotime((string) $saleNote->fecha_emision)) . ' ' . $saleNote->hora,
+            'seller'                    => mb_strtoupper((string) ($saleNote->usuario->user ?? '')),
+            'items'                     => $details,
+            'subtotal'                  => $saleNote->subtotal,
+            'igv'                       => $saleNote->igv,
+            'total'                     => $saleNote->total,
+            'discount_total'            => $details->sum('descuento'),
+            'amount_in_words'           => $formatter->toWords((float) $saleNote->total, 2),
+            'payment_modes'             => $payments->count() ? $payments : collect($saleNote->payment_breakdown ?? []),
+            'count_payment'             => $payments->count() ?: count($saleNote->payment_breakdown ?? []),
+            'signo'                     => $this->signo_pais(),
+            'moneda'                    => $this->moneda_pais(),
+            'payment_condition_label'   => (int) ($saleNote->modo_pago ?? 1) === 2 ? 'Credito' : 'Contado',
+            'installments'              => collect($saleNote->cuotas ?? []),
         ];
 
         return $this->savePosTicket('sale-notes/ticket', $name, $data);
@@ -1500,9 +1402,9 @@ class PosController extends Controller
 
     protected function generateBillingTicket(int $id, string $name): string
     {
-        $billing = Billing::with(['customer.tipoDocumento', 'user', 'currency', 'typeDocument', 'warehouse'])->findOrFail($id);
-        $business = Business::find(1);
-        $payments = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
+        $billing    = Billing::with(['customer.tipoDocumento', 'user', 'currency', 'typeDocument', 'warehouse'])->findOrFail($id);
+        $business   = Business::find(1);
+        $payments   = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
             ->join('pay_modes', 'detail_payments.idpago', '=', 'pay_modes.id')
             ->where('idfactura', $billing->id)
             ->where('idtipo_comprobante', $billing->idtipo_comprobante)
@@ -1515,49 +1417,47 @@ class PosController extends Controller
         $formatter = new NumeroALetras();
         $qrImage = $this->ensureBillingQrImage($billing);
         $data = [
-            'name' => $name,
-            'business' => $this->resolveBusinessForWarehouse($business, $billing->warehouse),
-            'document_label' => $billing->typeDocument?->descripcion ?? 'COMPROBANTE',
-            'document_number' => $billing->serie . ' - ' . $billing->correlativo,
-            'customer_name' => $billing->customer?->nombres ?? 'Cliente',
-            'customer_document_label' => $billing->customer?->tipoDocumento?->descripcion ?? 'Documento',
-            'customer_document_value' => $billing->customer?->nro_documento ?? '-',
-            'customer_address' => $billing->customer?->direccion ?? '-',
-            'issued_at' => date('d/m/Y', strtotime((string) $billing->fecha_emision)) . ' ' . $billing->hora,
-            'seller' => mb_strtoupper((string) ($billing->user->user ?? '')),
-            'items' => $details,
-            'subtotal' => $billing->gravada,
-            'igv' => $billing->igv,
-            'total' => $billing->total,
-            'discount_total' => $details->sum('descuento'),
-            'amount_in_words' => $formatter->toWords((float) $billing->total, 2),
-            'payment_modes' => $payments->count() ? $payments : collect($billing->payment_breakdown ?? []),
-            'count_payment' => $payments->count() ?: count($billing->payment_breakdown ?? []),
-            'signo' => $this->signo_pais(),
-            'moneda' => $this->moneda_pais(),
-            'qr_image_path' => $qrImage,
-            'show_qr' => true,
-            'payment_condition_label' => (int) ($billing->modo_pago ?? 1) === 2 ? 'Credito' : 'Contado',
-            'installments' => collect($billing->cuotas ?? []),
+            'name'                      => $name,
+            'business'                  => $this->resolveBusinessForWarehouse($business, $billing->warehouse),
+            'document_label'            => $billing->typeDocument?->descripcion ?? 'COMPROBANTE',
+            'document_number'           => $billing->serie . ' - ' . $billing->correlativo,
+            'customer_name'             => $billing->customer?->nombres ?? 'Cliente',
+            'customer_document_label'   => $billing->customer?->tipoDocumento?->descripcion ?? 'Documento',
+            'customer_document_value'   => $billing->customer?->nro_documento ?? '-',
+            'customer_address'          => $billing->customer?->direccion ?? '-',
+            'issued_at'                 => date('d/m/Y', strtotime((string) $billing->fecha_emision)) . ' ' . $billing->hora,
+            'seller'                    => mb_strtoupper((string) ($billing->user->user ?? '')),
+            'items'                     => $details,
+            'subtotal'                  => $billing->gravada,
+            'igv'                       => $billing->igv,
+            'total'                     => $billing->total,
+            'discount_total'            => $details->sum('descuento'),
+            'amount_in_words'           => $formatter->toWords((float) $billing->total, 2),
+            'payment_modes'             => $payments->count() ? $payments : collect($billing->payment_breakdown ?? []),
+            'count_payment'             => $payments->count() ?: count($billing->payment_breakdown ?? []),
+            'signo'                     => $this->signo_pais(),
+            'moneda'                    => $this->moneda_pais(),
+            'qr_image_path'             => $qrImage,
+            'show_qr'                   => true,
+            'payment_condition_label'   => (int) ($billing->modo_pago ?? 1) === 2 ? 'Credito' : 'Contado',
+            'installments'              => collect($billing->cuotas ?? []),
         ];
 
         return $this->savePosTicket('billings/ticket', $name, $data);
     }
 
-    protected function savePosTicket(string $folder, string $name, array $data): string
-    {
-        $customPaper = [0, 0, 226.77, 900.00];
-        $path = public_path('files/' . $folder);
+    protected function savePosTicket(string $folder, string $name, array $data): string {
+        $customPaper    = [0, 0, 226.77, 900.00];
+        $path           = public_path('files/' . $folder);
         File::ensureDirectoryExists($path);
 
-        $pdf = Pdf::loadView('admin.pos.ticket_document', $data)->setPaper($customPaper, 'portrait');
+        $pdf            = Pdf::loadView('admin.pos.ticket_document', $data)->setPaper($customPaper, 'portrait');
         $pdf->save($path . DIRECTORY_SEPARATOR . $name . '.pdf');
 
         return asset('files/' . $folder . '/' . $name . '.pdf');
     }
 
-    protected function ensureBillingQrImage(Billing $billing): ?string
-    {
+    protected function ensureBillingQrImage(Billing $billing): ?string {
         try {
             $payload = app(BillingPayloadBuilder::class)->build($billing);
         } catch (\Throwable $exception) {
@@ -1608,14 +1508,14 @@ class PosController extends Controller
             return null;
         }
 
-        $documentBusiness = clone $business;
-        $documentBusiness->direccion_principal = $business->direccion;
-        $documentBusiness->direccion_sucursal = null;
-        $documentBusiness->direccion_documento = $business->direccion;
+        $documentBusiness                       = clone $business;
+        $documentBusiness->direccion_principal  = $business->direccion;
+        $documentBusiness->direccion_sucursal   = null;
+        $documentBusiness->direccion_documento  = $business->direccion;
 
         if ($warehouse && filled($warehouse->direccion)) {
-            $documentBusiness->direccion_sucursal = $warehouse->direccion;
-            $documentBusiness->direccion_documento = $warehouse->direccion;
+            $documentBusiness->direccion_sucursal   = $warehouse->direccion;
+            $documentBusiness->direccion_documento  = $warehouse->direccion;
         }
 
         return $documentBusiness;
@@ -1630,15 +1530,18 @@ class PosController extends Controller
         }
     }
 
-    public function create_cart()
-    {
+    public function create_cart() {
         if (! session()->get('pos') || empty(session()->get('pos')['products'])) {
             $pos = [
                 'pos' => [
-                    'products' => [],
-                    'igv' => 0,
-                    'subtotal' => 0,
-                    'total' => 0,
+                    'products'  => [],
+                    'igv'       => 0,
+                    'subtotal'  => 0,
+                    'gravada'   => 0,
+                    'exonerada' => 0,
+                    'inafecta'  => 0,
+                    'gratuita'  => 0,
+                    'total'     => 0,
                 ],
             ];
 
@@ -1647,26 +1550,18 @@ class PosController extends Controller
             return session()->get('pos');
         }
 
-        $subtotal = 0;
-        $igv = 0;
-
-        foreach (session('pos')['products'] as $index => $product) {
-            $igvFactor = $this->resolveIgvFactor((int) $product['igv']);
-            $precioBase = $igvFactor > 0 ? ((float) $product['precio_venta'] / $igvFactor) : (float) $product['precio_venta'];
-            $igvProducto = ((float) $product['precio_venta'] - $precioBase) * (int) $product['cantidad'];
-            $igv += $this->redondeado($igvProducto);
-            $subtotal += $precioBase * (int) $product['cantidad'];
-            session()->put('pos.products.' . $index, $product);
-        }
-
-        $total = $subtotal + $igv;
+        $saleBreakdown = $this->buildDiscountedSaleBreakdown(['products' => session('pos')['products']], 0);
 
         $pos = [
             'pos' => [
-                'products' => session('pos')['products'],
-                'igv' => $igv,
-                'subtotal' => $subtotal,
-                'total' => $total,
+                'products'  => session('pos')['products'],
+                'igv'       => $saleBreakdown['igv'],
+                'subtotal'  => $saleBreakdown['subtotal'],
+                'gravada'   => $saleBreakdown['gravada'],
+                'exonerada' => $saleBreakdown['exonerada'],
+                'inafecta'  => $saleBreakdown['inafecta'],
+                'gratuita'  => $saleBreakdown['gratuita'],
+                'total'     => $saleBreakdown['total'],
             ],
         ];
 
@@ -1675,8 +1570,7 @@ class PosController extends Controller
         return session()->get('pos');
     }
 
-    public function add_product_cart($id, $cantidad, $precio, $opcion, $idalmacen)
-    {
+    public function add_product_cart($id, $cantidad, $precio, $opcion, $idalmacen) {
         $product = Product::select(
             'products.*',
             'units.codigo as unidad',
@@ -1701,32 +1595,32 @@ class PosController extends Controller
 
         if ((int) $opcion === 1 && ((int) $product->stock < (int) $cantidad || (int) $product->stock === 0)) {
             return [
-                'status' => false,
-                'msg' => 'Producto sin stock para venta',
+                'status'    => false,
+                'msg'       => 'Producto sin stock para venta',
             ];
         }
 
         $newProduct = [
-            'id' => $product->id,
-            'descripcion' => $product->descripcion,
-            'idunidad' => $product->idunidad,
-            'unidad' => $product->unidad,
-            'igv' => $product->igv,
-            'idcodigo_igv' => $product->idcodigo_igv,
+            'id'            => $product->id,
+            'descripcion'   => $product->descripcion,
+            'idunidad'      => $product->idunidad,
+            'unidad'        => $product->unidad,
+            'igv'           => $product->igv,
+            'idcodigo_igv'  => $product->idcodigo_igv,
             'precio_compra' => $product->precio_compra,
-            'precio_venta' => $precio,
-            'stock' => ((int) $opcion === 1) ? $product->stock : null,
-            'opcion' => $opcion,
-            'cantidad' => $cantidad,
-            'idalmacen' => ((int) $opcion === 1) ? $idalmacen : null,
+            'precio_venta'  => $precio,
+            'stock'         => ((int) $opcion === 1) ? $product->stock : null,
+            'opcion'        => $opcion,
+            'cantidad'      => $cantidad,
+            'idalmacen'     => ((int) $opcion === 1) ? $idalmacen : null,
         ];
 
         if (empty(session()->get('pos')['products'])) {
             session()->push('pos.products', $newProduct);
 
             return [
-                'status' => true,
-                'msg' => '',
+                'status'    => true,
+                'msg'       => '',
             ];
         }
 
@@ -1734,8 +1628,8 @@ class PosController extends Controller
             if ($id == $sessionProduct['id'] && $sessionProduct['opcion'] == $opcion) {
                 if ((int) $opcion === 1 && (int) $sessionProduct['stock'] < ((int) $sessionProduct['cantidad'] + (int) $cantidad)) {
                     return [
-                        'status' => false,
-                        'msg' => 'Stock insuficiente para agregar más unidades.',
+                        'status'    => false,
+                        'msg'       => 'Stock insuficiente para agregar más unidades.',
                     ];
                 }
 
@@ -1743,8 +1637,8 @@ class PosController extends Controller
                 session()->put('pos.products.' . $index, $sessionProduct);
 
                 return [
-                    'status' => true,
-                    'msg' => '',
+                    'status'    => true,
+                    'msg'       => '',
                 ];
             }
         }
@@ -1757,8 +1651,7 @@ class PosController extends Controller
         ];
     }
 
-    public function delete_product_cart($id, $opcion)
-    {
+    public function delete_product_cart($id, $opcion) {
         if (! session()->get('pos') || empty(session()->get('pos')['products'])) {
             return false;
         }
@@ -1773,8 +1666,7 @@ class PosController extends Controller
         return false;
     }
 
-    public function update_quantity($id, $cantidad, $precio, $opcion)
-    {
+    public function update_quantity($id, $cantidad, $precio, $opcion) {
         if (empty(session()->get('pos')['products'])) {
             return false;
         }
@@ -1796,8 +1688,7 @@ class PosController extends Controller
         return false;
     }
 
-    public function destroy_cart()
-    {
+    public function destroy_cart() {
         if (! session()->get('pos') || empty(session()->get('pos')['products'])) {
             return false;
         }

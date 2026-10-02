@@ -40,4 +40,17 @@ return [
     |
     */
     'sync_product_master_cost' => env('INVENTORY_SYNC_MASTER_COST', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | POS Boleta Anonymous Customer Limit
+    |--------------------------------------------------------------------------
+    |
+    | Under SUNAT regulations, sales issued as Boleta de Venta (03) can be made
+    | to an anonymous / general customer ("Clientes Varios" / Doc "00000000") only
+    | up to a certain regulatory limit (by default S/ 700.00). Any sale exceeding
+    | this amount requires an identified customer with valid identity document.
+    |
+    */
+    'pos_boleta_anonymous_limit' => (float) env('POS_BOLETA_ANONYMOUS_LIMIT', 700.00),
 ];

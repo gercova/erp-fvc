@@ -274,4 +274,56 @@
             dataType: 'json'
         });
     });
+
+    $('body').on('click', '.btn-cancel-billing', function() {
+        const id = $(this).data('id');
+        const documentLabel = $(this).data('document') || 'este comprobante';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¿Anular comprobante?',
+                text: `¿Desea marcar como anulado ${documentLabel}?`,
+                icon: 'warning',
+                input: 'text',
+                inputPlaceholder: 'Ingrese motivo de anulación (opcional)',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, anular',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#d33',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeCancel(id, result.value || 'Anulación de comprobante');
+                }
+            });
+        } else {
+            if (confirm(`¿Desea marcar como anulado ${documentLabel}?`)) {
+                executeCancel(id, 'Anulación de comprobante');
+            }
+        }
+    });
+
+    function executeCancel(id, reason) {
+        $.ajax({
+            url: `{{ url('billings') }}/${id}/cancel`,
+            method: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}",
+                reason: reason
+            },
+            beforeSend: function() {
+                block_content('#layout-content');
+            },
+            success: function(r) {
+                close_block('#layout-content');
+                toast_msg(r.msg || 'Comprobante anulado', r.type || 'success');
+                $('#table').DataTable().ajax.reload(null, false);
+            },
+            error: function(xhr) {
+                close_block('#layout-content');
+                toast_msg(xhr.responseJSON?.msg || 'No se pudo anular el comprobante', xhr.responseJSON?.type || 'warning');
+                $('#table').DataTable().ajax.reload(null, false);
+            },
+            dataType: 'json'
+        });
+    }
 </script>

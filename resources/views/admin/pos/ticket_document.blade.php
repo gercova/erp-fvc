@@ -163,25 +163,39 @@
         <div class="divider"></div>
 
         <table class="totals">
-            <tr>
-                <td class="label">Subtotal</td>
-                <td class="amount">{{ $signo }} {{ number_format((float) $subtotal, 2, '.', '') }}</td>
-            </tr>
+            @if (!empty($cobrar_igv))
+                <tr>
+                    <td class="label">Op. Gravada</td>
+                    <td class="amount">{{ $signo }} {{ number_format((float) (($gravada ?? 0) > 0 ? $gravada : $subtotal), 2, '.', '') }}</td>
+                </tr>
+                <tr>
+                    <td class="label">IGV (18%)</td>
+                    <td class="amount">{{ $signo }} {{ number_format((float) $igv, 2, '.', '') }}</td>
+                </tr>
+            @else
+                <tr>
+                    <td class="label">Op. Exonerada</td>
+                    <td class="amount">{{ $signo }} {{ number_format((float) (($exonerada ?? 0) > 0 ? $exonerada : $subtotal), 2, '.', '') }}</td>
+                </tr>
+                <tr>
+                    <td class="label">IGV</td>
+                    <td class="amount">{{ $signo }} 0.00</td>
+                </tr>
+            @endif
             @if ($discountTotal > 0)
                 <tr>
                     <td class="label">Descuento</td>
                     <td class="amount">- {{ $signo }} {{ number_format($discountTotal, 2, '.', '') }}</td>
                 </tr>
             @endif
-            <tr>
-                <td class="label">IGV</td>
-                <td class="amount">{{ $signo }} {{ number_format((float) $igv, 2, '.', '') }}</td>
-            </tr>
             <tr class="grand-total">
                 <td>IMPORTE TOTAL</td>
                 <td class="right">{{ $signo }} {{ number_format((float) $total, 2, '.', '') }}</td>
             </tr>
         </table>
+        @if (!empty($leyenda_tributaria))
+            <p class="center tiny bold" style="margin: 4px 0 2px;">{{ $leyenda_tributaria }}</p>
+        @endif
 
         <div class="words">
             SON: {{ $amountInWords }} {{ mb_strtoupper((string) $moneda) }}
