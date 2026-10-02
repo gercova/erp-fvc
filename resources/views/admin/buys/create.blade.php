@@ -62,7 +62,19 @@
                                 <input type="date" id="fecha_vencimiento" class="form-control" name="fecha_vencimiento" value="{{ date('Y-m-d') }}">
                             </div>
 
-                            <div class="col-12 col-md-6 mb-3">
+                            <div class="col-12 col-md-3 mb-3">
+                                <label for="idalmacen" class="form-label">Almac&eacute;n de Destino</label>
+                                <select class="form-control form-select reque" id="idalmacen" name="idalmacen">
+                                    @foreach ($warehouses as $warehouse)
+                                        <option value="{{ $warehouse->id }}" {{ (int) $warehouse->id === (int) $default_warehouse_id ? 'selected' : '' }}>
+                                            {{ $warehouse->descripcion }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="invalid-feedback">Debe seleccionar un almacén.</div>
+                            </div>
+
+                            <div class="col-12 col-md-5 mb-3">
                                 <label for="dni_ruc" class="form-label d-flex align-items-center gap-2">
                                     <span>Proveedor</span>
                                     <small class="text-primary fw-bold btn-create-provider" style="cursor: pointer">[+ Nuevo]</small>
@@ -82,7 +94,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="invalid-feedback"></div>
+                                <div class="invalid-feedback">Debe seleccionar el proveedor.</div>
                                 <div class="card border border-primary bg-light-primary shadow-none mt-2 d-none" id="provider_detail_card">
                                     <div class="card-body p-2 font-small-2">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -103,7 +115,15 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 col-md-3 mb-3">
+                            <div class="col-12 col-md-2 mb-3">
+                                <label for="condicion_pago" class="form-label">Condici&oacute;n</label>
+                                <select class="form-control form-select" id="condicion_pago" name="condicion_pago">
+                                    <option value="Contado" selected>Contado</option>
+                                    <option value="Credito">Cr&eacute;dito</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-2 mb-3">
                                 <label for="modo_pago" class="form-label">Modo de Pago</label>
                                 <select class="form-control form-select reque" id="modo_pago" name="modo_pago">
                                     <option value=""></option>
@@ -111,11 +131,7 @@
                                         <option value="{{ $modo_pago->id }}">{{ $modo_pago->descripcion }}</option>
                                     @endforeach
                                 </select>
-                            </div>
-
-                            <div class="col-12 col-md-3 mb-3">
-                                <label for="tipo_cambio" class="form-label">Tipo de cambio</label>
-                                <input type="text" id="tipo_cambio" class="form-control" name="tipo_cambio" value="0.00" readonly>
+                                <div class="invalid-feedback">Debe seleccionar el modo de pago.</div>
                             </div>
                         </div>
 

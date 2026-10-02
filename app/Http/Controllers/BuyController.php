@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountPayable;
 use App\Models\Business;
 use App\Models\Buy;
 use App\Models\Client;
@@ -107,12 +108,19 @@ class BuyController extends Controller
 
     public function save(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
                 'type' => 'warning',
             ]);
+        }
+
+        if (! $request->filled('idalmacen')) {
+            $defaultWh = $this->currentWarehouseId();
+            if ($defaultWh > 0) {
+                $request->merge(['idalmacen' => $defaultWh]);
+            }
         }
 
         $validator = Validator::make($request->all(), [
@@ -122,7 +130,11 @@ class BuyController extends Controller
             'fecha_emision' => 'required|date',
             'fecha_vencimiento' => 'required|date|after_or_equal:fecha_emision',
             'dni_ruc' => 'required|integer|exists:providers,id',
+            'idalmacen' => 'required|integer|exists:warehouses,id',
             'modo_pago' => 'required|integer|exists:pay_modes,id',
+            'condicion_pago' => 'nullable|string|in:Contado,Credito',
+            'monto_credito' => 'nullable|numeric|min:0',
+            'cuotas' => 'nullable|array',
         ], [
             'idtipo_comprobante.required' => 'Debe seleccionar el tipo de comprobante.',
             'serie.required' => 'Debe ingresar la serie.',
@@ -132,6 +144,8 @@ class BuyController extends Controller
             'fecha_vencimiento.after_or_equal' => 'La fecha de vencimiento no puede ser menor a la fecha de emisión.',
             'dni_ruc.required' => 'Debe seleccionar el proveedor.',
             'dni_ruc.exists' => 'El proveedor seleccionado no existe.',
+            'idalmacen.required' => 'Debe seleccionar el almacén de destino.',
+            'idalmacen.exists' => 'El almacén de destino seleccionado no existe.',
             'modo_pago.required' => 'Debe seleccionar el modo de pago.',
         ]);
 
@@ -145,6 +159,20 @@ class BuyController extends Controller
         }
 
         $data = $validator->validated();
+        $destinationWarehouseId = (int) $data['idalmacen'];
+
+        $user = Auth::user();
+        if ($user && $user->warehouses()->exists()) {
+            $hasAccess = $user->warehouses()->where('warehouses.id', $destinationWarehouseId)->exists();
+            if (! $hasAccess) {
+                return response()->json([
+                    'status' => false,
+                    'msg' => 'No tiene autorización para registrar compras en el almacén seleccionado.',
+                    'type' => 'warning',
+                ], 422);
+            }
+        }
+
         $serie = mb_strtoupper(trim((string) $data['serie']));
         $correlativo = trim((string) $data['correlativo']);
         $cart = $this->create_cart();
@@ -152,12 +180,13 @@ class BuyController extends Controller
         if (empty($cart['products'])) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Ingrese al menos 1 producto',
+                'msg' => 'Ingrese al menos 1 producto o servicio',
                 'type' => 'warning',
             ], 422);
         }
 
         $validBuy = Buy::where('idproveedor', $data['dni_ruc'])
+            ->where('idtipo_comprobante', $data['idtipo_comprobante'])
             ->where('serie', $serie)
             ->where('correlativo', $correlativo)
             ->first();
@@ -165,64 +194,109 @@ class BuyController extends Controller
         if (! empty($validBuy)) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Registro existente con esos datos',
+                'msg' => 'Ya existe un comprobante registrado con este proveedor, tipo, serie y número.',
+                'errors' => [
+                    'correlativo' => ['Ya existe un comprobante registrado con este proveedor, tipo, serie y número.'],
+                ],
                 'type' => 'warning',
             ], 422);
         }
 
-        DB::transaction(function () use ($data, $serie, $correlativo, $cart) {
-            $buy = Buy::create([
-                'idtipo_comprobante' => $data['idtipo_comprobante'],
-                'serie' => $serie,
-                'correlativo' => $correlativo,
-                'fecha_emision' => $data['fecha_emision'],
-                'fecha_vencimiento' => $data['fecha_vencimiento'],
-                'hora' => date('H:i:s'),
-                'idproveedor' => $data['dni_ruc'],
-                'idmoneda' => 1,
-                'idpago' => 1,
-                'modo_pago' => $data['modo_pago'],
-                'anticipo' => '0.00',
-                'igv' => $cart['igv'],
-                'gratuita' => '0.00',
-                'otros_cargos' => '0.00',
-                'total' => $cart['total'],
-                'observaciones' => '',
-                'estado' => 1,
-                'idusuario' => Auth::user()['id'],
-            ]);
+        try {
+            $buy = DB::transaction(function () use ($data, $serie, $correlativo, $cart, $destinationWarehouseId, $request) {
+                $condicionPago = $request->input('condicion_pago') === 'Credito' ? 'Credito' : 'Contado';
+                $total = (float) $cart['total'];
+                $montoCredito = $condicionPago === 'Credito' ? ((float) $request->input('monto_credito') ?: $total) : 0.00;
+                $cuotas = $condicionPago === 'Credito' ? $request->input('cuotas') : null;
 
-            foreach ($cart['products'] as $product) {
-                DetailBuy::create([
-                    'idcompra' => $buy->id,
-                    'idproducto' => $product['id'],
-                    'cantidad' => $product['cantidad'],
-                    'descuento' => 0,
-                    'igv' => ($product['precio_compra'] * $product['igv']),
-                    'id_afectacion_igv' => 1,
-                    'precio_unitario' => $product['precio_compra'],
-                    'precio_total' => ($product['precio_compra'] * $product['cantidad']),
-                    'idalmacen' => $product['idalmacen'],
+                $buy = Buy::create([
+                    'idtipo_comprobante' => $data['idtipo_comprobante'],
+                    'serie' => $serie,
+                    'correlativo' => $correlativo,
+                    'fecha_emision' => $data['fecha_emision'],
+                    'fecha_vencimiento' => $data['fecha_vencimiento'],
+                    'hora' => date('H:i:s'),
+                    'idproveedor' => $data['dni_ruc'],
+                    'idalmacen' => $destinationWarehouseId,
+                    'idmoneda' => 1,
+                    'idpago' => 1,
+                    'modo_pago' => $data['modo_pago'],
+                    'condicion_pago' => $condicionPago,
+                    'monto_credito' => $montoCredito,
+                    'cuotas' => $cuotas,
+                    'anticipo' => '0.00',
+                    'igv' => $cart['igv'],
+                    'gratuita' => '0.00',
+                    'otros_cargos' => '0.00',
+                    'total' => $total,
+                    'observaciones' => $request->input('observaciones', ''),
+                    'estado' => 1,
+                    'idusuario' => Auth::id() ?? 1,
                 ]);
 
-                app(\App\Services\StockService::class)->increase(
-                    (int) $product['idalmacen'],
-                    (int) $product['id'],
-                    (float) $product['cantidad'],
-                    ['precio_compra' => (float) $product['precio_compra']]
-                );
-            }
+                foreach ($cart['products'] as $product) {
+                    $itemWarehouseId = ! empty($product['idalmacen']) ? (int) $product['idalmacen'] : $destinationWarehouseId;
 
-            Session::flash('exito', [
-                'msg' => 'Datos guardados correctamente',
-                'id' => $buy->id,
-            ]);
-        });
+                    DetailBuy::create([
+                        'idcompra' => $buy->id,
+                        'idproducto' => $product['id'],
+                        'cantidad' => $product['cantidad'],
+                        'descuento' => 0,
+                        'igv' => ((float) $product['precio_compra'] * (float) ($product['igv'] ?? 0.18)),
+                        'id_afectacion_igv' => 1,
+                        'precio_unitario' => $product['precio_compra'],
+                        'precio_total' => ((float) $product['precio_compra'] * (float) $product['cantidad']),
+                        'idalmacen' => $itemWarehouseId,
+                    ]);
+
+                    app(StockService::class)->increase(
+                        $itemWarehouseId,
+                        (int) $product['id'],
+                        (float) $product['cantidad'],
+                        ['precio_compra' => (float) $product['precio_compra']]
+                    );
+                }
+
+                if ($condicionPago === 'Credito') {
+                    AccountPayable::create([
+                        'idcompra' => $buy->id,
+                        'idproveedor' => $buy->idproveedor,
+                        'idalmacen' => $destinationWarehouseId,
+                        'monto_total' => $total,
+                        'monto_pagado' => 0.00,
+                        'saldo' => $total,
+                        'fecha_emision' => $buy->fecha_emision,
+                        'fecha_vencimiento' => $buy->fecha_vencimiento,
+                        'estado' => 'PENDIENTE',
+                        'cuotas' => $cuotas,
+                        'observaciones' => $buy->observaciones,
+                        'idusuario' => Auth::id() ?? 1,
+                    ]);
+                }
+
+                Session::flash('exito', [
+                    'msg' => 'Datos guardados correctamente',
+                    'id' => $buy->id,
+                ]);
+
+                return $buy;
+            });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'Ya existe un comprobante registrado con este proveedor, tipo, serie y número.',
+                'errors' => [
+                    'correlativo' => ['Ya existe un comprobante registrado con este proveedor, tipo, serie y número.'],
+                ],
+                'type' => 'warning',
+            ], 422);
+        }
 
         $this->destroy_cart();
 
         return response()->json([
             'status' => true,
+            'id' => $buy->id,
         ]);
     }
 
@@ -238,16 +312,21 @@ class BuyController extends Controller
             ->orderBy('descripcion')
             ->get(['id', 'codigo', 'descripcion']);
         $data['modo_pagos'] = PayMode::orderBy('descripcion')->get();
-        $data['warehouses'] = Warehouse::orderBy('descripcion')->get();
+
+        $user = Auth::user();
+        $assignedWarehouses = $user ? $user->warehouses()->orderBy('descripcion')->get() : collect();
+        $data['warehouses'] = $assignedWarehouses->isNotEmpty() ? $assignedWarehouses : Warehouse::orderBy('descripcion')->get();
+        $data['default_warehouse_id'] = (int) (session('selected_warehouse_id') ?: ($user?->idalmacen ?: ($data['warehouses']->first()?->id ?? 0)));
+
         $data['providers'] = Provider::with('tipoDocumento')->orderBy('nombres')->get();
-        $data['products'] = Product::where('opcion', '=', 1)->get();
+        $data['products'] = Product::orderBy('descripcion')->get();
 
         return view('admin.buys.create', $data);
     }
 
     public function get_product(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -257,40 +336,44 @@ class BuyController extends Controller
 
         $id = (int) $request->input('id');
         $idalmacen = (int) $request->input('idalmacen');
-        $product = StockProduct::select(
-            'products.codigo_barras',
-            'products.codigo_interno',
-            'products.descripcion as producto',
-            'categories.descripcion as categoria',
-            'stock_products.stock_minimo',
-            'stock_products.stock_actual',
-            'stock_products.idproducto',
-            'stock_products.idalmacen',
-            'stock_products.precio_compra'
-        )
-            ->join('products', 'stock_products.idproducto', 'products.id')
-            ->join('categories', 'products.idcategoria', 'categories.id')
-            ->where('stock_products.idproducto', $id)
-            ->where('stock_products.idalmacen', $idalmacen)
-            ->first();
+
+        $product = Product::with(['category', 'unit'])->find($id);
 
         if (! $product) {
             return response()->json([
                 'status' => false,
-                'msg' => 'El producto no está disponible en el almacén seleccionado.',
+                'msg' => 'El producto no fue encontrado.',
                 'type' => 'warning',
             ], 404);
         }
 
+        $stockProduct = StockProduct::where('idproducto', $id)
+            ->where('idalmacen', $idalmacen)
+            ->first();
+
+        $productData = (object) [
+            'id' => $product->id,
+            'idproducto' => $product->id,
+            'idalmacen' => $idalmacen,
+            'codigo_barras' => $product->codigo_barras,
+            'codigo_interno' => $product->codigo_interno,
+            'producto' => $product->descripcion,
+            'categoria' => $product->category?->descripcion ?? '-',
+            'stock_minimo' => $stockProduct?->stock_minimo ?? 5,
+            'stock_actual' => $stockProduct?->stock_actual ?? 0,
+            'precio_compra' => $stockProduct ? $stockProduct->precio_compra : ($product->precio_compra ?? 0.00),
+            'is_service' => $product->isService(),
+        ];
+
         return response()->json([
             'status' => true,
-            'product' => $product,
+            'product' => $productData,
         ]);
     }
 
     public function get_product_idwarehouse(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -299,24 +382,33 @@ class BuyController extends Controller
         }
 
         $idalmacen = (int) $request->input('idalmacen');
-        $productos = StockProduct::select(
-            'products.opcion',
-            'products.codigo_barras',
-            'products.codigo_interno',
-            'products.descripcion as producto',
-            'categories.descripcion as categoria',
-            'stock_products.stock_minimo',
-            'stock_products.stock_actual',
-            'stock_products.idproducto',
-            'stock_products.idalmacen',
-            'stock_products.precio_compra'
-        )
-            ->join('products', 'stock_products.idproducto', 'products.id')
-            ->join('categories', 'products.idcategoria', 'categories.id')
-            ->where('products.opcion', '=', 1)
-            ->where('stock_products.idalmacen', $idalmacen)
-            ->orderByDesc('stock_products.idproducto')
+
+        $products = Product::with('category')
+            ->orderBy('opcion')
+            ->orderBy('descripcion')
             ->get();
+
+        $stockMap = StockProduct::where('idalmacen', $idalmacen)
+            ->get()
+            ->keyBy('idproducto');
+
+        $productos = $products->map(function ($product) use ($idalmacen, $stockMap) {
+            $stock = $stockMap->get($product->id);
+
+            return [
+                'opcion' => $product->opcion,
+                'codigo_barras' => $product->codigo_barras,
+                'codigo_interno' => $product->codigo_interno,
+                'producto' => $product->descripcion . ($product->isService() ? ' (SERVICIO)' : ''),
+                'categoria' => $product->category?->descripcion ?? '-',
+                'stock_minimo' => $stock?->stock_minimo ?? 5,
+                'stock_actual' => $stock?->stock_actual ?? 0,
+                'idproducto' => $product->id,
+                'idalmacen' => $idalmacen,
+                'precio_compra' => $stock ? $stock->precio_compra : ($product->precio_compra ?? 0.00),
+                'is_service' => $product->isService(),
+            ];
+        });
 
         return response()->json([
             'status' => true,
@@ -326,7 +418,7 @@ class BuyController extends Controller
 
     public function add_product(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -337,13 +429,13 @@ class BuyController extends Controller
         $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:products,id',
             'idalmacen' => 'required|integer|exists:warehouses,id',
-            'cantidad' => 'required|numeric|min:1',
+            'cantidad' => 'required|numeric|gt:0',
             'precio_compra' => 'required|numeric|min:0',
         ], [
-            'id.required' => 'Debe seleccionar un producto.',
+            'id.required' => 'Debe seleccionar un producto o servicio.',
             'idalmacen.required' => 'Debe seleccionar un almacén.',
             'cantidad.required' => 'Debe ingresar la cantidad.',
-            'cantidad.min' => 'La cantidad debe ser mayor a cero.',
+            'cantidad.gt' => 'La cantidad debe ser mayor a cero.',
             'precio_compra.required' => 'Debe ingresar el precio de compra.',
         ]);
 
@@ -358,7 +450,7 @@ class BuyController extends Controller
 
         $data = $validator->validated();
 
-        if (! $this->add_product_cart((int) $data['id'], (int) $data['idalmacen'], (int) $data['cantidad'], number_format((float) $data['precio_compra'], 2, '.', ''))) {
+        if (! $this->add_product_cart((int) $data['id'], (int) $data['idalmacen'], (float) $data['cantidad'], number_format((float) $data['precio_compra'], 2, '.', ''))) {
             return response()->json([
                 'status' => false,
                 'msg' => 'No se pudo agregar el producto seleccionado',
@@ -368,7 +460,7 @@ class BuyController extends Controller
 
         return response()->json([
             'status' => true,
-            'msg' => 'Producto agregado correctamente',
+            'msg' => 'Item agregado correctamente',
             'type' => 'success',
         ]);
     }
@@ -585,7 +677,7 @@ class BuyController extends Controller
         DB::transaction(function () use ($detailBuy, $id) {
             foreach ($detailBuy as $item) {
                 $idProduct = (int) $item['idproducto'];
-                $cantidad = (int) $item['cantidad'];
+                $cantidad = (float) $item['cantidad'];
                 app(\App\Services\StockService::class)->decrease(
                     (int) $item['idalmacen'],
                     $idProduct,
@@ -593,6 +685,7 @@ class BuyController extends Controller
                 );
             }
 
+            AccountPayable::where('idcompra', $id)->delete();
             DetailBuy::where('idcompra', $id)->delete();
             Buy::where('id', $id)->delete();
         });
@@ -635,9 +728,9 @@ class BuyController extends Controller
             };
 
             $precioBase = (float) $product['precio_compra'] / $igvFactor;
-            $igvProducto = ((float) $product['precio_compra'] - $precioBase) * (int) $product['cantidad'];
+            $igvProducto = ((float) $product['precio_compra'] - $precioBase) * (float) $product['cantidad'];
             $igv += $this->redondeado($igvProducto);
-            $subtotal += $precioBase * (int) $product['cantidad'];
+            $subtotal += $precioBase * (float) $product['cantidad'];
             session()->put('buy.products.' . $index, $product);
         }
 
@@ -658,20 +751,7 @@ class BuyController extends Controller
 
     public function add_product_cart($id, $idalmacen, $cantidad, $precio_compra)
     {
-        $product = Product::select(
-            'products.*',
-            'units.codigo as unidad',
-            'stock_products.stock_actual as stock',
-            'stock_products.idalmacen as idalmacen',
-            'categories.descripcion as categoria'
-        )
-            ->join('categories', 'products.idcategoria', '=', 'categories.id')
-            ->join('units', 'products.idunidad', '=', 'units.id')
-            ->join('stock_products', 'products.id', 'stock_products.idproducto')
-            ->join('warehouses', 'stock_products.idalmacen', 'warehouses.id')
-            ->where('products.id', $id)
-            ->where('warehouses.id', $idalmacen)
-            ->first();
+        $product = Product::with(['category', 'unit'])->find($id);
 
         if (! $product) {
             return false;
@@ -683,7 +763,7 @@ class BuyController extends Controller
             'codigo_sunat' => $product->codigo_sunat,
             'descripcion' => $product->descripcion,
             'idunidad' => $product->idunidad,
-            'unidad' => $product->unidad,
+            'unidad' => $product->unit?->codigo ?? 'NIU',
             'idcodigo_igv' => $product->idcodigo_igv,
             'codigo_igv' => $product->codigo_igv,
             'igv' => $product->igv,
@@ -691,6 +771,7 @@ class BuyController extends Controller
             'impuesto' => $product->impuesto,
             'idalmacen' => $idalmacen,
             'cantidad' => $cantidad,
+            'is_service' => $product->isService(),
         ];
 
         if (empty(session()->get('buy')['products'])) {
@@ -700,7 +781,7 @@ class BuyController extends Controller
 
         foreach (session()->get('buy')['products'] as $index => $sessionProduct) {
             if (($newProduct['cart_key']) === ($sessionProduct['cart_key'] ?? null)) {
-                $sessionProduct['cantidad'] = $sessionProduct['cantidad'] + $cantidad;
+                $sessionProduct['cantidad'] = (float) $sessionProduct['cantidad'] + (float) $cantidad;
                 $sessionProduct['precio_compra'] = $precio_compra;
                 session()->put('buy.products.' . $index, $sessionProduct);
                 return true;

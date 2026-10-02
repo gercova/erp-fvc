@@ -37,21 +37,57 @@ class StockService
                 ->first();
 
             if (! $stock) {
+                $initialCost = isset($attributes['precio_compra'])
+                    ? round((float) $attributes['precio_compra'], 2)
+                    : round((float) ($product->precio_compra ?? 0), 2);
+
                 $stock = new StockProduct([
                     'idalmacen' => $warehouseId,
                     'idproducto' => $productId,
                     'stock_actual' => (int) $quantity,
                     'stock_minimo' => $attributes['stock_minimo'] ?? 5,
-                    'precio_compra' => $attributes['precio_compra'] ?? ($product->precio_compra ?? 0),
+                    'precio_compra' => $initialCost,
                     'precio_venta' => $attributes['precio_venta'] ?? ($product->precio_venta ?? 0),
                     'fecha_registro' => $attributes['fecha_registro'] ?? now()->toDateString(),
                     'stock_entrada' => $attributes['stock_entrada'] ?? (int) $quantity,
                 ]);
-            } else {
-                $stock->stock_actual = (int) $stock->stock_actual + (int) $quantity;
-                if (isset($attributes['precio_compra'])) {
-                    $stock->precio_compra = $attributes['precio_compra'];
+
+                if (isset($attributes['precio_compra']) && config('inventory.sync_product_master_cost', true)) {
+                    $product->precio_compra = $initialCost;
+                    $product->save();
                 }
+            } else {
+                if (isset($attributes['precio_compra'])) {
+                    $incomingPrice = (float) $attributes['precio_compra'];
+                    $costMethod = $attributes['cost_method'] ?? config('inventory.cost_method', 'weighted_average');
+
+                    if ($costMethod === 'last_cost') {
+                        $calculatedCost = round($incomingPrice, 2);
+                    } else {
+                        // Weighted average (PMP - Precio Medio Ponderado)
+                        $previousStock = max(0, (float) ($stock->stock_actual ?? 0));
+                        $previousCost = (float) ($stock->precio_compra ?? 0);
+
+                        if ($previousStock > 0) {
+                            $totalUnits = $previousStock + (float) $quantity;
+                            $calculatedCost = $totalUnits > 0
+                                ? round((($previousStock * $previousCost) + ((float) $quantity * $incomingPrice)) / $totalUnits, 2)
+                                : round($incomingPrice, 2);
+                        } else {
+                            $calculatedCost = round($incomingPrice, 2);
+                        }
+                    }
+
+                    $stock->precio_compra = $calculatedCost;
+
+                    if (config('inventory.sync_product_master_cost', true)) {
+                        $product->precio_compra = $calculatedCost;
+                        $product->save();
+                    }
+                }
+
+                $stock->stock_actual = (int) $stock->stock_actual + (int) $quantity;
+
                 if (isset($attributes['precio_venta'])) {
                     $stock->precio_venta = $attributes['precio_venta'];
                 }

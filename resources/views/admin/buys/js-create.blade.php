@@ -33,6 +33,14 @@
             placeholder: "[SELECCIONE]"
         });
 
+        $('#form_save_buy select[name="idalmacen"]').select2({
+            placeholder: "[SELECCIONE]"
+        });
+
+        $('#form_save_buy select[name="condicion_pago"]').select2({
+            minimumResultsForSearch: Infinity
+        });
+
         $('#form_save_buy select[name="modo_pago"]').select2({
             placeholder: "[SELECCIONE]"
         });
@@ -65,11 +73,14 @@
 
     function resetProductModal()
     {
-        $('#form_save_to_product select[name="idalmacen"]').val('').trigger('change');
+        const currentWh = $('#form_save_buy select[name="idalmacen"]').val() || '';
+        $('#form_save_to_product select[name="idalmacen"]').val(currentWh).trigger('change');
         $('#form_save_to_product select[name="product"]').html('<option value=""></option>').val('').trigger('change');
         $('#form_save_to_product input[name="cantidad"]').val('1');
         $('#form_save_to_product input[name="precio"]').val('');
-        $('#modalAddToProduct #wrapper-product').addClass('d-none');
+        if (!currentWh) {
+            $('#modalAddToProduct #wrapper-product').addClass('d-none');
+        }
     }
 
     function load_cart()
@@ -438,6 +449,11 @@
         if (validation.status) {
             if (validation.ids.includes('serie') || validation.ids.includes('correlativo')) {
                 toastr.warning('Complete los campos de serie y correlativo', 'Atencion');
+                return;
+            }
+
+            if (validation.ids.includes('idalmacen')) {
+                toastr.warning('Seleccione el almacén de destino', 'Atencion');
                 return;
             }
 
