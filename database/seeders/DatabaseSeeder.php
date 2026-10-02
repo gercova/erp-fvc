@@ -40,5 +40,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PayModeSeeder::class);
         $this->call(RoleSeeder::class);
         $this->call(UserSeeder::class);
+        $this->call(ChartOfAccountsSeeder::class);
+        $this->call(AccountingRulesSeeder::class);
     }
 }

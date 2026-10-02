@@ -57,6 +57,7 @@ use App\Http\Controllers\AgroNurseryController;
 use App\Http\Controllers\AgroLivestockController;
 use App\Http\Controllers\AgroHarvestQuickEntryController;
 use App\Http\Controllers\AgroReportsController;
+use App\Http\Controllers\ChartOfAccountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -742,5 +743,18 @@ Route::prefix('agrolivestock')->middleware(['auth', 'activity.access'])->group(f
         Route::get('/cost-breakdown',       'costBreakdown')->name('agrolivestock.reports.cost_breakdown');
         Route::get('/reconciliation',       'reconciliation')->name('agrolivestock.reports.reconciliation');
         Route::post('/link-invoice',        'linkInvoice')->name('agrolivestock.reports.link_invoice');
+    });
+});
+
+# Módulo de Contabilidad y Tesorería
+Route::prefix('accounting')->middleware(['auth'])->group(function() {
+    Route::controller(ChartOfAccountController::class)->prefix('chart-of-accounts')->group(function() {
+        Route::get('/',             'index')->name('accounting.chart_of_accounts.index');
+        Route::get('/data',         'data')->name('accounting.chart_of_accounts.data');
+        Route::get('/tree',         'tree')->name('accounting.chart_of_accounts.tree');
+        Route::post('/',            'store')->name('accounting.chart_of_accounts.store');
+        Route::get('/{id}',         'show')->name('accounting.chart_of_accounts.show');
+        Route::put('/{id}',         'update')->name('accounting.chart_of_accounts.update');
+        Route::delete('/{id}',      'destroy')->name('accounting.chart_of_accounts.destroy');
     });
 });
