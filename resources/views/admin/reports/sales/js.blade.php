@@ -8,16 +8,15 @@ document.addEventListener("DOMContentLoaded", function () {
         buttons: ['copy', 'excel', 'pdf', 'print']
     });
 
-    document.getElementById("formReport").addEventListener("submit", function (event) {
-        event.preventDefault();
-        
+    function loadSalesReport() {
         let startDate = document.getElementById("start_date").value;
         let endDate = document.getElementById("end_date").value;
+        let warehouse = document.getElementById("id_almacen") ? document.getElementById("id_almacen").value : '';
 
-        fetch(`{{ route('report.sales.data') }}?start_date=${startDate}&end_date=${endDate}`)
+        fetch(`{{ route('report.sales.data') }}?start_date=${startDate}&end_date=${endDate}&id_almacen=${warehouse}`)
             .then(response => response.json())
             .then(data => {
-                const signo = data.signo || "$";
+                const signo = data.signo || "S/";
                 table.clear();
                 let sumTotal = 0, sumCant = 0, sumTicket = 0;
 
@@ -27,8 +26,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     table.row.add([
                         sale.fecha,
-                        sale.cantidad_ventas,
-                        `${signo} ${parseFloat(sale.total - sale.total_impuestos).toFixed(2)}`,
+                        `<span class="badge bg-secondary">${sale.cantidad_ventas}</span>`,
+                        `${signo} ${parseFloat(sale.subtotal).toFixed(2)}`,
                         `${signo} ${parseFloat(sale.total_impuestos).toFixed(2)}`,
                         `<strong>${signo} ${parseFloat(sale.total).toFixed(2)}</strong>`,
                         `${signo} ${parseFloat(sale.ticket_promedio).toFixed(2)}`
@@ -38,10 +37,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 document.getElementById('kpi-total-ventas').innerText = `${signo} ${sumTotal.toFixed(2)}`;
                 document.getElementById('kpi-cantidad-ventas').innerText = sumCant;
-                document.getElementById('kpi-ticket-promedio').innerText = `${signo} ${(sumTotal/sumCant || 0).toFixed(2)}`;
+                document.getElementById('kpi-ticket-promedio').innerText = `${signo} ${(sumCant > 0 ? (sumTotal/sumCant) : 0).toFixed(2)}`;
                 renderChart(data.sales, signo);
             });
+    }
+
+    document.getElementById("formReport").addEventListener("submit", function (event) {
+        event.preventDefault();
+        loadSalesReport();
     });
+
+    if (document.getElementById("btnExportPdf")) {
+        document.getElementById("btnExportPdf").addEventListener("click", function() {
+            let startDate = document.getElementById("start_date").value;
+            let endDate = document.getElementById("end_date").value;
+            let warehouse = document.getElementById("id_almacen") ? document.getElementById("id_almacen").value : '';
+            window.location.href = `{{ route('report.sales.by_date.pdf') }}?start_date=${startDate}&end_date=${endDate}&id_almacen=${warehouse}`;
+        });
+    }
+
+    if (document.getElementById("btnExportExcel")) {
+        document.getElementById("btnExportExcel").addEventListener("click", function() {
+            let startDate = document.getElementById("start_date").value;
+            let endDate = document.getElementById("end_date").value;
+            let warehouse = document.getElementById("id_almacen") ? document.getElementById("id_almacen").value : '';
+            window.location.href = `{{ route('report.sales.by_date.excel') }}?start_date=${startDate}&end_date=${endDate}&id_almacen=${warehouse}`;
+        });
+    }
+
+    loadSalesReport();
 });
 
 function renderChart(salesData, signo) {

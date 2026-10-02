@@ -32,6 +32,7 @@ class SaleNote extends Model
         'idusuario',
         'idarqueocaja',
         'idfactura_anular',
+        'billing_id',
         'vuelto',
     ];
 
@@ -55,6 +56,18 @@ class SaleNote extends Model
 
     public function cliente(): BelongsTo {
         return $this->belongsTo(Client::class, 'idcliente');
+    }
+
+    public function billing(): BelongsTo {
+        return $this->belongsTo(Billing::class, 'billing_id');
+    }
+
+    public function isConverted(): bool {
+        return !is_null($this->billing_id) || (int) $this->estado === 2;
+    }
+
+    public function isAnnulled(): bool {
+        return (int) $this->estado === 0;
     }
 
     public function details(): HasMany {

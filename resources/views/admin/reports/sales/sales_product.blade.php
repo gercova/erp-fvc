@@ -11,6 +11,14 @@
                         Reporte de Ventas por Producto
                     </h1>
                 </div>
+                <div class="col-12 col-xl-auto mb-3">
+                    <button type="button" id="btnExportPdf" class="btn btn-danger btn-sm me-2">
+                        <i class="ri-file-pdf-line me-1"></i> Exportar PDF
+                    </button>
+                    <button type="button" id="btnExportExcel" class="btn btn-success btn-sm">
+                        <i class="ri-file-excel-line me-1"></i> Exportar Excel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -24,16 +32,27 @@
                     <!-- Formulario de filtro -->
                     <form id="formReport">
                         <div class="row">
-                            <div class="col-md-5">
+                            <div class="col-md-4">
                                 <label for="start_date" class="form-label">Fecha inicio</label>
-                                <input type="date" id="start_date" name="start_date" class="form-control">
+                                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ now()->startOfMonth()->toDateString() }}">
                             </div>
-                            <div class="col-md-5">
+                            <div class="col-md-4">
                                 <label for="end_date" class="form-label">Fecha fin</label>
-                                <input type="date" id="end_date" name="end_date" class="form-control">
+                                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ now()->endOfMonth()->toDateString() }}">
                             </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Generar</button>
+                            <div class="col-md-3">
+                                <label for="id_almacen" class="form-label">Almacén</label>
+                                <select id="id_almacen" name="id_almacen" class="form-select">
+                                    <option value="">Todos los almacenes</option>
+                                    @if(isset($warehouses))
+                                        @foreach ($warehouses as $warehouse)
+                                            <option value="{{ $warehouse->id }}">{{ $warehouse->descripcion }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
                             </div>
                         </div>
                     </form>

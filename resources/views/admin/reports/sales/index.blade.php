@@ -11,6 +11,14 @@
                         Reporte de ventas
                     </h1>
                 </div>
+                <div class="col-12 col-xl-auto mb-3">
+                    <button type="button" id="btnExportPdf" class="btn btn-danger btn-sm me-2">
+                        <i class="ri-file-pdf-line me-1"></i> Exportar PDF
+                    </button>
+                    <button type="button" id="btnExportExcel" class="btn btn-success btn-sm">
+                        <i class="ri-file-excel-line me-1"></i> Exportar Excel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -20,13 +28,24 @@
     <div class="card mb-4">
         <div class="card-body">
             <form id="formReport" class="row gx-3 align-items-end">
-                <div class="col-md-10">
+                <div class="col-md-6">
                     <label class="small mb-1">Rango de Fechas</label>
                     <div class="input-group">
-                        <input type="date" id="start_date" class="form-control">
+                        <input type="date" id="start_date" class="form-control" value="{{ now()->startOfMonth()->toDateString() }}">
                         <span class="input-group-text">a</span>
-                        <input type="date" id="end_date" class="form-control">
+                        <input type="date" id="end_date" class="form-control" value="{{ now()->endOfMonth()->toDateString() }}">
                     </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="small mb-1">Almacén</label>
+                    <select id="id_almacen" class="form-select">
+                        <option value="">Todos los almacenes</option>
+                        @if(isset($warehouses))
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}">{{ $warehouse->descripcion }}</option>
+                            @endforeach
+                        @endif
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">

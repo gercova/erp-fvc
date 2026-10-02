@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Billing extends Model
 {
@@ -45,12 +47,14 @@ class Billing extends Model
         'estado_cpe',
         'errores',
         'nticket',
+        'sale_note_id',
         'idusuario',
         'idarqueocaja',
         'vuelto',
         'qr',
         'idalmacen',
     ];
+
 
     protected $casts = [
         'fecha_emision' => 'date',
@@ -71,63 +75,56 @@ class Billing extends Model
         'vuelto' => 'decimal:2',
     ];
 
-    public function customer()
-    {
+    public function saleNote(): BelongsTo {
+        return $this->belongsTo(SaleNote::class, 'sale_note_id');
+    }
+
+
+    public function customer(): BelongsTo {
         return $this->belongsTo(Client::class, 'idcliente');
     }
 
-    public function currency()
-    {
+    public function currency(): BelongsTo {
         return $this->belongsTo(Currency::class, 'idmoneda');
     }
 
-    public function typeDocument()
-    {
+    public function typeDocument(): BelongsTo {
         return $this->belongsTo(TypeDocument::class, 'idtipo_comprobante');
     }
 
-    public function payMode()
-    {
+    public function payMode(): BelongsTo {
         return $this->belongsTo(PayMode::class, 'idpago');
     }
 
-    public function user()
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'idusuario');
     }
 
-    public function archingCash()
-    {
+    public function archingCash(): BelongsTo {
         return $this->belongsTo(ArchingCash::class, 'idarqueocaja');
     }
 
-    public function warehouse()
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'idalmacen');
     }
 
-    public function noteType()
-    {
+    public function noteType(): BelongsTo {
         return $this->belongsTo(CreditNoteType::class, 'id_tipo_nota_credito');
     }
 
-    public function creditNoteType()
-    {
+    public function creditNoteType(): BelongsTo {
         return $this->belongsTo(CreditNoteType::class, 'id_tipo_nota_credito');
     }
 
-    public function debitNoteType()
-    {
+    public function debitNoteType(): BelongsTo {
         return $this->belongsTo(DebitNoteType::class, 'id_tipo_nota_debito');
     }
 
-    public function parentBilling()
-    {
+    public function parentBilling(): BelongsTo {
         return $this->belongsTo(self::class, 'idfactura_anular');
     }
 
-    public function details()
-    {
+    public function details(): HasMany {
         return $this->hasMany(DetailBilling::class, 'idfacturacion');
     }
 }

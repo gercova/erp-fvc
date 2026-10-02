@@ -28,6 +28,7 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseSelectorController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ReportSalesController;
+use App\Http\Controllers\ReportOperationsController;
 use App\Http\Controllers\ShipmentGuideController;
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\ExpenseDeclarationController;
@@ -369,14 +370,65 @@ Route::controller(RoleController::class)->prefix('roles')->middleware(['auth', '
 });
 
 # Reportes
-Route::get('/reportes/ventas',                  [ReportSalesController::class, 'index'])->name('report.sales.index')->middleware(['auth', 'can:report.sales.index']);
-Route::get('/reportes/ventas/data',             [ReportSalesController::class, 'getSalesReport'])->name('report.sales.data')->middleware(['auth', 'can:report.sales.index']);
-Route::get('/by-product',                       [ReportSalesController::class, 'salesByProductIndex'])->name('report.sales.by_product.index')->middleware(['auth', 'can:report.sales.by_product.index']);
-Route::get('/reports/sales/products',           [ReportSalesController::class, 'getSalesByProduct'])->name('report.sales.products')->middleware(['auth', 'can:report.sales.by_product.index']);
+Route::middleware(['auth'])->group(function() {
+    // 1. Reportes de Ventas
+    Route::controller(ReportSalesController::class)->group(function() {
+        Route::get('/reportes/ventas',                      'index')->name('report.sales.index');
+        Route::get('/reportes/ventas/data',                 'getSalesReport')->name('report.sales.data');
+        Route::get('/reportes/ventas/pdf',                  'salesByDatePdf')->name('report.sales.by_date.pdf');
+        Route::get('/reportes/ventas/excel',                'salesByDateExcel')->name('report.sales.by_date.excel');
 
+        Route::get('/by-product',                           'salesByProductIndex')->name('report.sales.by_product.index');
+        Route::get('/reports/sales/products',               'getSalesByProduct')->name('report.sales.products');
+        Route::get('/reports/sales/products/pdf',           'salesByProductPdf')->name('report.sales.products.pdf');
+        Route::get('/reports/sales/products/excel',         'salesByProductExcel')->name('report.sales.products.excel');
 
-Route::get('/reportes/pagos',                   [ReportPaymentController::class, 'index'])->name('report.payments.index')->middleware(['auth', 'can:report.payments.index']);
-Route::get('/reports/sales/payment-methods'     , [ReportPaymentController::class, 'getSalesByPaymentMethod'])->name('report.sales.payment_methods')->middleware(['auth', 'can:report.payments.index']);
+        Route::get('/reportes/ventas-por-cliente',          'salesByCustomerIndex')->name('report.sales.customer.index');
+        Route::get('/reportes/ventas-por-cliente/data',     'getSalesByCustomer')->name('report.sales.customer.data');
+        Route::get('/reportes/ventas-por-cliente/pdf',      'salesByCustomerPdf')->name('report.sales.customer.pdf');
+        Route::get('/reportes/ventas-por-cliente/excel',    'salesByCustomerExcel')->name('report.sales.customer.excel');
+
+        Route::get('/reportes/ventas-por-tipo-comprobante',       'salesByTypeDocumentIndex')->name('report.sales.type_document.index');
+        Route::get('/reportes/ventas-por-tipo-comprobante/data',  'getSalesByTypeDocument')->name('report.sales.type_document.data');
+        Route::get('/reportes/ventas-por-tipo-comprobante/pdf',   'salesByTypeDocumentPdf')->name('report.sales.type_document.pdf');
+        Route::get('/reportes/ventas-por-tipo-comprobante/excel', 'salesByTypeDocumentExcel')->name('report.sales.type_document.excel');
+    });
+
+    // 2. Reportes de Pagos / Métodos de Pago
+    Route::controller(ReportPaymentController::class)->group(function() {
+        Route::get('/reportes/pagos',                       'index')->name('report.payments.index');
+        Route::get('/reports/sales/payment-methods',         'getSalesByPaymentMethod')->name('report.sales.payment_methods');
+        Route::get('/reports/sales/payment-methods/pdf',     'salesByPaymentMethodPdf')->name('report.payments.pdf');
+        Route::get('/reports/sales/payment-methods/excel',   'salesByPaymentMethodExcel')->name('report.payments.excel');
+    });
+
+    // 3. Reportes Operativos
+    Route::controller(ReportOperationsController::class)->prefix('reportes')->group(function() {
+        // Stock por Almacén
+        Route::get('/stock-almacen',                        'stockWarehouseIndex')->name('report.operations.stock_warehouse.index');
+        Route::get('/stock-almacen/data',                   'getStockWarehouse')->name('report.operations.stock_warehouse.data');
+        Route::get('/stock-almacen/pdf',                    'stockWarehousePdf')->name('report.operations.stock_warehouse.pdf');
+        Route::get('/stock-almacen/excel',                  'stockWarehouseExcel')->name('report.operations.stock_warehouse.excel');
+
+        // Compras por Proveedor
+        Route::get('/compras-proveedor',                    'purchasesSupplierIndex')->name('report.operations.purchases_supplier.index');
+        Route::get('/compras-proveedor/data',               'getPurchasesSupplier')->name('report.operations.purchases_supplier.data');
+        Route::get('/compras-proveedor/pdf',                'purchasesSupplierPdf')->name('report.operations.purchases_supplier.pdf');
+        Route::get('/compras-proveedor/excel',              'purchasesSupplierExcel')->name('report.operations.purchases_supplier.excel');
+
+        // Caja Diaria
+        Route::get('/caja-diaria',                          'dailyCashIndex')->name('report.operations.daily_cash.index');
+        Route::get('/caja-diaria/data',                     'getDailyCash')->name('report.operations.daily_cash.data');
+        Route::get('/caja-diaria/pdf',                      'dailyCashPdf')->name('report.operations.daily_cash.pdf');
+        Route::get('/caja-diaria/excel',                    'dailyCashExcel')->name('report.operations.daily_cash.excel');
+
+        // Comprobantes Emitidos y Estados
+        Route::get('/comprobantes-estados',                 'issuedVouchersIndex')->name('report.operations.issued_vouchers.index');
+        Route::get('/comprobantes-estados/data',            'getIssuedVouchers')->name('report.operations.issued_vouchers.data');
+        Route::get('/comprobantes-estados/pdf',             'issuedVouchersPdf')->name('report.operations.issued_vouchers.pdf');
+        Route::get('/comprobantes-estados/excel',           'issuedVouchersExcel')->name('report.operations.issued_vouchers.excel');
+    });
+});
 
 Route::controller(BuyController::class)->prefix('buys')->middleware(['auth', 'can:admin.buys'])->group(function() {
     Route::get('/'                          , 'index')->name('admin.buys');
