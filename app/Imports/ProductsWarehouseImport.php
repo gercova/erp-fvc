@@ -3,7 +3,8 @@
 namespace App\Imports;
 
 use App\Models\Product;
-use App\Models\StockProduct;
+use App\Services\StockService;
+use Exception;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -22,8 +23,9 @@ class ProductsWarehouseImport implements ToModel, WithHeadingRow, WithEvents
         $description = trim((string) ($row['descripcion'] ?? ''));
         if ($description === '' ||
             str_contains($description, 'Notas:') ||
-            str_contains($description, 'Puede modificar todos los campos, excepto la descripcion.') ||
-            str_contains($description, 'Los registros que no tienen stock minimo ni stock actual corresponden a servicios. No es necesario realizar cambios a esta informacion.')) {
+            str_contains($description, 'Modifique todos los campos') ||
+            str_contains($description, 'Este formato contiene') ||
+            str_contains($description, 'servicios')) {
             return null;
         }
 
@@ -32,31 +34,30 @@ class ProductsWarehouseImport implements ToModel, WithHeadingRow, WithEvents
             ->first(['id', 'opcion']);
 
         if (! $product) {
-            throw new \Exception('Producto no encontrado para la descripcion: ' . $description);
+            throw new Exception('Producto no encontrado para la descripción: ' . $description);
         }
 
-        $isService = (int) ($product->opcion ?? 1) === 2;
-        $stock = StockProduct::query()->firstOrNew([
-            'idproducto' => $product->id,
-            'idalmacen' => $this->idalmacen,
-        ]);
-
-        $stock->precio_compra = (float) ($row['precio_compra'] ?? 0);
-        $stock->precio_venta = (float) ($row['precio_venta'] ?? 0);
-
-        if ($isService) {
-            $stock->stock_minimo = null;
-            $stock->stock_actual = null;
-        } else {
-            $stock->stock_minimo = ($row['stock_minimo'] === null || $row['stock_minimo'] === '') ? null : (float) $row['stock_minimo'];
-            $stock->stock_actual = ($row['stock_actual'] === null || $row['stock_actual'] === '') ? null : (float) $row['stock_actual'];
-            if (! $stock->exists) {
-                $stock->fecha_registro = now()->toDateString();
-                $stock->stock_entrada = $stock->stock_actual;
-            }
+        // SERVICES never hold stock nor appear in physical inventory
+        if ((int) $product->opcion === 2) {
+            return null;
         }
 
-        $stock->save();
+        $precioCompra = (float) ($row['precio_compra'] ?? 0);
+        $precioVenta = (float) ($row['precio_venta'] ?? 0);
+        $stockMinimo = ($row['stock_minimo'] === null || $row['stock_minimo'] === '') ? 5 : (int) $row['stock_minimo'];
+        $stockActual = ($row['stock_actual'] === null || $row['stock_actual'] === '') ? 0 : (int) $row['stock_actual'];
+
+        $stockService = app(StockService::class);
+        $stockService->initializeStock(
+            (int) $this->idalmacen,
+            (int) $product->id,
+            $stockActual,
+            $precioCompra,
+            $precioVenta,
+            $stockMinimo
+        );
+        $stockService->setStock((int) $this->idalmacen, (int) $product->id, $stockActual);
+        $stockService->updatePricingAndMinStock((int) $this->idalmacen, (int) $product->id, $precioCompra, $precioVenta, $stockMinimo);
 
         return null;
     }

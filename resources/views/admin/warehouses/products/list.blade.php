@@ -44,7 +44,7 @@
                         {{ $warehouse->descripcion }} - Productos
                     </h1>
                     <div class="warehouse-module-note mt-1">
-                        Administra precios y stock de este almac&eacute;n. Los servicios se muestran, pero no manejan stock f&iacute;sico.
+                        Administra precios y stock f&iacute;sico de este almac&eacute;n. Los servicios intangibles est&aacute;n excluidos del inventario f&iacute;sico.
                     </div>
                 </div>
                 <div class="col-auto">

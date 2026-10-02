@@ -330,11 +330,8 @@ class SaleNoteController extends Controller
             $cantidad       = intval($product["cantidad"]);
             $product        = Product::where('id', $idproducto)->first();
 
-            if ($product->opcion == 1) {
-                $registro  = StockProduct::where('idproducto', $idproducto)->where('idalmacen', $idalmacen)->first();
-                StockProduct::where('idproducto', $product["id"])->where('idalmacen', $idalmacen)->update([
-                    'stock_actual'  => $registro->stock_actual + $cantidad
-                ]);
+            if ($product && (int) $product->opcion === 1) {
+                app(\App\Services\StockService::class)->increase($idalmacen, $idproducto, $cantidad);
             }
         }
 

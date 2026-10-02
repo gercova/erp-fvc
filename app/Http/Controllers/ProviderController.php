@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
+use App\Http\Requests\ProviderValidate;
 use App\Models\District;
 use App\Models\IdentityDocumentType;
+use App\Models\Provider;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ProviderController extends Controller
@@ -23,7 +25,7 @@ class ProviderController extends Controller
 
     public function get(Request $request)
     {
-        $providers = Client::query()
+        $providers = Provider::query()
             ->with('tipoDocumento:id,codigo,descripcion')
             ->when($request->filled('filter_name'), function ($query) use ($request) {
                 $query->where('nombres', 'like', '%' . trim((string) $request->input('filter_name')) . '%');
@@ -35,10 +37,11 @@ class ProviderController extends Controller
 
         return datatables()
             ->of($providers)
-            ->addColumn('documento_info', function (Client $provider) {
-                return '<span class="fw-semibold">' . e((string) $provider->nro_documento) . '</span>';
+            ->addColumn('documento_info', function (Provider $provider) {
+                $tipo = $provider->tipoDocumento?->descripcion ?? 'DOC';
+                return '<div><span class="fw-semibold">' . e((string) $provider->nro_documento) . '</span><br><small class="text-muted">' . e($tipo) . '</small></div>';
             })
-            ->addColumn('acciones', function (Client $provider) {
+            ->addColumn('acciones', function (Provider $provider) {
                 return '<div class="dropdown">
                             <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 18H9V20H2V18ZM2 11H11V13H2V11ZM2 4H22V6H2V4ZM20.674 13.0251L21.8301 12.634L22.8301 14.366L21.914 15.1711C21.9704 15.4386 22 15.7158 22 16C22 16.2842 21.9704 16.5614 21.914 16.8289L22.8301 17.634L21.8301 19.366L20.674 18.9749C20.2635 19.3441 19.7763 19.6295 19.2391 19.8044L19 21H17L16.7609 19.8044C16.2237 19.6295 15.7365 19.3441 15.326 18.9749L14.1699 19.366L13.1699 17.634L14.086 16.8289C14.0296 15.4386 14 16.2842 14 16C14 15.7158 14.0296 15.4386 14.086 15.1711L13.1699 14.366L14.1699 12.634L15.326 13.0251C15.7365 12.6559 16.2237 12.3705 16.7609 12.1956L17 11H19L19.2391 12.1956C19.7763 12.3705 20.2635 12.6559 20.674 13.0251ZM18 18C19.1046 18 20 17.1046 20 16C20 14.8954 19.1046 14 18 14C16.8954 14 16 14.8954 16 16C16 17.1046 16.8954 18 18 18Z"></path></svg>
@@ -55,7 +58,7 @@ class ProviderController extends Controller
 
     public function searchDocument(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
@@ -134,38 +137,17 @@ class ProviderController extends Controller
         ]);
     }
 
-    public function save(Request $request)
+    public function save(ProviderValidate $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
-        $validator = $this->validateProviderRequest($request);
+        $data = $request->validated();
+        $id = $request->input('id');
+        $provider = $id ? Provider::find($id) : null;
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $data = $validator->validated();
-        $exists = Client::query()
-            ->where('iddoc', $data['tipo_documento'])
-            ->where('nro_documento', trim((string) $data['dni_ruc']))
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'El proveedor ya se encuentra registrado.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $provider = Client::create([
+        $attributes = [
             'iddoc' => $data['tipo_documento'],
             'nro_documento' => trim((string) $data['dni_ruc']),
             'nombres' => trim((string) $data['razon_social']),
@@ -174,11 +156,19 @@ class ProviderController extends Controller
             'ubigeo' => $this->resolveUbigeo($data),
             'telefono' => $this->normalizeNullableText($data['telefono'] ?? null),
             'email' => $this->normalizeNullableText($data['email'] ?? null),
-        ]);
+        ];
+
+        if ($provider) {
+            $provider->update($attributes);
+            $msg = 'Datos actualizados correctamente.';
+        } else {
+            $provider = Provider::create($attributes);
+            $msg = 'Datos guardados correctamente.';
+        }
 
         return response()->json([
             'status' => true,
-            'msg' => 'Datos guardados correctamente.',
+            'msg' => $msg,
             'type' => 'success',
             'last_id' => $provider->id,
         ]);
@@ -186,11 +176,11 @@ class ProviderController extends Controller
 
     public function detail(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
-        $provider = Client::query()->find((int) $request->input('id'));
+        $provider = Provider::query()->find((int) $request->input('id'));
 
         if (! $provider) {
             return response()->json(['status' => false, 'msg' => 'El proveedor no existe.', 'type' => 'warning'], 404);
@@ -218,43 +208,19 @@ class ProviderController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(ProviderValidate $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
-        $provider = Client::query()->find((int) $request->input('id'));
+        $provider = Provider::query()->find((int) $request->input('id'));
 
         if (! $provider) {
             return response()->json(['status' => false, 'msg' => 'El proveedor no existe.', 'type' => 'warning'], 404);
         }
 
-        $validator = $this->validateProviderRequest($request, true);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $data = $validator->validated();
-        $exists = Client::query()
-            ->where('iddoc', $data['tipo_documento'])
-            ->where('nro_documento', trim((string) $data['dni_ruc']))
-            ->where('id', '!=', $provider->id)
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'Ya existe otro proveedor con ese documento.',
-                'type' => 'warning',
-            ], 422);
-        }
+        $data = $request->validated();
 
         $provider->update([
             'iddoc' => $data['tipo_documento'],
@@ -276,14 +242,23 @@ class ProviderController extends Controller
 
     public function delete(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
-        $provider = Client::query()->find((int) $request->input('id'));
+        $provider = Provider::query()->find((int) $request->input('id'));
 
         if (! $provider) {
             return response()->json(['status' => false, 'msg' => 'Proveedor no encontrado.', 'type' => 'warning'], 404);
+        }
+
+        $hasBuys = DB::table('buys')->where('idproveedor', $provider->id)->exists();
+        if ($hasBuys) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'No se puede eliminar el proveedor porque tiene compras registradas en el sistema.',
+                'type' => 'warning',
+            ], 422);
         }
 
         $provider->delete();
@@ -293,45 +268,6 @@ class ProviderController extends Controller
             'msg' => 'Registro eliminado correctamente.',
             'type' => 'success',
         ]);
-    }
-
-    private function validateProviderRequest(Request $request, bool $isUpdate = false)
-    {
-        $rules = [
-            'tipo_documento' => 'required|integer|exists:identity_document_types,id',
-            'dni_ruc' => 'required|string|max:15',
-            'razon_social' => 'required|string|max:255',
-            'direccion' => 'required|string|max:255',
-            'departamento' => 'nullable|string|max:2',
-            'provincia' => 'nullable|string|max:4',
-            'distrito' => 'nullable|string|max:6',
-            'telefono' => 'nullable|string|max:30',
-            'email' => 'nullable|email|max:255',
-        ];
-
-        if ($isUpdate) {
-            $rules['id'] = 'required|integer';
-        }
-
-        $validator = Validator::make($request->all(), $rules, [
-            'tipo_documento.required' => 'Debe seleccionar el tipo de documento.',
-            'dni_ruc.required' => 'Debe ingresar el numero del documento.',
-            'razon_social.required' => 'Debe ingresar el nombre o razon social.',
-            'direccion.required' => 'Debe ingresar la direccion.',
-        ]);
-
-        $validator->after(function ($validator) use ($request) {
-            $message = $this->validateDocumentNumberByType(
-                (int) $request->input('tipo_documento'),
-                (string) $request->input('dni_ruc')
-            );
-
-            if ($message !== null) {
-                $validator->errors()->add('dni_ruc', $message);
-            }
-        });
-
-        return $validator;
     }
 
     private function resolveUbigeo(array $data): ?string
@@ -345,28 +281,6 @@ class ProviderController extends Controller
 
         if (in_array($tipoDocumentoCodigo, ['1', '4', '6'], true) && $departamento !== '') {
             return $distrito !== '' ? $distrito : null;
-        }
-
-        return null;
-    }
-
-    private function validateDocumentNumberByType(int $tipoDocumentoId, string $documentNumber): ?string
-    {
-        $tipoDocumentoCodigo = trim((string) IdentityDocumentType::query()
-            ->whereKey($tipoDocumentoId)
-            ->value('codigo'));
-        $documentNumber = trim($documentNumber);
-
-        if ($tipoDocumentoCodigo === '1' && ! preg_match('/^\d{8}$/', $documentNumber)) {
-            return 'Para DNI debe ingresar exactamente 8 digitos numericos.';
-        }
-
-        if ($tipoDocumentoCodigo === '6' && ! preg_match('/^\d{11}$/', $documentNumber)) {
-            return 'Para RUC debe ingresar exactamente 11 digitos numericos.';
-        }
-
-        if (in_array($tipoDocumentoCodigo, ['4', '7', 'A', '0'], true) && ! preg_match('/^[A-Za-z0-9\-]{3,15}$/', $documentNumber)) {
-            return 'Para este tipo de documento solo se permiten letras, numeros y guion.';
         }
 
         return null;

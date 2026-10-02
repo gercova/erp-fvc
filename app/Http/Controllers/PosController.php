@@ -845,15 +845,11 @@ class PosController extends Controller
                         continue;
                     }
 
-                    $registro = StockProduct::where('idproducto', $product['id'])
-                        ->where('idalmacen', $product['idalmacen'])
-                        ->lockForUpdate()
-                        ->first();
-
-                    $nuevoStock = max(0, (int) $registro->stock_actual - (int) $product['cantidad']);
-                    $registro->update([
-                        'stock_actual' => $nuevoStock,
-                    ]);
+                    app(\App\Services\StockService::class)->decrease(
+                        (int) $product['idalmacen'],
+                        (int) $product['id'],
+                        (float) $product['cantidad']
+                    );
                 }
 
                 foreach ($paymentBreakdown as $payment) {
@@ -1220,15 +1216,11 @@ class PosController extends Controller
                         continue;
                     }
 
-                    $registro = StockProduct::where('idproducto', $product['id'])
-                        ->where('idalmacen', $product['idalmacen'])
-                        ->lockForUpdate()
-                        ->first();
-
-                    $nuevoStock = max(0, (int) $registro->stock_actual - (int) $product['cantidad']);
-                    $registro->update([
-                        'stock_actual' => $nuevoStock,
-                    ]);
+                    app(\App\Services\StockService::class)->decrease(
+                        (int) $product['idalmacen'],
+                        (int) $product['id'],
+                        (float) $product['cantidad']
+                    );
                 }
 
                 if ($paymentCondition === 'contado') {

@@ -609,27 +609,27 @@ Route::prefix('productive-activities')->middleware(['auth', 'activity.access'])-
 
     // 3. Módulo RDR (CUT, Préstamos Internos, Conciliaciones, Cierres)
     Route::controller(RdrModuleController::class)->prefix('rdr')->group(function() {
-        Route::get('/',                             'index')->name('productive_activities.rdr.index');
-        Route::post('/cut-transfers',               'storeCutTransfer')->name('productive_activities.rdr.cut_transfers.store');
-        Route::post('/internal-loans',              'storeInternalLoan')->name('productive_activities.rdr.internal_loans.store');
-        Route::post('/internal-loans/{id}/repay',   'repayInternalLoan')->name('productive_activities.rdr.internal_loans.repay');
-        Route::post('/reconciliations',             'storeReconciliation')->name('productive_activities.rdr.reconciliations.store');
-        Route::post('/period-closures',             'storePeriodClosure')->name('productive_activities.rdr.period_closures.store');
-        Route::post('/period-closures/{id}/submit-approval', 'submitClosureApproval')->name('productive_activities.rdr.period_closures.submit_approval');
+        Route::get('/',                                         'index')->name('productive_activities.rdr.index');
+        Route::post('/cut-transfers',                           'storeCutTransfer')->name('productive_activities.rdr.cut_transfers.store');
+        Route::post('/internal-loans',                          'storeInternalLoan')->name('productive_activities.rdr.internal_loans.store');
+        Route::post('/internal-loans/{id}/repay',               'repayInternalLoan')->name('productive_activities.rdr.internal_loans.repay');
+        Route::post('/reconciliations',                         'storeReconciliation')->name('productive_activities.rdr.reconciliations.store');
+        Route::post('/period-closures',                         'storePeriodClosure')->name('productive_activities.rdr.period_closures.store');
+        Route::post('/period-closures/{id}/submit-approval',    'submitClosureApproval')->name('productive_activities.rdr.period_closures.submit_approval');
     });
 
     // 4. CRUD de Actividades Productivas (Estilo AssetController)
     Route::controller(ProductiveActivityController::class)->group(function() {
-        Route::get('/',                     'index')->name('productive_activities.index');
-        Route::get('/get',                  'get')->name('productive_activities.get');
-        Route::get('/create',               'create')->name('productive_activities.create');
-        Route::post('/store',               'store')->name('productive_activities.store');
-        Route::get('/{id}',                 'show')->name('productive_activities.show');
-        Route::get('/{id}/edit',            'edit')->name('productive_activities.edit');
-        Route::put('/{id}',                 'update')->name('productive_activities.update');
-        Route::post('/delete',              'delete')->name('productive_activities.delete');
-        Route::post('/{id}/submit-approval', 'submitApproval')->name('productive_activities.submit_approval');
-        Route::post('/{id}/tracking-logs',  'storeTrackingLog')->name('productive_activities.tracking_logs.store');
+        Route::get('/',                         'index')->name('productive_activities.index');
+        Route::get('/get',                      'get')->name('productive_activities.get');
+        Route::get('/create',                   'create')->name('productive_activities.create');
+        Route::post('/store',                   'store')->name('productive_activities.store');
+        Route::get('/{id}',                     'show')->name('productive_activities.show');
+        Route::get('/{id}/edit',                'edit')->name('productive_activities.edit');
+        Route::put('/{id}',                     'update')->name('productive_activities.update');
+        Route::post('/delete',                  'delete')->name('productive_activities.delete');
+        Route::post('/{id}/submit-approval',    'submitApproval')->name('productive_activities.submit_approval');
+        Route::post('/{id}/tracking-logs',      'storeTrackingLog')->name('productive_activities.tracking_logs.store');
     });
 });
 
@@ -658,14 +658,14 @@ Route::prefix('agrolivestock')->middleware(['auth', 'activity.access'])->group(f
 
     // 3. Manejo Pecuario (Ganado vacuno, porcino, cuyes, aves)
     Route::controller(AgroLivestockController::class)->prefix('livestock')->group(function() {
-        Route::get('/',             'index')->name('agrolivestock.livestock.index');
-        Route::get('/get',          'get')->name('agrolivestock.livestock.get');
-        Route::post('/store',       'store')->name('agrolivestock.livestock.store');
-        Route::get('/{id}',         'show')->name('agrolivestock.livestock.show');
-        Route::put('/{id}',         'update')->name('agrolivestock.livestock.update');
-        Route::post('/delete',      'delete')->name('agrolivestock.livestock.delete');
-        Route::post('/event/store', 'storeEvent')->name('agrolivestock.livestock.event.store');
-        Route::post('/event/delete','deleteEvent')->name('agrolivestock.livestock.event.delete');
+        Route::get('/',                 'index')->name('agrolivestock.livestock.index');
+        Route::get('/get',              'get')->name('agrolivestock.livestock.get');
+        Route::post('/store',           'store')->name('agrolivestock.livestock.store');
+        Route::get('/{id}',             'show')->name('agrolivestock.livestock.show');
+        Route::put('/{id}',             'update')->name('agrolivestock.livestock.update');
+        Route::post('/delete',          'delete')->name('agrolivestock.livestock.delete');
+        Route::post('/event/store',     'storeEvent')->name('agrolivestock.livestock.event.store');
+        Route::post('/event/delete',    'deleteEvent')->name('agrolivestock.livestock.event.delete');
     });
 
     // 4. Registro Rápido de Cosechas (Alimenta Bloque C sin duplicidad)

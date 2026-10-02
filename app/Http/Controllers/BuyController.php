@@ -9,9 +9,11 @@ use App\Models\DetailBuy;
 use App\Models\IdentityDocumentType;
 use App\Models\PayMode;
 use App\Models\Product;
+use App\Models\Provider;
 use App\Models\StockProduct;
 use App\Models\TypeDocument;
 use App\Models\Warehouse;
+use App\Services\StockService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,12 +34,12 @@ class BuyController extends Controller
         $buys = Buy::query()
             ->select(
                 'buys.*',
-                'clients.nro_documento as nro_documento',
-                'clients.nombres as proveedor',
+                'providers.nro_documento as nro_documento',
+                'providers.nombres as proveedor',
                 'type_documents.descripcion as tipo_comprobante',
                 DB::raw("CONCAT(buys.serie, '-', buys.correlativo) as documento")
             )
-            ->join('clients', 'buys.idproveedor', '=', 'clients.id')
+            ->leftJoin('providers', 'buys.idproveedor', '=', 'providers.id')
             ->leftJoin('type_documents', 'buys.idtipo_comprobante', '=', 'type_documents.id')
             ->where('buys.idtipo_comprobante', '!=', 6)
             ->when($request->filled('filter_voucher'), function ($query) use ($request) {
@@ -52,10 +54,10 @@ class BuyController extends Controller
                 $query->whereDate('buys.fecha_emision', $request->input('filter_date'));
             })
             ->when($request->filled('filter_document'), function ($query) use ($request) {
-                $query->where('clients.nro_documento', 'like', '%' . trim((string) $request->input('filter_document')) . '%');
+                $query->where('providers.nro_documento', 'like', '%' . trim((string) $request->input('filter_document')) . '%');
             })
             ->when($request->filled('filter_reason'), function ($query) use ($request) {
-                $query->where('clients.nombres', 'like', '%' . trim((string) $request->input('filter_reason')) . '%');
+                $query->where('providers.nombres', 'like', '%' . trim((string) $request->input('filter_reason')) . '%');
             })
             ->when($request->filled('filter_total'), function ($query) use ($request) {
                 $query->where('buys.total', 'like', '%' . trim((string) $request->input('filter_total')) . '%');
@@ -119,7 +121,7 @@ class BuyController extends Controller
             'correlativo' => 'required|string|max:20',
             'fecha_emision' => 'required|date',
             'fecha_vencimiento' => 'required|date|after_or_equal:fecha_emision',
-            'dni_ruc' => 'required|integer|exists:clients,id',
+            'dni_ruc' => 'required|integer|exists:providers,id',
             'modo_pago' => 'required|integer|exists:pay_modes,id',
         ], [
             'idtipo_comprobante.required' => 'Debe seleccionar el tipo de comprobante.',
@@ -203,20 +205,12 @@ class BuyController extends Controller
                     'idalmacen' => $product['idalmacen'],
                 ]);
 
-                $registro = StockProduct::where('idproducto', $product['id'])
-                    ->where('idalmacen', $product['idalmacen'])
-                    ->first();
-
-                if (! $registro) {
-                    throw new \RuntimeException('Uno de los productos ya no está registrado en el almacén seleccionado.');
-                }
-
-                StockProduct::where('idalmacen', $product['idalmacen'])
-                    ->where('idproducto', $product['id'])
-                    ->update([
-                        'precio_compra' => $product['precio_compra'],
-                        'stock_actual' => ((int) $registro->stock_actual) + ((int) $product['cantidad']),
-                    ]);
+                app(\App\Services\StockService::class)->increase(
+                    (int) $product['idalmacen'],
+                    (int) $product['id'],
+                    (float) $product['cantidad'],
+                    ['precio_compra' => (float) $product['precio_compra']]
+                );
             }
 
             Session::flash('exito', [
@@ -245,7 +239,7 @@ class BuyController extends Controller
             ->get(['id', 'codigo', 'descripcion']);
         $data['modo_pagos'] = PayMode::orderBy('descripcion')->get();
         $data['warehouses'] = Warehouse::orderBy('descripcion')->get();
-        $data['providers'] = Client::orderBy('nombres')->get();
+        $data['providers'] = Provider::with('tipoDocumento')->orderBy('nombres')->get();
         $data['products'] = Product::where('opcion', '=', 1)->get();
 
         return view('admin.buys.create', $data);
@@ -523,7 +517,8 @@ class BuyController extends Controller
         $data['moneda'] = $this->moneda_pais();
         $data['signo'] = $this->signo_pais();
         $data['business'] = Business::where('id', 1)->first();
-        $data['provider'] = Client::where('id', $data['buy']['idproveedor'])->first();
+        $data['provider'] = Provider::where('id', $data['buy']['idproveedor'])->first()
+            ?? Client::where('id', $data['buy']['idproveedor'])->first();
         $data['name_buy'] = mb_strtoupper($data['provider']->nro_documento . '-' . $data['buy']['serie']) . '-' . $data['buy']['correlativo'];
         $data['type_document'] = TypeDocument::where('id', $data['buy']['idtipo_comprobante'])->first();
         $formatter = new NumeroALetras();
@@ -591,23 +586,11 @@ class BuyController extends Controller
             foreach ($detailBuy as $item) {
                 $idProduct = (int) $item['idproducto'];
                 $cantidad = (int) $item['cantidad'];
-                $registro = StockProduct::where('idproducto', $idProduct)
-                    ->where('idalmacen', $item['idalmacen'])
-                    ->first();
-
-                if (! $registro) {
-                    continue;
-                }
-
-                $nuevoStock = ((int) $registro->stock_actual - $cantidad) <= 0
-                    ? 0
-                    : ((int) $registro->stock_actual - $cantidad);
-
-                StockProduct::where('idproducto', $idProduct)
-                    ->where('idalmacen', $item['idalmacen'])
-                    ->update([
-                        'stock_actual' => $nuevoStock,
-                    ]);
+                app(\App\Services\StockService::class)->decrease(
+                    (int) $item['idalmacen'],
+                    $idProduct,
+                    $cantidad
+                );
             }
 
             DetailBuy::where('idcompra', $id)->delete();
@@ -774,7 +757,7 @@ class BuyController extends Controller
 
     public function load_providers(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -782,7 +765,7 @@ class BuyController extends Controller
             ]);
         }
 
-        $providers = Client::orderBy('nombres')->get();
+        $providers = Provider::with('tipoDocumento:id,codigo,descripcion')->orderBy('nombres')->get();
 
         return response()->json([
             'status' => true,

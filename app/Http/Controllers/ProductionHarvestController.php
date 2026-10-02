@@ -120,25 +120,23 @@ class ProductionHarvestController extends Controller
 
         $harvest = ProductionHarvest::create($data);
 
-        // Si el producto está publicado en el catálogo central y se seleccionó un almacén, actualizar el stock
+        // Si el producto está publicado en el catálogo central y se seleccionó un almacén, actualizar el stock mediante StockService
         $producedItem = ProducedItem::find($data['produced_item_id']);
         if ($producedItem && $producedItem->product_id && !empty($data['warehouse_id'])) {
-            $stock = StockProduct::firstOrCreate(
+            $stock = app(\App\Services\StockService::class)->increase(
+                (int) $data['warehouse_id'],
+                (int) $producedItem->product_id,
+                (float) $data['quantity'],
                 [
-                    'idalmacen'  => $data['warehouse_id'],
-                    'idproducto' => $producedItem->product_id,
-                ],
-                [
-                    'stock_actual'  => 0,
+                    'precio_compra' => (float) ($data['unit_cost_calculated'] ?? 0),
+                    'precio_venta'  => (float) ($producedItem->standard_cost ?? 0),
                     'stock_minimo'  => 0,
-                    'precio_compra' => $data['unit_cost_calculated'] ?? 0,
-                    'precio_venta'  => $producedItem->standard_cost ?? 0,
-                    'fecha_registro'=> now(),
                 ]
             );
 
-            $stock->increment('stock_actual', $data['quantity']);
-            $harvest->update(['stock_product_id' => $stock->id]);
+            if ($stock) {
+                $harvest->update(['stock_product_id' => $stock->id]);
+            }
         }
 
         return redirect()->back()->with('success', 'Registro de cosecha / producción guardado correctamente.');

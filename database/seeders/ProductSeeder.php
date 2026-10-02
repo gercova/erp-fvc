@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\StockService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -239,23 +240,17 @@ class ProductSeeder extends Seeder
     private function upsertWarehouseStock(array $product, int $productId, int $warehouseId, Carbon $now): void
     {
         $isService = (int) $product['opcion'] === 2;
-        $stockActual = $isService ? null : (int) $product['stock_actual'];
+        if ($isService) {
+            return;
+        }
 
-        DB::table('stock_products')->updateOrInsert(
-            [
-                'idproducto' => $productId,
-                'idalmacen' => $warehouseId,
-            ],
-            [
-                'stock_minimo' => $isService ? null : 10,
-                'stock_actual' => $stockActual,
-                'precio_compra' => $product['precio_compra'],
-                'precio_venta' => $product['precio_venta'],
-                'fecha_registro' => $now->format('Y-m-d'),
-                'stock_entrada' => $stockActual,
-                'updated_at' => $now,
-                'created_at' => $now,
-            ]
+        app(StockService::class)->setStock(
+            $productId,
+            $warehouseId,
+            (int) $product['stock_actual'],
+            (float) $product['precio_compra'],
+            (float) $product['precio_venta'],
+            10
         );
     }
 

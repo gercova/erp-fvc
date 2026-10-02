@@ -171,42 +171,15 @@ class TransferOrderController extends Controller
                             ->join('categories', 'products.idcategoria', 'categories.id')
                             ->where('detail_transfer_orders.idorden_traslado', $id)
                             ->get();
-        // Aumentar la cantidad del almacen receptor y dismunuir de despacho
-        foreach($detail_transfer as $i => $product)
-        {
-            $cantidad_despacho              = StockProduct::where('idproducto', $product['idproducto'])
-                                            ->where('idalmacen', $transfer->idalmacen_despacho)
-                                            ->first()['stock_actual'];
-
-
-
-            $producto_almacen               = StockProduct::where('idproducto', $product['idproducto'])
-                                            ->where('idalmacen', $transfer->idalmacen_receptor)
-                                            ->first();
-                                   
-            $cantidad_receptor              = (empty($producto_almacen)) ? 0 : $producto_almacen['stock_actual'];
-            $precio_compra                  = (empty($producto_almacen)) ? 0 : $product["precio_compra"];
-            $precio_venta                   = (empty($producto_almacen)) ? 0 : $product["precio_venta"];
-            $stock_minimo                   = (empty($producto_almacen)) ? 5 : $producto_almacen["stock_minimo"];
-            $fecha_registro                 = (empty($producto_almacen)) ? date('Y-m-d') : $producto_almacen["fecha_registro"];
-            StockProduct::where('idproducto', $product["idproducto"])
-                        ->where('idalmacen', $transfer->idalmacen_despacho)
-                        ->update([
-                            'stock_actual'  => ((int) $cantidad_despacho - (int) $product['cantidad']),
-                        ]);
-
-            StockProduct::updateOrCreate([
-                            'idproducto'  => $product["idproducto"],
-                            'idalmacen'   => $transfer->idalmacen_receptor,
-                        ], [
-                            'stock_actual'      => ((int) $cantidad_receptor + (int) $product['cantidad']),
-                            'idalmacen'         => $transfer->idalmacen_receptor,
-                            'precio_compra'     => $precio_compra,
-                            'precio_venta'      => $precio_venta,
-                            'stock_minimo'      => $stock_minimo,
-                            'fecha_registro'    => $fecha_registro,
-                            'stock_entrada'     => ((int) $cantidad_receptor + (int) $product['cantidad'])
-                        ]);
+        // Aumentar la cantidad del almacen receptor y disminuir de despacho mediante StockService
+        $stockService = app(\App\Services\StockService::class);
+        foreach ($detail_transfer as $product) {
+            $stockService->transfer(
+                (int) $transfer->idalmacen_despacho,
+                (int) $transfer->idalmacen_receptor,
+                (int) $product['idproducto'],
+                (float) $product['cantidad']
+            );
         }
 
         TransferOrder::where('id', $id)->update([

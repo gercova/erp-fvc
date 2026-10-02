@@ -4,6 +4,29 @@
         load_providers(last_id);
     }
 
+    function updateProviderDetailCard()
+    {
+        const $selected = $('#form_save_buy select[name="dni_ruc"] option:selected');
+        const id = $selected.val();
+        if (!id) {
+            $('#provider_detail_card').addClass('d-none');
+            return;
+        }
+
+        $('#card_provider_doctype').text($selected.data('doctype') || 'DOCUMENTO');
+        $('#card_provider_document').text($selected.data('document') || '');
+        $('#card_provider_name').text($selected.data('name') || '');
+        $('#card_provider_address').text($selected.data('address') || '-');
+        $('#card_provider_ubigeo').text('Ubigeo: ' + ($selected.data('ubigeo') || '-'));
+        $('#card_provider_phone').text($selected.data('phone') || '-');
+        $('#card_provider_email').text($selected.data('email') || '-');
+        $('#provider_detail_card').removeClass('d-none');
+
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
     function initializeBuySelects()
     {
         $('#form_save_buy select[name="idtipo_comprobante"]').select2({
@@ -16,6 +39,8 @@
 
         $('#form_save_buy select[name="dni_ruc"]').select2({
             placeholder: "[SELECCIONE]"
+        }).on('change', function() {
+            updateProviderDetailCard();
         });
     }
 
@@ -87,7 +112,15 @@
 
                 let htmlProviders = '<option value=""></option>';
                 $.each(r.providers, function(index, provider) {
-                    htmlProviders += `<option value="${provider.id}">${provider.nro_documento + ' - ' + provider.nombres}</option>`;
+                    const docType = provider.tipo_documento ? provider.tipo_documento.descripcion : 'DOCUMENTO';
+                    htmlProviders += `<option value="${provider.id}"
+                        data-document="${provider.nro_documento || ''}"
+                        data-name="${provider.nombres || ''}"
+                        data-doctype="${docType}"
+                        data-address="${provider.direccion || '-'}"
+                        data-ubigeo="${provider.idubigeo || '-'}"
+                        data-phone="${provider.telefono || '-'}"
+                        data-email="${provider.correo || '-'}">${provider.nro_documento + ' - ' + provider.nombres}</option>`;
                 });
 
                 const $providerSelect = $('#form_save_buy select[name="dni_ruc"]');
@@ -96,6 +129,7 @@
                     $providerSelect.val(String(selectedId));
                 }
                 $providerSelect.trigger('change');
+                updateProviderDetailCard();
             },
             error: function(xhr) {
                 toast_msg(xhr.responseJSON?.msg || 'No se pudo recargar la lista de proveedores.', xhr.responseJSON?.type || 'error');
@@ -478,6 +512,7 @@
 
     $(document).ready(function() {
         initializeBuySelects();
+        updateProviderDetailCard();
         load_cart();
     });
 </script>

@@ -70,12 +70,37 @@
                                 <select class="form-control form-select reque" id="dni_ruc" name="dni_ruc">
                                     <option value=""></option>
                                     @foreach ($providers as $provider)
-                                        <option value="{{ $provider->id }}">
+                                        <option value="{{ $provider->id }}"
+                                            data-document="{{ $provider->nro_documento }}"
+                                            data-name="{{ $provider->nombres }}"
+                                            data-doctype="{{ $provider->tipoDocumento?->descripcion ?? 'DOCUMENTO' }}"
+                                            data-address="{{ $provider->direccion ?? '-' }}"
+                                            data-ubigeo="{{ $provider->idubigeo ?? '-' }}"
+                                            data-phone="{{ $provider->telefono ?? '-' }}"
+                                            data-email="{{ $provider->correo ?? '-' }}">
                                             {{ $provider->nro_documento . ' - ' . $provider->nombres }}
                                         </option>
                                     @endforeach
                                 </select>
                                 <div class="invalid-feedback"></div>
+                                <div class="card border border-primary bg-light-primary shadow-none mt-2 d-none" id="provider_detail_card">
+                                    <div class="card-body p-2 font-small-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="badge bg-primary" id="card_provider_doctype">RUC</span>
+                                            <span class="fw-bold text-dark font-small-3" id="card_provider_document"></span>
+                                        </div>
+                                        <div class="fw-bold text-dark mb-1" id="card_provider_name"></div>
+                                        <div class="text-muted mb-1">
+                                            <i data-feather="map-pin" style="width: 14px; height: 14px;"></i>
+                                            <span id="card_provider_address">-</span>
+                                            <span class="badge bg-secondary font-small-1 ms-1" id="card_provider_ubigeo">Ubigeo: -</span>
+                                        </div>
+                                        <div class="text-muted d-flex gap-3">
+                                            <span><i data-feather="phone" style="width: 14px; height: 14px;"></i> <span id="card_provider_phone">-</span></span>
+                                            <span><i data-feather="mail" style="width: 14px; height: 14px;"></i> <span id="card_provider_email">-</span></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="col-12 col-md-3 mb-3">

@@ -99,7 +99,7 @@
                 <td>Puede modificar todos los campos, excepto la descripción.</td>
             </tr>
             <tr>
-                <td>Los registros que no tienen stock mínimo ni stock actual corresponden a servicios. No es necesario realizar cambios a esta información.</td>
+                <td>Este archivo contiene únicamente productos físicos con inventario. Los servicios intangibles están excluidos del stock físico.</td>
             </tr>
         </table>
     </div>

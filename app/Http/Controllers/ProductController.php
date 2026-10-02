@@ -154,16 +154,16 @@ class ProductController extends Controller
             'stock_actual' => $stockActual,
         ]);
 
-        StockProduct::create([
-            'idproducto' => $product->id,
-            'idalmacen' => $warehouseId,
-            'stock_minimo' => $isService ? null : 10,
-            'stock_actual' => $stockActual,
-            'precio_compra' => $precioCompra,
-            'precio_venta' => $precioVenta,
-            'fecha_registro' => now()->toDateString(),
-            'stock_entrada' => $stockActual,
-        ]);
+        if (! $isService) {
+            app(\App\Services\StockService::class)->initializeStock(
+                $warehouseId,
+                $product->id,
+                $stockActual,
+                $precioCompra,
+                $precioVenta,
+                10
+            );
+        }
 
         return response()->json([
             'status' => true,
@@ -350,7 +350,7 @@ class ProductController extends Controller
             ], 422);
         }
 
-        StockProduct::query()->where('idproducto', $product->id)->delete();
+        app(\App\Services\StockService::class)->deleteProductStock($product->id);
         $product->delete();
 
         return response()->json([

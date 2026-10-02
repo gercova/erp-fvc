@@ -7,12 +7,18 @@ use App\Imports\ProductsWarehouseImport;
 use App\Models\Product;
 use App\Models\StockProduct;
 use App\Models\Warehouse;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 
 class WarehouseController extends Controller
 {
+    public function __construct(
+        protected StockService $stockService
+    ) {
+    }
+
     public function index()
     {
         return view('admin.warehouses.list');
@@ -44,11 +50,11 @@ class WarehouseController extends Controller
                 $id = $warehouse->id;
                 return '<div class="dropdown">
                             <a href="#" role="button" id="dropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 18H9V20H2V18ZM2 11H11V13H2V11ZM2 4H22V6H2V4ZM20.674 13.0251L21.8301 12.634L22.8301 14.366L21.914 15.1711C21.9704 15.4386 22 15.7158 22 16C22 16.2842 21.9704 16.5614 21.914 16.8289L22.8301 17.634L21.8301 19.366L20.674 18.9749C20.2635 19.3441 19.7763 19.6295 19.2391 19.8044L19 21H17L16.7609 19.8044C16.2237 19.6295 15.7365 19.3441 15.326 18.9749L14.1699 19.366L13.1699 17.634L14.086 16.8289C14.0296 16.5614 14 16.2842 14 16C14 15.7158 14.0296 15.4386 14.086 15.1711L13.1699 14.366L14.1699 12.634L15.326 13.0251C15.7365 12.6559 16.2237 12.3705 16.7609 12.1956L17 11H19L19.2391 12.1956C19.7763 12.3705 20.2635 12.6559 20.674 13.0251ZM18 18C19.1046 18 20 17.1046 20 16C20 14.8954 19.1046 14 18 14C16.8954 14 16 14.8954 16 16C16 17.1046 16.8954 18 18 18Z" class="menu-icon"></path></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 18H9V20H2V18ZM2 11H11V13H2V11ZM2 4H22V6H2V4ZM20.674 13.0251L21.8301 12.634L22.8301 14.366L21.914 15.1711C21.9704 15.4386 22 15.7158 22 16C22 16.2842 21.9704 16.5614 21.914 16.8289L22.8301 17.634L21.8301 19.366L20.674 18.9749C20.2635 19.3441 19.7763 19.6295 19.2391 19.8044L19 21H17L16.7609 19.8044C16.2237 19.6295 15.7365 19.3441 15.326 18.9749L14.1699 19.366L13.1699 17.634L14.086 16.8289C14.0296 15.4386 14 16.2842 14 16C14 15.7158 14.0296 15.4386 14.086 15.1711L13.1699 14.366L14.1699 12.634L15.326 13.0251C15.7365 12.6559 16.2237 12.3705 16.7609 12.1956L17 11H19L19.2391 12.1956C19.7763 12.3705 20.2635 12.6559 20.674 13.0251ZM18 18C19.1046 18 20 17.1046 20 16C20 14.8954 19.1046 14 18 14C16.8954 14 16 14.8954 16 16C16 17.1046 16.8954 18 18 18Z" class="menu-icon"></path></svg>
                             </a>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuLink1">
                                 <a class="dropdown-item" data-id="' . $id . '" href="' . route('admin.products_warehouse', $id) . '">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" width="24" height="24" class="main-grid-item-icon menu-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" class="main-grid-item-icon menu-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
                                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
                                 <line x1="7" x2="7.01" y1="7" y2="7" />
                                 </svg>
@@ -71,7 +77,7 @@ class WarehouseController extends Controller
 
     public function save(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -113,7 +119,7 @@ class WarehouseController extends Controller
 
     public function detail(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -135,7 +141,7 @@ class WarehouseController extends Controller
 
     public function store(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -186,7 +192,7 @@ class WarehouseController extends Controller
 
     public function delete(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -229,7 +235,7 @@ class WarehouseController extends Controller
 
     public function get_prod_warehouse(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
         }
 
@@ -247,7 +253,8 @@ class WarehouseController extends Controller
             'stock_products.precio_venta'
         )
             ->join('products', 'stock_products.idproducto', 'products.id')
-            ->where('stock_products.idalmacen', $id);
+            ->where('stock_products.idalmacen', $id)
+            ->where('products.opcion', 1); // SERVICES do not appear as physical inventory nor hold stock
 
         if ($request->has('barcode') && $request->barcode != '') {
             $query->where('products.codigo_barras', 'like', '%' . $request->barcode . '%');
@@ -275,11 +282,7 @@ class WarehouseController extends Controller
         return datatables()
             ->of($productos)
             ->editColumn('producto', function ($producto) {
-                $typeBadge = (int) $producto->opcion === 2
-                    ? '<span class="badge bg-info-subtle text-info fw-medium ms-2">Servicio</span>'
-                    : '<span class="badge bg-success-subtle text-success fw-medium ms-2">Producto</span>';
-
-                return '<div><div class="fw-semibold">' . e($producto->producto) . '</div><div class="small text-muted mt-1">' . $typeBadge . '</div></div>';
+                return '<div><div class="fw-semibold">' . e($producto->producto) . '</div></div>';
             })
             ->addColumn('precio_compra', function ($producto) {
                 return '<input type="text" class="align-middle form-control form-control-sm text-center input-precio-compra" 
@@ -287,8 +290,7 @@ class WarehouseController extends Controller
                             data-idalmacen="' . $producto->idalmacen . '" 
                             data-idproducto="' . $producto->idproducto . '" 
                             data-stock_minimo="' . $producto->stock_minimo . '" 
-                            data-precio_venta="' . $producto->precio_venta . '"
-                            >';
+                            data-precio_venta="' . $producto->precio_venta . '">';
             })
             ->addColumn('precio_venta', function ($producto) {
                 return '<input type="text" class="align-middle form-control form-control-sm text-center input-precio-venta" 
@@ -299,21 +301,14 @@ class WarehouseController extends Controller
                             data-precio_compra="' . $producto->precio_compra . '">';
             })
             ->addColumn('stock_minimo', function ($producto) {
-                if ($producto->opcion == 1) {
-                    return '<input type="text" class="align-middle form-control form-control-sm text-center input-stock-minimo" 
-                        name="input-stock-minimo" value="' . (int) $producto->stock_minimo . '" 
-                        data-idalmacen="' . $producto->idalmacen . '" 
-                        data-idproducto="' . $producto->idproducto . '" 
-                        data-precio_compra="' . $producto->precio_compra . '" 
-                        data-precio_venta="' . $producto->precio_venta . '">';
-                }
-                return '<span class="badge bg-light text-muted border">No aplica</span>';
+                return '<input type="text" class="align-middle form-control form-control-sm text-center input-stock-minimo" 
+                    name="input-stock-minimo" value="' . (int) $producto->stock_minimo . '" 
+                    data-idalmacen="' . $producto->idalmacen . '" 
+                    data-idproducto="' . $producto->idproducto . '" 
+                    data-precio_compra="' . $producto->precio_compra . '" 
+                    data-precio_venta="' . $producto->precio_venta . '">';
             })
             ->editColumn('stock_actual', function ($producto) {
-                if ((int) $producto->opcion === 2) {
-                    return '<span class="badge bg-light text-muted border">No inventariable</span>';
-                }
-
                 $stockActual = (int) $producto->stock_actual;
                 $stockMinimo = (int) $producto->stock_minimo;
                 $badgeClass = 'bg-success-subtle text-success';
@@ -330,7 +325,6 @@ class WarehouseController extends Controller
                 return '<div class="text-center"><div class="fw-semibold">' . $stockActual . '</div><div class="mt-1"><span class="badge ' . $badgeClass . '">' . $label . '</span></div></div>';
             })
             ->addColumn('acciones', function ($producto) {
-                $hidden = ($producto->opcion == 1) ? '' : 'd-none';
                 return '<div class="dropdown">
                             <a href="#" role="button" id="dropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -338,14 +332,14 @@ class WarehouseController extends Controller
                                 </svg>
                             </a>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuLink1">
-                                <a class="dropdown-item btn-detail-sum ' . $hidden . '" data-idalmacen="' . $producto->idalmacen . '" data-idproducto="' . $producto->idproducto . '" href="javascript:void(0);">
+                                <a class="dropdown-item btn-detail-sum" data-idalmacen="' . $producto->idalmacen . '" data-idproducto="' . $producto->idproducto . '" href="javascript:void(0);">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus mr-50 menu-icon">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
                                 <span> Sumar</span>
                             </a>
-                            <a class="dropdown-item btn-detail-stock ' . $hidden . '" data-idalmacen="' . $producto->idalmacen . '" data-idproducto="' . $producto->idproducto . '" href="javascript:void(0);">
+                            <a class="dropdown-item btn-detail-stock" data-idalmacen="' . $producto->idalmacen . '" data-idproducto="' . $producto->idproducto . '" href="javascript:void(0);">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2 mr-50 menu-icon">
                                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
                                 </svg>
@@ -367,7 +361,7 @@ class WarehouseController extends Controller
 
     public function get_detail_products(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -378,8 +372,10 @@ class WarehouseController extends Controller
         $id = $request->input('id');
         $ids_productos_stocks = StockProduct::where('idalmacen', $id)->pluck('idproducto')->toArray();
 
+        // Only physical inventory items (opcion = 1); services do not hold stock
         $productos = Product::select('products.*', 'categories.descripcion as categoria')
-            ->join('categories', 'products.idcategoria', 'categories.id');
+            ->join('categories', 'products.idcategoria', 'categories.id')
+            ->where('products.opcion', 1);
 
         if ($request->has('search_barcode') && $request->search_barcode) {
             $productos->where('products.codigo_barras', 'LIKE', '%' . $request->search_barcode . '%');
@@ -411,11 +407,9 @@ class WarehouseController extends Controller
                 return '<input type="checkbox" class="align-middle checkbox-item btn-checkbox" data-precio_compra="' . $producto->precio_compra . '" data-id="' . $producto->id . '" data-precio_venta="' . $producto->precio_venta . '">';
             })
             ->addColumn('stock_inicial', function ($producto) {
-                $tipo = ($producto->opcion == 1) ? 'producto' : 'servicio';
-                $hidden = ($producto->opcion == 1) ? 'text' : 'hidden';
-                return '<input type="' . $hidden . '" class="align-middle form-control form-control-sm" 
+                return '<input type="text" class="align-middle form-control form-control-sm" 
                 name="input-stock" data-id="' . $producto->id . '" disabled 
-                data-tipo="' . $tipo . '" data-precio_compra="' . $producto->precio_compra . '" 
+                data-tipo="producto" data-precio_compra="' . $producto->precio_compra . '" 
                 data-precio_venta="' . $producto->precio_venta . '" 
                 onkeydown="return event.key !== \'Enter\';">';
             })
@@ -425,7 +419,7 @@ class WarehouseController extends Controller
 
     public function list_products(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -441,7 +435,7 @@ class WarehouseController extends Controller
 
     public function save_product_stock(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -455,8 +449,26 @@ class WarehouseController extends Controller
             return $warehouse;
         }
 
-        $productos = json_decode((string) $request->post('productos'));
-        $fecha_registro = date('Y-m-d');
+        $isSingleProduct = false;
+        $productosRaw = $request->input('productos');
+        if (is_string($productosRaw)) {
+            $productos = json_decode($productosRaw);
+        } elseif (is_array($productosRaw)) {
+            $productos = json_decode(json_encode($productosRaw));
+        } elseif ($request->filled('product')) {
+            $isSingleProduct = true;
+            $productos = [
+                (object) [
+                    'idproducto' => (int) $request->input('product'),
+                    'stock_inicial' => (int) $request->input('cantidad', 1),
+                    'precio_compra' => (float) $request->input('precio_compra', 0),
+                    'precio_venta' => (float) $request->input('precio_venta', 0),
+                    'stock_minimo' => (int) $request->input('stock_minimo', 5),
+                ]
+            ];
+        } else {
+            $productos = [];
+        }
 
         if (! is_array($productos) || empty($productos)) {
             return response()->json([
@@ -476,9 +488,19 @@ class WarehouseController extends Controller
                 ], 404);
             }
 
-            $isService = (int) $product->opcion === 2;
-            $stockInicial = $isService ? null : (int) ($producto->stock_inicial ?? 0);
-            if (! $isService && $stockInicial < 0) {
+            if ($product->isService()) {
+                if ($isSingleProduct) {
+                    return response()->json([
+                        'status' => false,
+                        'msg' => 'Los servicios no forman parte del inventario físico ni manejan stock.',
+                        'type' => 'warning',
+                    ], 422);
+                }
+                continue; // Services never generate stock rows
+            }
+
+            $stockInicial = (int) ($producto->stock_inicial ?? 0);
+            if ($stockInicial < 0) {
                 return response()->json([
                     'status' => false,
                     'msg' => 'El stock inicial no puede ser negativo.',
@@ -486,17 +508,16 @@ class WarehouseController extends Controller
                 ], 422);
             }
 
-            StockProduct::insert([
-                'idalmacen' => $idalmacen,
-                'stock_minimo' => $isService ? null : 5,
-                'idproducto' => $product->id,
-                'stock_actual' => $stockInicial,
-                'precio_compra' => number_format((float) ($producto->precio_compra ?? 0), 2, '.', ''),
-                'precio_venta' => number_format((float) ($producto->precio_venta ?? 0), 2, '.', ''),
-                'fecha_registro' => $fecha_registro,
-                'stock_entrada' => $stockInicial,
-                'created_at' => now(),
-            ]);
+            $minStock = isset($producto->stock_minimo) ? (int) $producto->stock_minimo : 5;
+
+            $this->stockService->initializeStock(
+                $idalmacen,
+                $product->id,
+                $stockInicial,
+                (float) ($producto->precio_compra ?? 0),
+                (float) ($producto->precio_venta ?? 0),
+                $minStock
+            );
         }
 
         return response()->json([
@@ -508,7 +529,7 @@ class WarehouseController extends Controller
 
     public function barcode_sum(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -524,7 +545,6 @@ class WarehouseController extends Controller
 
         $barcode = trim((string) $request->input('barcode'));
         $producto = Product::where('codigo_barras', $barcode)->first();
-        $cantidad = 1;
         if (empty($producto)) {
             return response()->json([
                 'status' => false,
@@ -533,8 +553,15 @@ class WarehouseController extends Controller
             ]);
         }
 
-        $buscar_producto = StockProduct::where('idalmacen', $idalmacen)->where('idproducto', $producto->id)->first();
+        if ($producto->isService()) {
+            return response()->json([
+                'status' => false,
+                'msg' => 'Los servicios no forman parte del inventario físico ni manejan stock.',
+                'type' => 'warning',
+            ], 422);
+        }
 
+        $buscar_producto = StockProduct::where('idalmacen', $idalmacen)->where('idproducto', $producto->id)->first();
         if (empty($buscar_producto)) {
             return response()->json([
                 'status' => false,
@@ -543,18 +570,7 @@ class WarehouseController extends Controller
             ]);
         }
 
-        if ((int) $producto->opcion === 2) {
-            return response()->json([
-                'status' => false,
-                'msg' => 'Los servicios no manejan stock fÃ­sico por almacÃ©n.',
-                'type' => 'warning',
-            ], 422);
-        }
-
-        $stock_db = StockProduct::where('idalmacen', $idalmacen)->where('idproducto', $producto->id)->first();
-        StockProduct::where('idalmacen', $idalmacen)->where('idproducto', $producto->id)->update([
-            'stock_actual' => $stock_db->stock_actual + $cantidad,
-        ]);
+        $this->stockService->increase($idalmacen, $producto->id, 1);
 
         return response()->json([
             'status' => true,
@@ -565,7 +581,7 @@ class WarehouseController extends Controller
 
     public function save_products_all(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -573,61 +589,45 @@ class WarehouseController extends Controller
             ]);
         }
 
-        $idalmacen = (int) $request->input('idalmacen');
+        $idalmacen = (int) ($request->input('idalmacen') ?? $request->input('id'));
         $warehouse = $this->findWarehouseOrFail($idalmacen);
         if ($warehouse !== null) {
             return $warehouse;
         }
 
-        $stock_inicial = (int) $request->input('stock_inicial');
-        $fecha_registro = date('Y-m-d');
+        $stock_inicial = (int) $request->input('stock_inicial', 0);
 
-        $ids_productos_db = Product::pluck('id')->toArray();
+        // Only physical products (opcion = 1)
+        $ids_productos_db = Product::where('opcion', 1)->pluck('id')->toArray();
         $ids_productos_stocks = StockProduct::where('idalmacen', $idalmacen)->pluck('idproducto')->toArray();
-        $productos = [];
         $nuevo_array = array_diff($ids_productos_db, $ids_productos_stocks);
 
-        foreach ($nuevo_array as $key) {
-            $productos[] = Product::where('id', $key)->first();
-        }
-
-        if (empty($productos)) {
+        if (empty($nuevo_array)) {
             return response()->json([
                 'status' => false,
-                'msg' => 'No hay productos para añadir al establecimiento.',
+                'msg' => 'No hay productos físicos pendientes para añadir al establecimiento.',
                 'type' => 'warning',
             ]);
         }
 
-        $hay_productos = false;
-
-        foreach ($productos as $producto) {
-            if ($producto->opcion == 1) {
-                $hay_productos = true;
-                break;
-            }
-        }
-
-        if ($hay_productos && $stock_inicial <= 0) {
+        if ($stock_inicial < 0) {
             return response()->json([
                 'status' => false,
-                'msg' => 'El stock inicial debe ser mayor a cero para un producto.',
+                'msg' => 'El stock inicial debe ser mayor o igual a cero.',
                 'type' => 'warning',
-            ]);
+            ], 422);
         }
 
+        $productos = Product::whereIn('id', $nuevo_array)->where('opcion', 1)->get();
+
         foreach ($productos as $producto) {
-            StockProduct::insert([
-                'idalmacen' => $idalmacen,
-                'stock_minimo' => 5,
-                'idproducto' => $producto->id,
-                'stock_actual' => ($producto->opcion == 1) ? $stock_inicial : null,
-                'precio_compra' => $producto->precio_compra,
-                'precio_venta' => $producto->precio_venta,
-                'fecha_registro' => $fecha_registro,
-                'stock_entrada' => ($producto->opcion == 1) ? $stock_inicial : null,
-                'created_at' => now(),
-            ]);
+            $this->stockService->initializeStock(
+                $idalmacen,
+                $producto->id,
+                $stock_inicial,
+                (float) $producto->precio_compra,
+                (float) $producto->precio_venta
+            );
         }
 
         return response()->json([
@@ -639,7 +639,7 @@ class WarehouseController extends Controller
 
     public function detail_sum(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -655,7 +655,7 @@ class WarehouseController extends Controller
         if ((int) $stock->opcion === 2) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Los servicios no manejan stock fÃ­sico.',
+                'msg' => 'Los servicios no manejan stock físico.',
                 'type' => 'warning',
             ], 422);
         }
@@ -668,7 +668,7 @@ class WarehouseController extends Controller
 
     public function sum_stock(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -695,14 +695,12 @@ class WarehouseController extends Controller
         if ((int) $stock_db->opcion === 2) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Los servicios no manejan stock fÃ­sico.',
+                'msg' => 'Los servicios no manejan stock físico.',
                 'type' => 'warning',
             ], 422);
         }
 
-        StockProduct::where('idalmacen', $idalmacen)->where('idproducto', $idproducto)->update([
-            'stock_actual' => $stock_db->stock_actual + $cantidad,
-        ]);
+        $this->stockService->increase($idalmacen, $idproducto, $cantidad);
 
         return response()->json([
             'status' => true,
@@ -713,7 +711,7 @@ class WarehouseController extends Controller
 
     public function detail_stock(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -729,7 +727,7 @@ class WarehouseController extends Controller
         if ((int) $stock->opcion === 2) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Los servicios no manejan stock fÃ­sico.',
+                'msg' => 'Los servicios no manejan stock físico.',
                 'type' => 'warning',
             ], 422);
         }
@@ -742,7 +740,7 @@ class WarehouseController extends Controller
 
     public function store_stock(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -769,14 +767,12 @@ class WarehouseController extends Controller
         if ((int) $stock->opcion === 2) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Los servicios no manejan stock fÃ­sico.',
+                'msg' => 'Los servicios no manejan stock físico.',
                 'type' => 'warning',
             ], 422);
         }
 
-        StockProduct::where('idalmacen', $idalmacen)->where('idproducto', $idproducto)->update([
-            'stock_actual' => $stock_actual,
-        ]);
+        $this->stockService->setStock($idalmacen, $idproducto, $stock_actual);
 
         return response()->json([
             'status' => true,
@@ -787,7 +783,7 @@ class WarehouseController extends Controller
 
     public function delete_stock(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -795,22 +791,23 @@ class WarehouseController extends Controller
             ]);
         }
 
-        $stock = $this->findStockProduct((int) $request->input('idalmacen'), (int) $request->input('idproducto'));
+        $idalmacen = (int) $request->input('idalmacen');
+        $idproducto = (int) $request->input('idproducto');
+
+        $stock = $this->findStockProduct($idalmacen, $idproducto);
         if ($stock instanceof \Illuminate\Http\JsonResponse) {
             return $stock;
         }
 
-        if ((int) $stock->opcion === 1 && (int) $stock->stock_actual > 0) {
+        try {
+            $this->stockService->removeFromWarehouse($idalmacen, $idproducto);
+        } catch (\RuntimeException $e) {
             return response()->json([
                 'status' => false,
-                'msg' => 'No se puede retirar el producto mientras tenga stock en el almacÃ©n.',
+                'msg' => $e->getMessage(),
                 'type' => 'warning',
             ], 422);
         }
-
-        StockProduct::where('idalmacen', (int) $request->input('idalmacen'))
-            ->where('idproducto', (int) $request->input('idproducto'))
-            ->delete();
 
         return response()->json([
             'status' => true,
@@ -821,7 +818,7 @@ class WarehouseController extends Controller
 
     public function store_product_stocks(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -839,16 +836,16 @@ class WarehouseController extends Controller
         $validator = Validator::make($request->all(), [
             'precio_compra' => 'required|numeric|min:0',
             'precio_venta' => 'required|numeric|min:0',
-            'stock_minimo' => ((int) $stock->opcion === 1) ? 'nullable|numeric|min:0' : 'nullable',
+            'stock_minimo' => 'nullable|numeric|min:0',
         ], [
             'precio_compra.required' => 'Debe ingresar el precio de compra.',
-            'precio_compra.numeric' => 'El precio de compra debe ser numÃ©rico.',
+            'precio_compra.numeric' => 'El precio de compra debe ser numérico.',
             'precio_compra.min' => 'El precio de compra no puede ser negativo.',
             'precio_venta.required' => 'Debe ingresar el precio de venta.',
-            'precio_venta.numeric' => 'El precio de venta debe ser numÃ©rico.',
+            'precio_venta.numeric' => 'El precio de venta debe ser numérico.',
             'precio_venta.min' => 'El precio de venta no puede ser negativo.',
-            'stock_minimo.numeric' => 'El stock mÃ­nimo debe ser numÃ©rico.',
-            'stock_minimo.min' => 'El stock mÃ­nimo no puede ser negativo.',
+            'stock_minimo.numeric' => 'El stock mínimo debe ser numérico.',
+            'stock_minimo.min' => 'El stock mínimo no puede ser negativo.',
         ]);
 
         if ($validator->fails()) {
@@ -860,17 +857,17 @@ class WarehouseController extends Controller
             ], 422);
         }
 
-        $stock_minimo = ((int) $stock->opcion === 1) ? (int) ($request->input('stock_minimo') ?: 0) : null;
-        $precio_compra = number_format((float) $request->input('precio_compra'), 2, '.', '');
-        $precio_venta = number_format((float) $request->input('precio_venta'), 2, '.', '');
+        $stock_minimo = $request->filled('stock_minimo') ? (int) $request->input('stock_minimo') : 5;
+        $precio_compra = (float) $request->input('precio_compra');
+        $precio_venta = (float) $request->input('precio_venta');
 
-        StockProduct::where('idalmacen', $idalmacen)
-            ->where('idproducto', $idproducto)
-            ->update([
-                'stock_minimo' => $stock_minimo,
-                'precio_compra' => $precio_compra,
-                'precio_venta' => $precio_venta,
-            ]);
+        $this->stockService->updatePricingAndMinStock(
+            $idalmacen,
+            $idproducto,
+            $precio_compra,
+            $precio_venta,
+            $stock_minimo
+        );
 
         return response()->json([
             'status' => true,
@@ -881,9 +878,11 @@ class WarehouseController extends Controller
 
     public function export_products($id)
     {
+        // Only physical products with stock records in this warehouse
         $stock_products = StockProduct::select('products.descripcion', 'products.opcion', 'stock_products.precio_compra', 'stock_products.precio_venta', 'stock_products.stock_minimo', 'stock_products.stock_actual')
             ->join('products', 'stock_products.idproducto', '=', 'products.id')
             ->where('stock_products.idalmacen', $id)
+            ->where('products.opcion', 1)
             ->orderByDesc('stock_products.created_at')
             ->get();
 
@@ -892,7 +891,7 @@ class WarehouseController extends Controller
 
     public function upload_excel_products(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -930,7 +929,7 @@ class WarehouseController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'msg' => 'Se encontraron observaciones en el documento ' . $e->getMessage(),
+                'msg' => 'Se encontraron observaciones en el documento: ' . $e->getMessage(),
                 'type' => 'warning',
             ]);
         }
@@ -973,7 +972,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'status' => false,
-            'msg' => 'El almacÃ©n no existe.',
+            'msg' => 'El almacén no existe.',
             'type' => 'warning',
         ], 404);
     }
@@ -993,7 +992,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'status' => false,
-            'msg' => 'El producto no estÃ¡ registrado en este almacÃ©n.',
+            'msg' => 'El producto no está registrado en este almacén.',
             'type' => 'warning',
         ], 404);
     }
