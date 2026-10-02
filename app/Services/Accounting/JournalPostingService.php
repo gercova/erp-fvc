@@ -39,7 +39,10 @@ class JournalPostingService
         }
 
         // Map event or model to journal entry structure
-        $mapped = $this->mapper->map($eventOrModel);
+        $mapped = (is_array($eventOrModel) && isset($eventOrModel['header'], $eventOrModel['lines']))
+            ? $eventOrModel
+            : $this->mapper->map($eventOrModel);
+
         if (!$mapped) {
             return null; // Event explicitly ignored (e.g. Single Origin Rule for ActivityTransaction)
         }
@@ -54,7 +57,11 @@ class JournalPostingService
         $sourceType = $header['source_type'] ?? null;
         $sourceId   = $header['source_id'] ?? null;
         $finalEventKey = $header['event_key'] ?? 'posted';
-        $idempotencyKey = $header['idempotency_key'] ?? md5("{$sourceType}_{$sourceId}_{$finalEventKey}");
+        $idempotencyKey = $header['idempotency_key'] ?? (
+            ($sourceType && $sourceId)
+                ? md5("{$sourceType}_{$sourceId}_{$finalEventKey}")
+                : (string) Str::uuid()
+        );
 
         // IDEMPOTENCY CHECK:
         // If an entry already exists for (source_type, source_id, event_key), return it immediately.
@@ -307,5 +314,13 @@ class JournalPostingService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Post a raw journal entry with explicit header and lines.
+     */
+    public function postRaw(array $header, array $lines, ?string $eventKey = null): ?JournalEntry
+    {
+        return $this->post(['header' => $header, 'lines' => $lines], $eventKey);
     }
 }

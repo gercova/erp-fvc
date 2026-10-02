@@ -17,22 +17,37 @@ class RdrBankReconciliation extends Model
     protected $fillable = [
         'uuid',
         'fund_source_id',
+        'bank_account_id',
+        'accounting_period_id',
         'period_year',
         'period_month',
         'statement_closing_date',
         'bank_statement_balance',
         'system_calculated_balance',
+        'book_calculated_balance',
+        'uncredited_deposits',
+        'outstanding_checks',
+        'unrecorded_bank_charges',
+        'unrecorded_bank_credits',
         'reconciled_difference',
+        'reconciled_at',
         'status',
         'reconciled_by_user_id',
+        'approved_by_user_id',
         'notes',
     ];
 
     protected $casts = [
         'bank_statement_balance' => 'decimal:2',
         'system_calculated_balance' => 'decimal:2',
+        'book_calculated_balance' => 'decimal:2',
+        'uncredited_deposits' => 'decimal:2',
+        'outstanding_checks' => 'decimal:2',
+        'unrecorded_bank_charges' => 'decimal:2',
+        'unrecorded_bank_credits' => 'decimal:2',
         'reconciled_difference' => 'decimal:2',
         'statement_closing_date' => 'date',
+        'reconciled_at' => 'datetime',
         'period_year' => 'integer',
         'period_month' => 'integer',
     ];
@@ -51,8 +66,28 @@ class RdrBankReconciliation extends Model
         return $this->belongsTo(FundSource::class, 'fund_source_id');
     }
 
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class, 'bank_account_id');
+    }
+
+    public function accountingPeriod(): BelongsTo
+    {
+        return $this->belongsTo(AccountingPeriod::class, 'accounting_period_id');
+    }
+
     public function reconciledByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reconciled_by_user_id');
+    }
+
+    public function approvedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by_user_id');
+    }
+
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BankReconciliationItem::class, 'reconciliation_id');
     }
 }

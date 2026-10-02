@@ -58,6 +58,10 @@ class SaleNote extends Model
         return $this->belongsTo(Client::class, 'idcliente');
     }
 
+    public function client(): BelongsTo {
+        return $this->belongsTo(Client::class, 'idcliente');
+    }
+
     public function billing(): BelongsTo {
         return $this->belongsTo(Billing::class, 'billing_id');
     }

@@ -62,6 +62,11 @@ use App\Http\Controllers\AccountingPostingFailureController;
 use App\Http\Controllers\GeneralJournalController;
 use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\TrialBalanceController;
+use App\Http\Controllers\Treasury\BankAccountController;
+use App\Http\Controllers\Treasury\BankReconciliationController;
+use App\Http\Controllers\Treasury\AgingReportController;
+use App\Http\Controllers\Treasury\CashFlowController;
+use App\Http\Controllers\Treasury\InternalTransferController;
 
 /*
 |--------------------------------------------------------------------------
@@ -791,5 +796,52 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::get('/data',     'data')->name('accounting.trial_balance.data')->middleware('can:accounting.view');
         Route::get('/pdf',      'exportPdf')->name('accounting.trial_balance.pdf')->middleware('can:accounting.export');
         Route::get('/excel',    'exportExcel')->name('accounting.trial_balance.excel')->middleware('can:accounting.export');
+    });
+
+    // ==========================================
+    // TREASURY MODULE (BLOCK B4)
+    // ==========================================
+    Route::prefix('treasury')->group(function () {
+        // Bank Accounts & Statement Imports
+        Route::controller(BankAccountController::class)->prefix('bank-accounts')->group(function () {
+            Route::get('/',                 'index')->name('treasury.bank_accounts.index')->middleware('can:accounting.view');
+            Route::post('/',                'store')->name('treasury.bank_accounts.store')->middleware('can:accounting.view');
+            Route::get('/template/download', 'downloadTemplate')->name('treasury.bank_accounts.template')->middleware('can:accounting.export');
+            Route::get('/{id}',             'show')->name('treasury.bank_accounts.show')->middleware('can:accounting.view');
+            Route::post('/{id}/import',     'importStatement')->name('treasury.bank_accounts.import')->middleware('can:accounting.view');
+        });
+
+        // Bank Reconciliation (Extends RDR)
+        Route::controller(BankReconciliationController::class)->prefix('reconciliations')->group(function () {
+            Route::get('/',                 'index')->name('treasury.reconciliations.index')->middleware('can:accounting.view');
+            Route::post('/',                'store')->name('treasury.reconciliations.store')->middleware('can:accounting.view');
+            Route::get('/{id}',             'show')->name('treasury.reconciliations.show')->middleware('can:accounting.view');
+            Route::get('/{id}/suggestions', 'suggestions')->name('treasury.reconciliations.suggestions')->middleware('can:accounting.view');
+            Route::post('/{id}/match',       'match')->name('treasury.reconciliations.match')->middleware('can:accounting.view');
+            Route::post('/{id}/items',       'addItem')->name('treasury.reconciliations.add_item')->middleware('can:accounting.view');
+            Route::post('/{id}/adjustment',  'postAdjustment')->name('treasury.reconciliations.adjustment')->middleware('can:accounting.view');
+            Route::post('/{id}/close',       'close')->name('treasury.reconciliations.close')->middleware('can:accounting.view');
+        });
+
+        // Aging Views (AR & AP)
+        Route::controller(AgingReportController::class)->prefix('aging')->group(function () {
+            Route::get('/receivables', 'receivables')->name('treasury.aging.receivables')->middleware('can:accounting.view');
+            Route::get('/payables',    'payables')->name('treasury.aging.payables')->middleware('can:accounting.view');
+        });
+
+        // Cash Flow (Direct Method, Projected vs Actual, Chart & Excel)
+        Route::controller(CashFlowController::class)->prefix('cash-flow')->group(function () {
+            Route::get('/',       'index')->name('treasury.cash_flow.index')->middleware('can:accounting.view');
+            Route::get('/data',   'data')->name('treasury.cash_flow.data')->middleware('can:accounting.view');
+            Route::get('/export', 'exportExcel')->name('treasury.cash_flow.export')->middleware('can:accounting.export');
+        });
+
+        // Internal Transfers (Account-to-account, Cash-to-bank, Transfer-to-CUT)
+        Route::controller(InternalTransferController::class)->prefix('transfers')->group(function () {
+            Route::get('/',             'index')->name('treasury.transfers.index')->middleware('can:accounting.view');
+            Route::post('/bank-to-bank', 'storeBankToBank')->name('treasury.transfers.bank_to_bank')->middleware('can:accounting.view');
+            Route::post('/cash-to-bank', 'storeCashToBank')->name('treasury.transfers.cash_to_bank')->middleware('can:accounting.view');
+            Route::post('/to-cut',       'storeTransferToCut')->name('treasury.transfers.to_cut')->middleware('can:accounting.view');
+        });
     });
 });

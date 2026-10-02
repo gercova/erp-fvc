@@ -84,6 +84,10 @@ class Billing extends Model
         return $this->belongsTo(Client::class, 'idcliente');
     }
 
+    public function client(): BelongsTo {
+        return $this->belongsTo(Client::class, 'idcliente');
+    }
+
     public function currency(): BelongsTo {
         return $this->belongsTo(Currency::class, 'idmoneda');
     }
