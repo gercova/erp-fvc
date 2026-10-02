@@ -177,6 +177,10 @@
                 'productive_activities.rdr.index',
                 'agrolivestock.plots.index',
             ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'JEFE_AREA', 'ADMINISTRACION', 'CONTABILIDAD', 'RESPONSABLE_ACTIVIDAD']);
+            $canContabilidad = $authUser?->canany([
+                'accounting.view',
+                'accounting.export',
+            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'CONTABILIDAD']);
             $pendingApprovalsCount = $authUser ? $authUser->pendingApprovalsCount() : 0;
             $totalNotificationsCount = ($productos_agotar ?? 0) + $pendingApprovalsCount;
         @endphp
@@ -752,6 +756,46 @@
                                             @endcan
                                         </nav>
                                     </div>
+                                </nav>
+                            </div>
+                        @endif
+
+                        <!-- Sidenav Accordion (Contabilidad) -->
+                        @if ($canContabilidad)
+                            @php
+                                $isAccountingGroup = request()->is('accounting*');
+                            @endphp
+                            <a class="nav-link {{ $isAccountingGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse"
+                                data-bs-target="#collapseAccounting" aria-expanded="{{ $isAccountingGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseAccounting">
+                                <div class="nav-link-icon"><i data-feather="book-open"></i></div>
+                                Contabilidad
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse {{ $isAccountingGroup ? 'show' : '' }}"
+                                id="collapseAccounting" data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    <a class="nav-link {{ request()->routeIs('accounting.journal.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.journal.index') }}">
+                                        Libro Diario
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.ledger.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.ledger.index') }}">
+                                        Libro Mayor
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.trial_balance.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.trial_balance.index') }}">
+                                        Balance Comprobación
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.chart_of_accounts.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.chart_of_accounts.index') }}">
+                                        Plan de Cuentas (PCGE)
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.failures.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.failures.index') }}">
+                                        Fallos de Asiento
+                                    </a>
                                 </nav>
                             </div>
                         @endif

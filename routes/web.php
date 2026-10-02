@@ -59,6 +59,9 @@ use App\Http\Controllers\AgroHarvestQuickEntryController;
 use App\Http\Controllers\AgroReportsController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\AccountingPostingFailureController;
+use App\Http\Controllers\GeneralJournalController;
+use App\Http\Controllers\GeneralLedgerController;
+use App\Http\Controllers\TrialBalanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -764,5 +767,29 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::get('/data',                 'data')->name('accounting.failures.data');
         Route::post('/{id}/reprocess',      'reprocess')->name('accounting.failures.reprocess');
         Route::post('/reprocess-all',       'reprocessAll')->name('accounting.failures.reprocess-all');
+    });
+
+    // Libro Diario (General Journal)
+    Route::controller(GeneralJournalController::class)->prefix('journal')->group(function() {
+        Route::get('/',         'index')->name('accounting.journal.index')->middleware('can:accounting.view');
+        Route::get('/data',     'data')->name('accounting.journal.data')->middleware('can:accounting.view');
+        Route::get('/pdf',      'exportPdf')->name('accounting.journal.pdf')->middleware('can:accounting.export');
+        Route::get('/excel',    'exportExcel')->name('accounting.journal.excel')->middleware('can:accounting.export');
+    });
+
+    // Libro Mayor (General Ledger)
+    Route::controller(GeneralLedgerController::class)->prefix('ledger')->group(function() {
+        Route::get('/',         'index')->name('accounting.ledger.index')->middleware('can:accounting.view');
+        Route::get('/data',     'data')->name('accounting.ledger.data')->middleware('can:accounting.view');
+        Route::get('/pdf',      'exportPdf')->name('accounting.ledger.pdf')->middleware('can:accounting.export');
+        Route::get('/excel',    'exportExcel')->name('accounting.ledger.excel')->middleware('can:accounting.export');
+    });
+
+    // Balance de Comprobación (Trial Balance)
+    Route::controller(TrialBalanceController::class)->prefix('trial-balance')->group(function() {
+        Route::get('/',         'index')->name('accounting.trial_balance.index')->middleware('can:accounting.view');
+        Route::get('/data',     'data')->name('accounting.trial_balance.data')->middleware('can:accounting.view');
+        Route::get('/pdf',      'exportPdf')->name('accounting.trial_balance.pdf')->middleware('can:accounting.export');
+        Route::get('/excel',    'exportExcel')->name('accounting.trial_balance.excel')->middleware('can:accounting.export');
     });
 });

@@ -132,6 +132,10 @@ class RoleSeeder extends Seeder
                 'production.profitability.index' => 'Consultar reporte de rentabilidad',
                 'commercialization.orders.index' => 'Gestionar preventas y pedidos de actividades',
             ],
+            'Contabilidad' => [
+                'accounting.view' => 'Ver libros contables y reportes contables',
+                'accounting.export' => 'Exportar libros contables a PDF y Excel',
+            ],
         ];
 
         $allPermissions = [];
@@ -225,6 +229,8 @@ class RoleSeeder extends Seeder
 
         $contabilidad->syncPermissions([
             'admin.home',
+            'accounting.view',
+            'accounting.export',
             'report.billings.sales_register',
             'report.billings.billing_documents',
             'report.billings.credit_notes',
