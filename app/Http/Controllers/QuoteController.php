@@ -23,6 +23,7 @@ use Carbon\Carbon;
 use Luecano\NumeroALetras\NumeroALetras;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
+use App\Services\TaxCalculator;
 
 class QuoteController extends Controller
 {
@@ -123,7 +124,7 @@ class QuoteController extends Controller
     }
 
     public function get_product(Request $request) {
-        if (!$request->ajax()) {
+        if (!$request->ajax() && !$request->expectsJson()) {
             return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
@@ -132,8 +133,30 @@ class QuoteController extends Controller
             ]);
         }
 
-        $id         = $request->input('id');
-        $idalmacen  = $request->input('idalmacen');
+        $id         = (int) $request->input('id');
+        $idalmacen  = (int) $request->input('idalmacen');
+
+        $check = Product::with('category')->find($id);
+        if ($check && (int) $check->opcion === 2) {
+            $product = (object) [
+                'codigo_barras'  => $check->codigo_barras,
+                'codigo_interno' => $check->codigo_interno,
+                'producto'       => $check->descripcion,
+                'categoria'      => $check->category?->descripcion ?? 'Servicios',
+                'stock_minimo'   => 0,
+                'stock_actual'   => 9999,
+                'idproducto'     => $check->id,
+                'idalmacen'      => $idalmacen,
+                'precio_compra'  => $check->precio_compra,
+                'precio_venta'   => $check->precio_venta,
+            ];
+
+            return response()->json([
+                'status'    => true,
+                'product'   => $product
+            ]);
+        }
+
         $product    = StockProduct::select(
             'products.codigo_barras',
             'products.codigo_interno',
@@ -159,7 +182,7 @@ class QuoteController extends Controller
     }
 
     public function get_product_idwarehouse(Request $request) {
-        if (!$request->ajax()) {
+        if (!$request->ajax() && !$request->expectsJson()) {
             return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
@@ -186,11 +209,30 @@ class QuoteController extends Controller
             ->orderBy('stock_products.idproducto', 'desc')
             ->get();
 
+        $services = Product::select(
+            'products.codigo_barras',
+            'products.codigo_interno',
+            'products.descripcion as producto',
+            'categories.descripcion as categoria',
+            \DB::raw('0 as stock_minimo'),
+            \DB::raw('9999 as stock_actual'),
+            'products.id as idproducto',
+            \DB::raw("$idalmacen as idalmacen"),
+            'products.precio_compra',
+            'products.precio_venta'
+        )
+            ->join('categories', 'products.idcategoria', 'categories.id')
+            ->where('products.opcion', 2)
+            ->get();
+
+        $productos = $productos->concat($services);
+
         return response()->json([
             'status'        => true,
             'productos'     => $productos
         ]);
     }
+
 
     public function load_clients(Request $request) {
         if (!$request->ajax()) {
@@ -266,20 +308,26 @@ class QuoteController extends Controller
 
     public function add_product(Request $request)
     {
-        if (!$request->ajax()) {
-            echo json_encode([
+        if (!$request->ajax() && !$request->expectsJson()) {
+            return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
                 'type'      => 'warning'
             ]);
-            return;
         }
 
         $id             = (int) $request->input('id');
         $producto       = Product::where('id', $id)->first();
+        if (!$producto) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'Producto no encontrado',
+                'type'   => 'warning'
+            ], 404);
+        }
         $opcion         = (int) $producto->opcion;
-        $cantidad       = (int) $request->input('cantidad');
-        $precio         = number_format($request->input('precio'), 2, ".", "");
+        $cantidad       = (float) $request->input('cantidad');
+        $precio         = number_format((float) $request->input('precio'), 2, ".", "");
         $idalmacen      = (int) $request->input('idalmacen');
         $agregar        = $this->add_product_cart($id, $cantidad, $precio, $opcion, $idalmacen);
 
@@ -359,7 +407,7 @@ class QuoteController extends Controller
 
     public function save(Request $request)
     {
-        if(!$request->ajax()) {
+        if (!$request->ajax() && !$request->expectsJson()) {
             return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
@@ -367,73 +415,103 @@ class QuoteController extends Controller
             ]);
         }
 
-        $fecha_emision          = $request->input('fecha_emision');
-        $fecha_vencimiento      = date('Y-m-d');
+        $fecha_emision          = $request->input('fecha_emision') ?: date('Y-m-d');
+        $fecha_vencimiento      = $request->input('fecha_vencimiento') ?: date('Y-m-d');
         $idcliente              = $request->input('dni_ruc');
         $tipo_cambio            = $request->input('tipo_cambio');
-        $modo_pago              = $request->input('modo_pago');
-        $observaciones          = $request->input('observaciones');
+        $modo_pago              = $request->input('modo_pago') ?: 1;
+        $observaciones          = $request->input('observaciones') ?: '';
         $cart                   = $this->create_cart(); 
-        $ultimo_correlativo     = NULL;
         
-        if(empty($idcliente)) {
+        if (empty($idcliente)) {
             return response()->json([
                 'status'    => false,
                 'msg'       => 'Debe seleccionar el cliente',
                 'type'      => 'warning'
-            ]);
+            ], 422);
         }
 
-        if(empty($cart['products'])) {
+        $client = Client::with('tipoDocumento')->find($idcliente);
+        if (!$client) {
+            return response()->json([
+                'status'    => false,
+                'msg'       => 'Cliente no encontrado',
+                'type'      => 'warning'
+            ], 422);
+        }
+
+        // Validate identified customer: ID document must be present and not anonymous
+        $docCodigo = trim((string) ($client->tipoDocumento?->codigo ?? ''));
+        $docNumero = trim((string) ($client->nro_documento ?? ''));
+        $isAnonymous = empty($docNumero)
+            || $docNumero === '00000000'
+            || $docCodigo === '0'
+            || strcasecmp($client->nombres ?? '', 'Clientes Varios') === 0;
+
+        if ($isAnonymous) {
+            return response()->json([
+                'status'    => false,
+                'msg'       => 'La cotización requiere un cliente identificado con documento de identidad (DNI, RUC, etc.).',
+                'type'      => 'warning'
+            ], 422);
+        }
+
+        if (empty($cart['products'])) {
             return response()->json([
                 'status'    => false,
                 'msg'       => 'Ingrese al menos 1 producto',
                 'type'      => 'warning'
-            ]);
+            ], 422);
         }
 
-        if(Quote::count() == 0)
-        $correlativo = str_pad(1, 8, '0', STR_PAD_LEFT);
-        else
-        $ultimo_correlativo = Quote::latest('id')->first()["correlativo"];
-        $correlativo = str_pad($ultimo_correlativo + 1, 8, '0', STR_PAD_LEFT);
+        $taxCalculator = app(TaxCalculator::class);
+        $taxBreakdown = $taxCalculator->calculate($cart['products']);
 
-        Quote::insert([
+        $lastCorrelativo = Quote::max('correlativo');
+        $correlativo = str_pad((int) $lastCorrelativo + 1, 8, '0', STR_PAD_LEFT);
+
+        $quote = Quote::create([
+            'serie'                 => 'C001',
             'correlativo'           => $correlativo,
             'fecha_emision'         => $fecha_emision,
             'fecha_vencimiento'     => $fecha_vencimiento,
             'hora'                  => date('H:i:s'),
-            'idcliente'             => $idcliente,
+            'idcliente'             => $client->id,
             'idpago'                => $modo_pago,
-            'subtotal'              => $cart["subtotal"],
-            'igv'                   => $cart["igv"],
-            'total'                 => $cart["total"],
+            'subtotal'              => $taxBreakdown['subtotal'],
+            'igv'                   => $taxBreakdown['igv'],
+            'total'                 => $taxBreakdown['total'],
             'observaciones'         => $observaciones,
             'estado'                => 1,
-            'idusuario'             => Auth::user()['id'],
-            'idcaja'                => Auth::user()['idcaja'],
+            'idusuario'             => Auth::id() ?? 1,
+            'idcaja'                => Auth::user()?->idcaja ?? 1,
         ]);
 
-        $idquote                    = Quote::latest('id')->first()['id'];
-        foreach($cart["products"] as $product) {
-            DetailQuote::insert([
-                'idcotizacion'      => $idquote,
-                'idproducto'        => $product['id'],
-                'cantidad'          => $product['cantidad'],
-                'precio_unitario'   => $product['precio_venta'],
-                'precio_total'      => ($product['precio_venta'] * $product['cantidad']),
-                'idalmacen'         => $product['idalmacen']
+        $activeWarehouseId = $this->currentWarehouseId();
+        foreach ($taxBreakdown['items'] as $item) {
+            $isProduct = (int) ($item['opcion'] ?? 1) === 1;
+            DetailQuote::create([
+                'idcotizacion'      => $quote->id,
+                'idproducto'        => $item['id'],
+                'cantidad'          => $item['cantidad'],
+                'precio_unitario'   => $item['precio_venta'],
+                'precio_total'      => $item['precio_total_descuento'] ?? round($item['precio_venta'] * $item['cantidad'], 2),
+                'idalmacen'         => $isProduct ? ($item['idalmacen'] ?: $activeWarehouseId) : null,
             ]);
         }
 
         Session::flash('exito', [
-            'msg'   => 'Datos actualizados correctamente',
-            'id'    => Quote::latest('id')->first()['id']
+            'msg'   => 'Cotización guardada exitosamente',
+            'id'    => $quote->id
         ]);
         $this->destroy_cart();
+
         return response()->json([
             'status'                => true,
-            'idcotizacion'          => $idquote
+            'msg'                   => 'Cotización guardada exitosamente',
+            'idcotizacion'          => $quote->id,
+            'id'                    => $quote->id,
+            'quote'                 => $quote,
         ]);
     }
 
@@ -516,7 +594,7 @@ class QuoteController extends Controller
 
     public function detail(Request $request)
     {
-        if (! $request->ajax()) {
+        if (! $request->ajax() && ! $request->expectsJson()) {
             return response()->json([
                 'status' => false,
                 'msg' => 'Intente de nuevo',
@@ -578,6 +656,12 @@ class QuoteController extends Controller
             ->get();
 
         if ($details->isEmpty()) {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'status' => false,
+                    'msg'    => 'La cotización no tiene productos para convertir.',
+                ], 422);
+            }
             return redirect()->route('admin.quotes')->with('message', 'La cotizacion no tiene productos para convertir.');
         }
 
@@ -585,18 +669,30 @@ class QuoteController extends Controller
 
         foreach ($details as $detail) {
             session()->push('pos.products', [
-                'id' => $detail->idproducto,
-                'descripcion' => $detail->descripcion,
-                'idunidad' => $detail->idunidad,
-                'unidad' => $detail->unidad,
-                'igv' => $detail->igv,
-                'idcodigo_igv' => $detail->idcodigo_igv,
-                'precio_compra' => $detail->precio_compra,
-                'precio_venta' => $detail->precio_unitario,
-                'stock' => (int) $detail->opcion === 1 ? (float) ($detail->stock_actual ?? 0) : null,
-                'opcion' => $detail->opcion,
-                'cantidad' => (float) $detail->cantidad,
-                'idalmacen' => (int) $detail->opcion === 1 ? $detail->idalmacen : null,
+                'id'                => $detail->idproducto,
+                'descripcion'       => $detail->descripcion,
+                'idunidad'          => $detail->idunidad,
+                'unidad'            => $detail->unidad,
+                'igv'               => $detail->igv,
+                'idcodigo_igv'      => $detail->idcodigo_igv,
+                'id_afectacion_igv' => $detail->idcodigo_igv,
+                'precio_compra'     => $detail->precio_compra,
+                'precio_venta'      => (float) $detail->precio_unitario,
+                'stock'             => (int) $detail->opcion === 1 ? (float) ($detail->stock_actual ?? 0) : null,
+                'opcion'            => (int) $detail->opcion,
+                'cantidad'          => (float) $detail->cantidad,
+                'idalmacen'         => (int) $detail->opcion === 1 ? ($detail->idalmacen ?: $this->currentWarehouseId()) : null,
+            ]);
+        }
+
+        session()->put('pos_from_quote', true);
+        session()->put('pos_client_id', $quote->idcliente);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'status'   => true,
+                'msg'      => 'Cotización convertida a venta exitosamente',
+                'redirect' => route('admin.pos.create'),
             ]);
         }
 
@@ -801,64 +897,37 @@ class QuoteController extends Controller
     public function create_cart()
     {
         if (!session()->get('quote') || empty(session()->get('quote')['products'])) {
-            $quote =
-                [
-                    'quote' =>
-                    [
-                        'products'     => [],
-                        'igv'          => 0,
-                        'subtotal'     => 0,
-                        'total'        => 0
-                    ]
-                ];
+            $quote = [
+                'quote' => [
+                    'products'  => [],
+                    'igv'       => 0,
+                    'subtotal'  => 0,
+                    'gravada'   => 0,
+                    'exonerada' => 0,
+                    'inafecta'  => 0,
+                    'gratuita'  => 0,
+                    'total'     => 0,
+                ],
+            ];
 
             session($quote);
             return session()->get('quote');
         }
 
-        $exonerados = 0;
-        $subtotal   = 0;
-        $total      = 0;
-        $igv        = 0;
+        $calculated = app(TaxCalculator::class)->calculate(session('quote')['products'] ?? [], 0);
 
-        foreach (session('quote')['products'] as $index => $product) {
-            $igv__ = (int) $product["igv"];
-                $igv_c = null;
-            
-                switch ($igv__) {
-                    case 0:
-                        $igv_c = 1; 
-                        break;
-                    
-                    case 10:
-                        $igv_c = 1.10;
-                        break;
-            
-                    case 18:
-                        $igv_c = 1.18;
-                        break;
-                }
-            
-                $precio_base    = (float) $product['precio_venta'] / $igv_c;
-                $igv_producto   = ($product['precio_venta'] - $precio_base) * (int) $product['cantidad'];
-                $igv            += $this->redondeado($igv_producto);
-                $exonerados     += $this->redondeado($precio_base * (int) $product['cantidad']);
-                $subtotal       += $precio_base * (int) $product['cantidad'];
-                session()->put('quote.products.' . $index, $product);
-        }
-
-        $total      = $subtotal + $igv;
-
-        $quote =
-            [
-                'quote' =>
-                [
-                    'products'     => session('quote')['products'],
-                    'igv'          => $igv,
-                    'subtotal'     => $subtotal,
-                    'total'        => $total,
-                ]
-            ];
+        $quote = [
+            'quote' => [
+                'products'  => session('quote')['products'],
+                'igv'       => (float) $calculated['igv'],
+                'subtotal'  => (float) $calculated['subtotal'],
+                'gravada'   => (float) $calculated['gravada'],
+                'exonerada' => (float) $calculated['exonerada'],
+                'inafecta'  => (float) $calculated['inafecta'],
+                'gratuita'  => (float) $calculated['gratuita'],
+                'total'     => (float) $calculated['total'],
+            ],
+        ];
 
         session($quote);
         return session()->get('quote');
@@ -866,101 +935,108 @@ class QuoteController extends Controller
 
     public function add_product_cart($id, $cantidad, $precio, $opcion, $idalmacen)
     {
-        $product        = Product::select(
-            'products.*',
-            'units.codigo as unidad',
-            'stock_products.stock_actual as stock',
-            'stock_products.idalmacen as idalmacen',
-            'categories.descripcion as categoria'
-        )
-        ->join('categories', 'products.idcategoria', '=', 'categories.id')
-        ->join('units', 'products.idunidad', '=', 'units.id')
-        ->join('stock_products', 'products.id', 'stock_products.idproducto')
-        ->join('warehouses', 'stock_products.idalmacen', 'warehouses.id')
-        ->where('products.id', $id)
-        ->where('warehouses.id', $idalmacen)
-        ->first();
+        if ((int) $opcion === 2) {
+            $product = Product::select(
+                'products.*',
+                'units.codigo as unidad',
+                'categories.descripcion as categoria'
+            )
+            ->join('categories', 'products.idcategoria', '=', 'categories.id')
+            ->join('units', 'products.idunidad', '=', 'units.id')
+            ->where('products.id', $id)
+            ->first();
 
-        if(!$product)
-        {
-            $data       = [
-                'status'    => false,
-                'msg'       => 'El producto no se encuentra en almacén'
-            ];
-            return $data;
+            if (!$product) {
+                return [
+                    'status' => false,
+                    'msg'    => 'El servicio no se encuentra en el catálogo'
+                ];
+            }
+
+            $stock = null;
+            $productWarehouseId = null;
+        } else {
+            $product = Product::select(
+                'products.*',
+                'units.codigo as unidad',
+                'stock_products.stock_actual as stock',
+                'stock_products.idalmacen as idalmacen',
+                'categories.descripcion as categoria'
+            )
+            ->join('categories', 'products.idcategoria', '=', 'categories.id')
+            ->join('units', 'products.idunidad', '=', 'units.id')
+            ->join('stock_products', 'products.id', 'stock_products.idproducto')
+            ->join('warehouses', 'stock_products.idalmacen', 'warehouses.id')
+            ->where('products.id', $id)
+            ->where('warehouses.id', $idalmacen)
+            ->first();
+
+            if (!$product) {
+                return [
+                    'status' => false,
+                    'msg'    => 'El producto no se encuentra en almacén'
+                ];
+            }
+
+            if ($product->stock < $cantidad || $product->stock == 0) {
+                return [
+                    'status' => false,
+                    'msg'    => 'Producto sin stock para venta'
+                ];
+            }
+
+            $stock = $product->stock;
+            $productWarehouseId = $idalmacen;
         }
 
-        if($opcion == 1)
-        {
-            if ($product->stock < $cantidad)
-            {
-                $data       = [
-                    'status'    => false,
-                    'msg'       => 'Producto sin stock para venta'
-                ];
-                return $data;
-            }
-            elseif($product->stock == 0)
-            {
-                $data       = [
-                    'status'    => false,
-                    'msg'       => 'Producto sin stock para venta'
-                ];
-                return $data;
-            }
-        }
-
-        $new_product    =
-        [
+        $new_product = [
             'id'                => $product->id,
             'descripcion'       => $product->descripcion,
             'idunidad'          => $product->idunidad,
             'unidad'            => $product->unidad,
             'igv'               => $product->igv,
+            'idcodigo_igv'      => $product->idcodigo_igv,
+            'id_afectacion_igv' => $product->idcodigo_igv,
             'precio_compra'     => $product->precio_compra,
-            'precio_venta'      => $precio,
-            'stock'             => ($opcion == 1) ? $product->stock : null,
-            'opcion'            => $opcion,
-            'cantidad'          => $cantidad,
-            'idalmacen'         => ($opcion == 1) ? $idalmacen : null,
+            'precio_venta'      => (float) $precio,
+            'stock'             => $stock,
+            'opcion'            => (int) $opcion,
+            'cantidad'          => (float) $cantidad,
+            'idalmacen'         => $productWarehouseId,
         ];
 
         if (empty(session()->get('quote')['products'])) {
             session()->push('quote.products', $new_product);
-            $data       = [
-                'status'    => true,
-                'msg'       => ''
+            return [
+                'status' => true,
+                'msg'    => ''
             ];
-            return $data;
         }
 
-        foreach (session()->get('quote')['products'] as $index => $product) {
-            if ($id == $product['id'] && $product['opcion'] == $opcion) {
-                if ($opcion == 1) {
-                    if ($product["stock"] < ($product['cantidad'] + $cantidad)) {
-                        $data       = [
-                            'status'    => true,
-                            'msg'       => ''
+        foreach (session()->get('quote')['products'] as $index => $item) {
+            if ($id == $item['id'] && (int) $item['opcion'] == (int) $opcion) {
+                if ((int) $opcion === 1) {
+                    if ($item["stock"] < ($item['cantidad'] + $cantidad)) {
+                        return [
+                            'status' => false,
+                            'msg'    => 'Producto sin stock suficiente'
                         ];
-                        return $data;
                     }
                 }
-                $product['cantidad'] = $product['cantidad'] + $cantidad;
-                session()->put('quote.products.' . $index, $product);
-                $data       = [
-                    'status'    => true,
-                    'msg'       => ''
+                $item['cantidad'] = $item['cantidad'] + $cantidad;
+                session()->put('quote.products.' . $index, $item);
+                return [
+                    'status' => true,
+                    'msg'    => ''
                 ];
-                return $data;
             }
         }
 
         session()->push('quote.products', $new_product);
-        $data       = [
-            'status'    => true,
-            'msg'       => ''
+        return [
+            'status' => true,
+            'msg'    => ''
         ];
-        return $data;
     }
 
     public function delete_product_cart($id, $opcion)
@@ -970,7 +1046,7 @@ class QuoteController extends Controller
         }
 
         foreach (session()->get('quote')['products'] as $index => $product) {
-            if ($id == $product['id'] && $product['opcion'] == $opcion) {
+            if ($id == $product['id'] && (int)$product['opcion'] == (int)$opcion) {
                 session()->forget('quote.products.' . $index, $product);
                 return true;
             }
@@ -984,20 +1060,20 @@ class QuoteController extends Controller
         }
 
         foreach (session()->get('quote')['products'] as $index => $product) {
-            if ($id == $product['id'] && $product['opcion'] == $opcion) {
-                if ($product["stock"] != NULL) {
-                    if ($product["stock"] < $cantidad) {
-                        return false;
-                    } elseif ($product["stock"] == 0) {
+            if ($id == $product['id'] && (int)$product['opcion'] == (int)$opcion) {
+                if ((int) $opcion === 1 && $product["stock"] != NULL) {
+                    if ($product["stock"] < $cantidad || $product["stock"] == 0) {
                         return false;
                     }
                 }
-                $product['cantidad']           =  $cantidad;
-                $product['precio_venta']       =  $precio;
+                $product['cantidad']     = (float) $cantidad;
+                $product['precio_venta'] = (float) $precio;
                 session()->put('quote.products.' . $index, $product);
                 return true;
             }
         }
+
+        return false;
     }
 
     public function destroy_cart() {

@@ -135,7 +135,10 @@ class Controller extends BaseController
             $subquery->selectRaw('1')
                 ->from('detail_quotes')
                 ->whereColumn('detail_quotes.idcotizacion', 'quotes.id')
-                ->where('detail_quotes.idalmacen', $warehouseId);
+                ->where(function ($w) use ($warehouseId) {
+                    $w->where('detail_quotes.idalmacen', $warehouseId)
+                      ->orWhereNull('detail_quotes.idalmacen');
+                });
         });
     }
 

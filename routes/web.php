@@ -226,6 +226,7 @@ Route::controller(QuoteController::class)->prefix('quotes')->middleware(['auth',
     Route::get('/q{id}'                      , 'edit')->name('admin.edit_quote');
     Route::post('/detail'                   , 'detail')->name('quotes.detail');
     Route::get('/q{id}/convert-sale'        , 'convert_to_sale')->name('admin.convert_quote_to_sale');
+    Route::match(['get', 'post'], '/{id}/convert-sale', 'convert_to_sale');
     Route::post('/save'                     , 'save')->name('admin.save_quote');
     Route::post('/load-clients'             , 'load_clients')->name('admin.load_clients');
     Route::post('/load-cart'                , 'load_cart')->name('admin.load_cart_quotes');
@@ -264,6 +265,9 @@ Route::controller(PosController::class)->prefix('pos')->middleware(['auth', 'can
 Route::controller(SaleNoteController::class)->prefix('salenotes')->middleware(['auth', 'can:admin.sale_notes'])->group(function() {
     Route::get('/'                          , 'index')->name('admin.sale_notes');
     Route::get('/get'                       , 'get')->name('sale_notes.get');
+    Route::post('/{id}/amortize'            , 'amortize')->name('admin.amortize_sale_note');
+    Route::post('/{id}/pay'                 , 'pay')->name('admin.pay_sale_note');
+    Route::get('/{id}/payments'             , 'payments')->name('admin.payments_sale_note');
     Route::post('/print-ticket'             , 'print_ticket')->name('admin.print_sale_note');
     Route::post('/print-a4'                 , 'print_a4')->name('admin.print_sale_note_a4');
     Route::post('/send-mail'                , 'send_mail')->name('admin.send_mail_sale_note');

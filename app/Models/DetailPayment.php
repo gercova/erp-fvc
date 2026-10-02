@@ -19,4 +19,14 @@ class DetailPayment extends Model
         'idarqueocaja',
         'estado'
     ];
+
+    public function payMode()
+    {
+        return $this->belongsTo(PayMode::class, 'idpago');
+    }
+
+    public function modoPago()
+    {
+        return $this->belongsTo(PayMode::class, 'idpago');
+    }
 }

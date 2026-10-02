@@ -26,4 +26,45 @@ class Quote extends Model
         'idusuario',
         'idcaja',
     ];
+
+    protected $casts = [
+        'subtotal' => 'decimal:2',
+        'igv' => 'decimal:2',
+        'total' => 'decimal:2',
+    ];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'idcliente');
+    }
+
+    public function cliente()
+    {
+        return $this->belongsTo(Client::class, 'idcliente');
+    }
+
+    public function details()
+    {
+        return $this->hasMany(DetailQuote::class, 'idcotizacion');
+    }
+
+    public function detailQuotes()
+    {
+        return $this->hasMany(DetailQuote::class, 'idcotizacion');
+    }
+
+    public function payMode()
+    {
+        return $this->belongsTo(PayMode::class, 'idpago');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'idusuario');
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'idusuario');
+    }
 }

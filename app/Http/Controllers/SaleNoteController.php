@@ -116,13 +116,12 @@ class SaleNoteController extends Controller
 
     public function print_ticket(Request $request)
     {
-        if (!$request->ajax()) {
-            echo json_encode([
+        if (!$request->ajax() && !$request->expectsJson()) {
+            return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
                 'type'      => 'warning'
             ]);
-            return;
         }
 
         return $this->printTicketModern($request);
@@ -247,13 +246,12 @@ class SaleNoteController extends Controller
 
     public function print_a4(Request $request)
     {
-        if (!$request->ajax()) {
-            echo json_encode([
+        if (!$request->ajax() && !$request->expectsJson()) {
+            return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
                 'type'      => 'warning'
             ]);
-            return;
         }
 
         $id                         = $request->input('id');
@@ -289,7 +287,8 @@ class SaleNoteController extends Controller
 
         $pdf    = PDF::loadView('admin.sale_notes.pdf', $data)->setPaper('A4', 'portrait');
         $pdf->save(public_path('files/sale-notes/a4/' . $data["name"] . '.pdf'));
-        echo json_encode([
+
+        return response()->json([
             'status'    => true,
             'pdf'       => $data["name"] . '.pdf'
         ]);
@@ -297,7 +296,7 @@ class SaleNoteController extends Controller
 
     public function anulled(Request $request)
     {
-        if (!$request->ajax()) {
+        if (!$request->ajax() && !$request->expectsJson()) {
             return response()->json([
                 'status'    => false,
                 'msg'       => 'Intente de nuevo',
@@ -335,7 +334,7 @@ class SaleNoteController extends Controller
             }
         }
 
-        DetailPayment::where('idtipo_comprobante', 7)->where('idfactura', $id)->update([
+        DetailPayment::where('idtipo_comprobante', $sale_note->idtipo_comprobante)->where('idfactura', $id)->update([
             'estado'    => 2
         ]);
 
@@ -347,6 +346,142 @@ class SaleNoteController extends Controller
             'status'    => true,
             'msg'       => 'Venta anulada correctamente',
             'type'      => 'success'
+        ]);
+    }
+
+    public function amortize(Request $request, int $id)
+    {
+        $saleNote = $this->saleNotesByCurrentWarehouse()->findOrFail($id);
+
+        if ((int) $saleNote->estado === 2) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'No se pueden registrar amortizaciones en una nota de venta anulada.',
+            ], 422);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'monto'   => 'required|numeric|min:0.01',
+            'idpago'  => 'nullable|integer|exists:pay_modes,id',
+            'observaciones' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'msg'    => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $monto = round((float) $request->input('monto'), 2);
+        $idpago = (int) ($request->input('idpago') ?: 1);
+
+        // Sum existing payments
+        $totalPaid = (float) DetailPayment::query()
+            ->where('idfactura', $saleNote->id)
+            ->where('idtipo_comprobante', $saleNote->idtipo_comprobante)
+            ->where('estado', 1)
+            ->sum('monto');
+
+        $pendingDebt = round(max((float) $saleNote->total - $totalPaid, 0), 2);
+
+        if ($pendingDebt <= 0) {
+            if ((int) $saleNote->estado !== 1) {
+                $saleNote->estado = 1;
+                $saleNote->save();
+            }
+            return response()->json([
+                'status' => false,
+                'msg'    => 'La nota de venta ya se encuentra totalmente pagada.',
+                'pending_debt' => 0,
+            ], 422);
+        }
+
+        if ($monto > $pendingDebt) {
+            return response()->json([
+                'status' => false,
+                'msg'    => "El monto a amortizar (S/ {$monto}) excede la deuda pendiente (S/ {$pendingDebt}).",
+                'pending_debt' => $pendingDebt,
+            ], 422);
+        }
+
+        $arching = ArchingCash::where('idusuario', Auth::id())->where('estado', 1)->first()
+            ?: ArchingCash::find($saleNote->idarqueocaja);
+
+        $archingId = $arching ? $arching->id : ($saleNote->idarqueocaja ?: 1);
+
+        $payment = DetailPayment::create([
+            'idtipo_comprobante' => (int) $saleNote->idtipo_comprobante,
+            'idfactura'          => $saleNote->id,
+            'idpago'             => $idpago,
+            'monto'              => $monto,
+            'idarqueocaja'       => $archingId,
+            'estado'             => 1,
+        ]);
+
+        $newTotalPaid = round($totalPaid + $monto, 2);
+        $newPendingDebt = round(max((float) $saleNote->total - $newTotalPaid, 0), 2);
+
+        if ($newPendingDebt <= 0) {
+            $saleNote->estado = 1; // Pagado
+            $saleNote->save();
+        }
+
+        return response()->json([
+            'status'         => true,
+            'msg'            => 'Amortización registrada correctamente.',
+            'payment'        => $payment,
+            'total'          => (float) $saleNote->total,
+            'total_paid'     => $newTotalPaid,
+            'pending_debt'   => $newPendingDebt,
+            'estado'         => (int) $saleNote->estado,
+            'estado_label'   => (int) $saleNote->estado === 1 ? 'Pagado' : 'Pendiente',
+        ]);
+    }
+
+    public function pay(Request $request, int $id)
+    {
+        return $this->amortize($request, $id);
+    }
+
+    public function payments(int $id)
+    {
+        $saleNote = $this->saleNotesByCurrentWarehouse()
+            ->with(['cliente', 'pago'])
+            ->findOrFail($id);
+
+        $payments = DetailPayment::select('detail_payments.*', 'pay_modes.descripcion as modo_pago')
+            ->join('pay_modes', 'detail_payments.idpago', '=', 'pay_modes.id')
+            ->where('idfactura', $saleNote->id)
+            ->where('idtipo_comprobante', $saleNote->idtipo_comprobante)
+            ->where('estado', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $totalPaid = round((float) $payments->sum('monto'), 2);
+        $pendingDebt = round(max((float) $saleNote->total - $totalPaid, 0), 2);
+
+        return response()->json([
+            'status'        => true,
+            'sale_note'     => [
+                'id'            => $saleNote->id,
+                'serie'         => $saleNote->serie,
+                'correlativo'   => $saleNote->correlativo,
+                'documento'     => $saleNote->serie . '-' . $saleNote->correlativo,
+                'fecha_emision' => $saleNote->fecha_emision,
+                'total'         => (float) $saleNote->total,
+                'modo_pago'     => (int) $saleNote->modo_pago,
+                'modo_pago_label' => (int) $saleNote->modo_pago === 2 ? 'Crédito' : 'Contado',
+                'estado'        => (int) $saleNote->estado,
+                'estado_label'  => (int) $saleNote->estado === 1 ? 'Pagado' : ((int) $saleNote->estado === 2 ? 'Anulado' : 'Pendiente'),
+                'cuotas'        => $saleNote->cuotas ?? [],
+                'monto_credito' => (float) $saleNote->monto_credito,
+            ],
+            'installments'  => $saleNote->cuotas ?? [],
+            'payments'      => $payments,
+            'total_paid'    => $totalPaid,
+            'pending_debt'  => $pendingDebt,
         ]);
     }
 
