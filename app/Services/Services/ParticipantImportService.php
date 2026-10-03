@@ -14,7 +14,7 @@ class ParticipantImportService
      * Import participants from Excel or CSV file.
      */
     public function import(ServiceEngagement $engagement, UploadedFile $file, ?int $sessionId = null): array {
-        $extension  = strtolower($file->getClientOriginalExtension());
+        $extension = strtolower($file->getClientOriginalExtension());
         $rows       = [];
 
         if (in_array($extension, ['xlsx', 'xls', 'csv'])) {

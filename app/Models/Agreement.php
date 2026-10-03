@@ -48,6 +48,7 @@ class Agreement extends Model
         'requires_financial_settlement',
         'resolution_number',
         'created_by_user_id',
+        'alerted_thresholds',
     ];
 
     public function getNameAttribute(): ?string {
@@ -70,7 +71,41 @@ class Agreement extends Model
         'counterparty_contribution'    => 'decimal:2',
         'institution_contribution'     => 'decimal:2',
         'requires_financial_settlement'=> 'boolean',
+        'alerted_thresholds'           => 'array',
     ];
+
+    public function compliancePercentage(): float {
+        $total = $this->obligations()->count();
+        if ($total === 0) {
+            return 100.0;
+        }
+        $completed = $this->obligations()->whereIn('status', ['COMPLETED', 'FULFILLED'])->count();
+        return round(($completed / $total) * 100, 1);
+    }
+
+    public function scheduledRevenue(): float {
+        return (float) $this->installments()->sum('amount');
+    }
+
+    public function invoicedRevenue(): float {
+        return (float) $this->installments()
+            ->where(function ($q) {
+                $q->whereIn('status', ['INVOICED', 'COLLECTED', 'PAID'])
+                  ->orWhereNotNull('billing_id')
+                  ->orWhereNotNull('sale_note_id');
+            })
+            ->sum('amount');
+    }
+
+    public function collectedRevenue(): float {
+        return (float) $this->installments()
+            ->whereIn('status', ['COLLECTED', 'PAID'])
+            ->sum('amount');
+    }
+
+    public function pendingRevenue(): float {
+        return max(0.00, $this->scheduledRevenue() - $this->collectedRevenue());
+    }
 
     protected static function booted(): void {
         static::creating(function (Agreement $agreement) {

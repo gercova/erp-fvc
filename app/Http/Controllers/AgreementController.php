@@ -17,8 +17,12 @@ use App\Models\Area;
 use App\Models\Client;
 use App\Models\ProductiveActivity;
 use App\Models\User;
+use App\Enums\InstallmentStatus;
+use App\Models\AgreementInstallment;
 use App\Services\Agreements\AgreementCodeService;
 use App\Services\Agreements\AgreementFileService;
+use App\Services\Agreements\AgreementInstallmentService;
+use App\Services\Agreements\AgreementReportService;
 use App\Services\DocumentApprovalService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -35,7 +39,9 @@ class AgreementController extends Controller
     public function __construct(
         protected AgreementCodeService $codeService,
         protected AgreementFileService $fileService,
-        protected DocumentApprovalService $approvalService
+        protected DocumentApprovalService $approvalService,
+        protected AgreementInstallmentService $installmentService,
+        protected AgreementReportService $reportService
     ) {}
 
     /**
@@ -336,23 +342,27 @@ class AgreementController extends Controller
             'specificAgreements',
             'addenda.creator',
             'obligations.verifier',
-            'installments',
+            'obligations.responsibleUser',
+            'installments.billing',
+            'installments.saleNote',
+            'installments.technologicalService',
             'documents.uploader',
             'auditLogs.user',
             'approvals.approver',
         ])->findOrFail($id);
 
-        $currentUser = Auth::user();
-        $userRoles = $currentUser->roles->pluck('name')->toArray();
-        $isSuper = in_array('SUPERADMIN', $userRoles) || in_array('ADMIN', $userRoles);
+        $currentUser    = Auth::user();
+        $userRoles      = $currentUser->roles->pluck('name')->toArray();
+        $isSuper        = in_array('SUPERADMIN', $userRoles) || in_array('ADMIN', $userRoles);
 
-        $canManage = $isSuper || $currentUser->can('agreements.manage') || $agreement->coordinator_user_id === $currentUser->id;
+        $canManage      = $isSuper || $currentUser->can('agreements.manage') || $agreement->coordinator_user_id === $currentUser->id;
         $canSubmitApproval = ($agreement->status === AgreementStatus::DRAFT || $agreement->status === AgreementStatus::REJECTED) &&
             ($isSuper || $agreement->coordinator_user_id === $currentUser->id || $agreement->created_by_user_id === $currentUser->id);
 
         $responsibleParties = ObligationResponsibleParty::cases();
         $obligationStatuses = ObligationStatus::cases();
         $documentTypes      = AgreementDocumentType::cases();
+        $technologicalServices = \App\Models\TechnologicalService::orderBy('name')->get();
 
         return view('admin.agreements.show', compact(
             'agreement',
@@ -360,7 +370,8 @@ class AgreementController extends Controller
             'canSubmitApproval',
             'responsibleParties',
             'obligationStatuses',
-            'documentTypes'
+            'documentTypes',
+            'technologicalServices'
         ));
     }
 
@@ -654,5 +665,437 @@ class AgreementController extends Controller
         return $request->expectsJson()
             ? response()->json(['success' => true, 'message' => $msg])
             : back()->with('success', $msg);
+    }
+
+    /**
+     * Store a new installment for an agreement.
+     */
+    public function storeInstallment(Request $request, int $id): JsonResponse|RedirectResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+
+        $validated = $request->validate([
+            'amount'                   => 'required|numeric|min:0.01',
+            'due_date'                 => 'required|date',
+            'milestone_condition'      => 'nullable|string|max:255',
+            'description'              => 'nullable|string|max:255',
+            'technological_service_id' => 'nullable|exists:technological_services,id',
+            'currency'                 => 'nullable|string|max:5',
+        ]);
+
+        $nextNumber = ((int) $agreement->installments()->max('installment_number')) + 1;
+        $dueDate = Carbon::parse($validated['due_date']);
+        $initialStatus = $dueDate->startOfDay()->isPast() ? InstallmentStatus::OVERDUE : InstallmentStatus::PENDING;
+
+        $installment = $agreement->installments()->create([
+            'installment_number'       => $nextNumber,
+            'amount'                   => $validated['amount'],
+            'due_date'                 => $validated['due_date'],
+            'currency'                 => $validated['currency'] ?? $agreement->currency ?? 'PEN',
+            'description'              => $validated['description'] ?? "Cuota N° {$nextNumber}",
+            'milestone_condition'      => $validated['milestone_condition'] ?? null,
+            'technological_service_id' => $validated['technological_service_id'] ?? null,
+            'status'                   => $initialStatus,
+        ]);
+
+        $agreement->transitionStatus(
+            $agreement->status,
+            "Registro de cuota N° {$nextNumber} por {$installment->currency} {$installment->amount}",
+            Auth::user(),
+            'INSTALLMENT_CREATED'
+        );
+
+        $msg = "Cuota N° {$nextNumber} programada exitosamente.";
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $msg, 'installment' => $installment], 201)
+            : back()->with('success', $msg);
+    }
+
+    /**
+     * Preload POS / billing data for an installment checkout.
+     */
+    public function prepareInstallmentCheckout(int $id, int $installmentId): JsonResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+        $installment = $agreement->installments()->findOrFail($installmentId);
+
+        $data = $this->installmentService->prepareVoucherData($installment);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
+    }
+
+    /**
+     * Generate voucher (Factura, Boleta o Nota de Venta) for an installment.
+     * Prevents double invoicing.
+     */
+    public function generateInstallmentVoucher(Request $request, int $id, int $installmentId): JsonResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+        $installment = $agreement->installments()->findOrFail($installmentId);
+
+        $validated = $request->validate([
+            'voucher_type'       => 'nullable|string|in:BILLING,SALE_NOTE',
+            'is_paid'            => 'nullable|boolean',
+            'amount'             => 'nullable|numeric|min:0.01',
+            'payment_reference'  => 'nullable|string|max:100',
+            'warehouse_id'       => 'nullable|integer',
+            'idtipo_comprobante' => 'nullable|integer|in:1,2',
+        ]);
+
+        try {
+            $result = $this->installmentService->createVoucher($installment, $validated, Auth::user());
+
+            $agreement->transitionStatus(
+                $agreement->status,
+                "Emisión de comprobante para la cuota N° {$installment->installment_number}",
+                Auth::user(),
+                'INSTALLMENT_INVOICED'
+            );
+
+            return response()->json([
+                'success'       => true,
+                'message'       => 'Comprobante generado y vinculado a la cuota exitosamente.',
+                'installment'   => $result['installment'],
+                'voucher'       => $result['voucher'],
+                'journal_entry' => $result['journal_entry'],
+            ], 201);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar el comprobante: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Link an existing voucher to an installment.
+     */
+    public function linkInstallmentVoucher(Request $request, int $id, int $installmentId): JsonResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+        $installment = $agreement->installments()->findOrFail($installmentId);
+
+        if (!$installment->canBeInvoiced()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta cuota ya ha sido facturada y no puede vincularse nuevamente.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'billing_id'   => 'nullable|integer|exists:billings,id',
+            'sale_note_id' => 'nullable|integer|exists:sale_notes,id',
+        ]);
+
+        try {
+            $updated = $this->installmentService->linkVoucher(
+                $installment,
+                $validated['billing_id'] ?? null,
+                $validated['sale_note_id'] ?? null,
+                Auth::user()
+            );
+
+            return response()->json([
+                'success'     => true,
+                'message'     => 'Comprobante vinculado a la cuota exitosamente.',
+                'installment' => $updated,
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Record payment / collection for an installment.
+     */
+    public function recordInstallmentPayment(Request $request, int $id, int $installmentId): JsonResponse|RedirectResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+        $installment = $agreement->installments()->findOrFail($installmentId);
+
+        $validated = $request->validate([
+            'payment_reference' => 'nullable|string|max:100',
+            'paid_at'           => 'nullable|date',
+        ]);
+
+        $paidAt = !empty($validated['paid_at']) ? Carbon::parse($validated['paid_at']) : now();
+        $updated = $this->installmentService->recordPayment(
+            $installment,
+            $validated['payment_reference'] ?? null,
+            $paidAt,
+            Auth::user()
+        );
+
+        $agreement->transitionStatus(
+            $agreement->status,
+            "Cobro registrado de la cuota N° {$installment->installment_number}",
+            Auth::user(),
+            'INSTALLMENT_COLLECTED'
+        );
+
+        $msg = 'Cobro registrado exitosamente.';
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $msg, 'installment' => $updated])
+            : back()->with('success', $msg);
+    }
+
+    /**
+     * Authorize an adjustment to an installment.
+     */
+    public function adjustInstallment(Request $request, int $id, int $installmentId): JsonResponse|RedirectResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+        $installment = $agreement->installments()->findOrFail($installmentId);
+
+        $validated = $request->validate([
+            'adjustment_notes'    => 'required|string|max:500',
+            'amount'              => 'nullable|numeric|min:0.01',
+            'due_date'            => 'nullable|date',
+            'description'         => 'nullable|string|max:255',
+            'milestone_condition' => 'nullable|string|max:255',
+        ]);
+
+        $updated = $this->installmentService->authorizeAdjustment($installment, $validated, Auth::user());
+
+        $agreement->transitionStatus(
+            $agreement->status,
+            "Ajuste financiero en cuota N° {$installment->installment_number}: {$validated['adjustment_notes']}",
+            Auth::user(),
+            'INSTALLMENT_ADJUSTED'
+        );
+
+        $msg = 'Ajuste financiero de la cuota registrado exitosamente.';
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $msg, 'installment' => $updated])
+            : back()->with('success', $msg);
+    }
+
+    /**
+     * Upload evidence for an agreement obligation.
+     */
+    public function uploadObligationEvidence(Request $request, int $id, int $obligationId): JsonResponse|RedirectResponse
+    {
+        $agreement = Agreement::findOrFail($id);
+        $obligation = $agreement->obligations()->findOrFail($obligationId);
+
+        $request->validate([
+            'evidence_file' => 'required|file|max:20480',
+            'status'        => 'nullable|string|in:COMPLETED,IN_PROGRESS,PENDING',
+        ]);
+
+        $this->fileService->storeObligationEvidence($obligation, $request->file('evidence_file'), Auth::user());
+
+        if ($request->filled('status')) {
+            $obligation->status = ObligationStatus::from($request->input('status'))->value;
+            if ($obligation->status === ObligationStatus::COMPLETED->value) {
+                $obligation->completed_at = now();
+            }
+            $obligation->save();
+        }
+
+        $agreement->transitionStatus(
+            $agreement->status,
+            "Evidencia adjuntada para el compromiso: '{$obligation->title}'",
+            Auth::user(),
+            'OBLIGATION_EVIDENCE_UPLOADED'
+        );
+
+        $msg = 'Evidencia del compromiso subida exitosamente.';
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $msg, 'obligation' => $obligation])
+            : back()->with('success', $msg);
+    }
+
+    /**
+     * Compliance dashboard for a specific agreement.
+     */
+    public function complianceDashboard(int $id): JsonResponse|View
+    {
+        $agreement = Agreement::with([
+            'client',
+            'productiveActivity',
+            'obligations.responsibleUser',
+            'installments.billing',
+            'installments.saleNote'
+        ])->findOrFail($id);
+
+        $obligations = $agreement->obligations;
+        $totalObligations = $obligations->count();
+        $completedObligations = $obligations->filter(fn($o) => $o->isCompleted())->count();
+        $overdueObligations = $obligations->filter(fn($o) => $o->isOverdue())->count();
+        $pendingObligations = $totalObligations - $completedObligations;
+
+        $compliancePercentage = $agreement->compliancePercentage();
+
+        $institutionObligations = $obligations->where('responsible_party', ObligationResponsibleParty::OUR_INSTITUTION->value);
+        $counterpartyObligations = $obligations->where('responsible_party', ObligationResponsibleParty::COUNTERPARTY->value);
+        $mutualObligations = $obligations->where('responsible_party', ObligationResponsibleParty::MUTUAL->value);
+
+        $scheduledRevenue = $agreement->scheduledRevenue();
+        $invoicedRevenue = $agreement->invoicedRevenue();
+        $collectedRevenue = $agreement->collectedRevenue();
+        $pendingRevenue = $agreement->pendingRevenue();
+
+        $data = [
+            'agreement'                => $agreement,
+            'compliance_percentage'    => $compliancePercentage,
+            'total_obligations'        => $totalObligations,
+            'completed_obligations'    => $completedObligations,
+            'overdue_obligations'      => $overdueObligations,
+            'pending_obligations'      => $pendingObligations,
+            'institution_obligations'  => $institutionObligations,
+            'counterparty_obligations' => $counterpartyObligations,
+            'mutual_obligations'       => $mutualObligations,
+            'scheduled_revenue'        => $scheduledRevenue,
+            'invoiced_revenue'         => $invoicedRevenue,
+            'collected_revenue'        => $collectedRevenue,
+            'pending_revenue'          => $pendingRevenue,
+        ];
+
+        return request()->expectsJson()
+            ? response()->json(['success' => true, 'data' => $data])
+            : view('admin.agreements.compliance', $data);
+    }
+
+    /**
+     * Revenue tracking report (Scheduled vs Invoiced vs Collected).
+     */
+    public function revenueReport(Request $request): View|JsonResponse
+    {
+        $filters = $request->only(['agreement_id', 'client_id', 'productive_activity_id', 'year', 'month', 'status']);
+        $reportData = $this->reportService->getRevenueReport($filters);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $reportData]);
+        }
+
+        $clients = Client::orderBy('nombres')->get();
+        $activities = ProductiveActivity::orderBy('name')->get();
+        $agreements = Agreement::orderBy('code')->get();
+
+        return view('admin.agreements.reports.revenue', compact('reportData', 'clients', 'activities', 'agreements', 'filters'));
+    }
+
+    /**
+     * Export Revenue Report to PDF.
+     */
+    public function exportRevenuePdf(Request $request)
+    {
+        $filters = $request->only(['agreement_id', 'client_id', 'productive_activity_id', 'year', 'month', 'status']);
+        $pdf = $this->reportService->generateRevenuePdf($filters);
+
+        return $pdf->stream('reporte_ingresos_convenios_' . now()->format('Ymd_His') . '.pdf');
+    }
+
+    /**
+     * Export Revenue Report to Excel/CSV.
+     */
+    public function exportRevenueExcel(Request $request): StreamedResponse
+    {
+        $filters = $request->only(['agreement_id', 'client_id', 'productive_activity_id', 'year', 'month', 'status']);
+        $reportData = $this->reportService->getRevenueReport($filters);
+
+        $fileName = 'reporte_ingresos_convenios_' . now()->format('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($reportData) {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($handle, [
+                'Código Convenio',
+                'Título Convenio',
+                'Contraparte',
+                'Doc. Contraparte',
+                'Centro de Costos / Actividad',
+                'Moneda',
+                'Monto Convenio',
+                'Ingreso Programado',
+                'Ingreso Facturado',
+                'Ingreso Cobrado',
+                'Saldo Pendiente',
+                'N° Cuotas',
+                'Cumplimiento (%)',
+            ]);
+
+            foreach ($reportData['rows'] as $row) {
+                fputcsv($handle, [
+                    $row['agreement_code'],
+                    $row['agreement_title'],
+                    $row['counterparty'],
+                    $row['counterparty_doc'],
+                    $row['productive_activity'],
+                    $row['currency'],
+                    number_format($row['total_agreement'], 2, '.', ''),
+                    number_format($row['scheduled'], 2, '.', ''),
+                    number_format($row['invoiced'], 2, '.', ''),
+                    number_format($row['collected'], 2, '.', ''),
+                    number_format($row['pending'], 2, '.', ''),
+                    $row['installments_count'],
+                    $row['compliance_pct'] . '%',
+                ]);
+            }
+
+            fputcsv($handle, []);
+            fputcsv($handle, [
+                'TOTAL GENERAL',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                number_format($reportData['grand_total_scheduled'], 2, '.', ''),
+                number_format($reportData['grand_total_invoiced'], 2, '.', ''),
+                number_format($reportData['grand_total_collected'], 2, '.', ''),
+                number_format($reportData['grand_total_pending'], 2, '.', ''),
+                '',
+                '',
+            ]);
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+        ]);
+    }
+
+    /**
+     * Overdue Obligations Report.
+     */
+    public function overdueObligationsReport(Request $request): View|JsonResponse
+    {
+        $filters = $request->only(['agreement_id', 'responsible_party']);
+        $reportData = $this->reportService->getOverdueObligationsReport($filters);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $reportData]);
+        }
+
+        $agreements = Agreement::orderBy('code')->get();
+
+        return view('admin.agreements.reports.overdue_obligations', compact('reportData', 'agreements', 'filters'));
+    }
+
+    /**
+     * Export Overdue Obligations to PDF.
+     */
+    public function exportOverdueObligationsPdf(Request $request)
+    {
+        $filters = $request->only(['agreement_id', 'responsible_party']);
+        $pdf = $this->reportService->generateOverdueObligationsPdf($filters);
+
+        return $pdf->stream('compromisos_vencidos_' . now()->format('Ymd_His') . '.pdf');
     }
 }

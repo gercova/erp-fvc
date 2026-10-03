@@ -887,22 +887,42 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
     });
 });
 
-// INSTITUTIONAL AGREEMENTS (BLOCK C2)
+// INSTITUTIONAL AGREEMENTS (BLOCK C2 & C4)
 Route::prefix('agreements')->middleware(['auth', 'agreement.access'])->controller(AgreementController::class)->group(function () {
     Route::get('/',                              'index')->name('agreements.index')->middleware('can:agreements.view');
     Route::get('/data',                          'data')->name('agreements.data')->middleware('can:agreements.view');
     Route::get('/create',                        'create')->name('agreements.create')->middleware('can:agreements.create');
     Route::post('/',                             'store')->name('agreements.store')->middleware('can:agreements.create');
-    Route::get('/{id}',                          'show')->name('agreements.show')->middleware('can:agreements.view');
-    Route::get('/{id}/edit',                     'edit')->name('agreements.edit')->middleware('can:agreements.edit');
-    Route::put('/{id}',                          'update')->name('agreements.update')->middleware('can:agreements.edit');
-    Route::delete('/{id}',                       'destroy')->name('agreements.destroy')->middleware('can:agreements.manage');
-    Route::post('/{id}/submit-approval',         'submitApproval')->name('agreements.submit_approval');
-    Route::post('/{id}/addenda',                 'storeAddendum')->name('agreements.addenda.store')->middleware('can:agreements.create');
-    Route::post('/{id}/obligations',             'storeObligation')->name('agreements.obligations.store')->middleware('can:agreements.edit');
-    Route::post('/{id}/obligations/{obligation}','updateObligationStatus')->name('agreements.obligations.update_status')->middleware('can:agreements.manage');
-    Route::post('/{id}/change-status',           'changeStatus')->name('agreements.change_status')->middleware('can:agreements.manage');
-    Route::post('/{id}/documents',               'uploadDocument')->name('agreements.documents.store')->middleware('can:agreements.edit');
+
+    // Reports (Block C4) - Placed before /{id} to prevent collision
+    Route::get('/reports/revenue',                          'revenueReport')->name('agreements.reports.revenue')->middleware('can:agreements.view');
+    Route::get('/reports/revenue/pdf',                      'exportRevenuePdf')->name('agreements.reports.revenue.pdf')->middleware('can:agreements.view');
+    Route::get('/reports/revenue/excel',                    'exportRevenueExcel')->name('agreements.reports.revenue.excel')->middleware('can:agreements.view');
+    Route::get('/reports/overdue-obligations',              'overdueObligationsReport')->name('agreements.reports.overdue_obligations')->middleware('can:agreements.view');
+    Route::get('/reports/overdue-obligations/pdf',          'exportOverdueObligationsPdf')->name('agreements.reports.overdue_obligations.pdf')->middleware('can:agreements.view');
+
+    Route::get('/{id}',                                     'show')->name('agreements.show')->middleware('can:agreements.view');
+    Route::get('/{id}/edit',                                'edit')->name('agreements.edit')->middleware('can:agreements.edit');
+    Route::put('/{id}',                                     'update')->name('agreements.update')->middleware('can:agreements.edit');
+    Route::delete('/{id}',                                  'destroy')->name('agreements.destroy')->middleware('can:agreements.manage');
+    Route::post('/{id}/submit-approval',                    'submitApproval')->name('agreements.submit_approval');
+    Route::post('/{id}/addenda',                            'storeAddendum')->name('agreements.addenda.store')->middleware('can:agreements.create');
+    Route::post('/{id}/obligations',                        'storeObligation')->name('agreements.obligations.store')->middleware('can:agreements.edit');
+    Route::post('/{id}/obligations/{obligation}',           'updateObligationStatus')->name('agreements.obligations.update_status')->middleware('can:agreements.manage');
+    Route::post('/{id}/obligations/{obligation}/evidence',  'uploadObligationEvidence')->name('agreements.obligations.upload_evidence')->middleware('can:agreements.edit');
+    Route::post('/{id}/change-status',                      'changeStatus')->name('agreements.change_status')->middleware('can:agreements.manage');
+    Route::post('/{id}/documents',                          'uploadDocument')->name('agreements.documents.store')->middleware('can:agreements.edit');
+
+    // Revenue Schedule & Installment Management (Block C4)
+    Route::post('/{id}/installments',                                   'storeInstallment')->name('agreements.installments.store')->middleware('can:agreements.edit');
+    Route::get('/{id}/installments/{installment}/checkout-prep',        'prepareInstallmentCheckout')->name('agreements.installments.checkout_prep')->middleware('can:agreements.view');
+    Route::post('/{id}/installments/{installment}/generate-voucher',    'generateInstallmentVoucher')->name('agreements.installments.generate_voucher')->middleware('can:agreements.manage');
+    Route::post('/{id}/installments/{installment}/link-voucher',        'linkInstallmentVoucher')->name('agreements.installments.link_voucher')->middleware('can:agreements.manage');
+    Route::post('/{id}/installments/{installment}/payment',             'recordInstallmentPayment')->name('agreements.installments.payment')->middleware('can:agreements.manage');
+    Route::post('/{id}/installments/{installment}/adjust',              'adjustInstallment')->name('agreements.installments.adjust')->middleware('can:agreements.manage');
+
+    // Compliance Dashboard (Block C4)
+    Route::get('/{id}/compliance',                          'complianceDashboard')->name('agreements.compliance')->middleware('can:agreements.view');
 });
 
 // AGREEMENTS & SERVICES - FILE STORAGE & DOWNLOAD (BLOCK C1)

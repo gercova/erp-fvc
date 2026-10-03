@@ -81,6 +81,30 @@ class AgreementFileService
     }
 
     /**
+     * Store an obligation evidence file in private storage.
+     */
+    public function storeObligationEvidence(
+        \App\Models\AgreementObligation $obligation,
+        UploadedFile $file,
+        ?User $user = null
+    ): \App\Models\AgreementObligation {
+        $agreement = $obligation->agreement;
+        $safeCode = $agreement ? Str::slug($agreement->code, '-') : 'general';
+        $directory = "agreements/{$safeCode}/obligations";
+
+        $extension = $file->getClientOriginalExtension();
+        $storedName = Str::random(32) . '.' . $extension;
+        $path = $file->storeAs($directory, $storedName, $this->disk);
+
+        $obligation->update([
+            'evidence_file_path' => $path,
+            'evidence'           => $file->getClientOriginalName() ?: $storedName,
+        ]);
+
+        return $obligation;
+    }
+
+    /**
      * Authorize and download an agreement document.
      */
     public function downloadDocument(AgreementDocument $document, ?User $user = null): StreamedResponse {

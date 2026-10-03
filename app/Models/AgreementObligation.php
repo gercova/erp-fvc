@@ -19,6 +19,7 @@ class AgreementObligation extends Model
         'uuid',
         'agreement_id',
         'responsible_party',
+        'responsible_user_id',
         'clause_reference',
         'title',
         'description',
@@ -27,12 +28,15 @@ class AgreementObligation extends Model
         'completed_at',
         'verified_by_user_id',
         'evidence_notes',
+        'evidence_file_path',
+        'alerted_thresholds',
     ];
 
     protected $casts = [
-        'status'       => ObligationStatus::class,
-        'due_date'     => 'date',
-        'completed_at' => 'datetime',
+        'status'             => ObligationStatus::class,
+        'due_date'           => 'date',
+        'completed_at'       => 'datetime',
+        'alerted_thresholds' => 'array',
     ];
 
     protected static function booted(): void {
@@ -54,6 +58,10 @@ class AgreementObligation extends Model
         return $this->belongsTo(User::class, 'verified_by_user_id');
     }
 
+    public function responsibleUser(): BelongsTo {
+        return $this->belongsTo(User::class, 'responsible_user_id');
+    }
+
     public function scopePending($query) {
         return $query->where('status', ObligationStatus::PENDING->value);
     }
@@ -64,5 +72,31 @@ class AgreementObligation extends Model
 
     public function scopeCompleted($query) {
         return $query->where('status', ObligationStatus::COMPLETED->value);
+    }
+
+    public function isCompleted(): bool {
+        $statusVal = $this->status instanceof ObligationStatus ? $this->status->value : (string)$this->status;
+        return in_array($statusVal, ['COMPLETED', 'FULFILLED'], true) || $this->completed_at !== null;
+    }
+
+    public function isOverdue(): bool {
+        if ($this->isCompleted()) {
+            return false;
+        }
+        $statusVal = $this->status instanceof ObligationStatus ? $this->status->value : (string)$this->status;
+        if ($statusVal === 'OVERDUE') {
+            return true;
+        }
+        return $this->due_date && $this->due_date->isPast();
+    }
+
+    public function isInProgress(): bool {
+        $statusVal = $this->status instanceof ObligationStatus ? $this->status->value : (string)$this->status;
+        return $statusVal === 'IN_PROGRESS';
+    }
+
+    public function isPending(): bool {
+        $statusVal = $this->status instanceof ObligationStatus ? $this->status->value : (string)$this->status;
+        return $statusVal === 'PENDING';
     }
 }

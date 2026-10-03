@@ -51,4 +51,8 @@ class ActivitySalesAttribution extends Model
     public function detailBilling(): BelongsTo {
         return $this->belongsTo(DetailBilling::class, 'detail_billing_id');
     }
+
+    public function getAttributedAmountAttribute(): float {
+        return (float) ($this->revenue_amount ?? 0);
+    }
 }
