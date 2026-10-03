@@ -85,7 +85,20 @@ class AgreementInstallmentService
         $amount = (float) ($options['amount'] ?? $installment->amount);
 
         return DB::transaction(function () use ($installment, $agreement, $voucherType, $isPaid, $amount, $user, $options) {
-            $product = $this->resolveServiceProduct($installment);
+            // Concurrency protection: Lock the installment row and re-verify invoicing gate
+            $lockedInstallment = AgreementInstallment::where('id', $installment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (!$lockedInstallment->canBeInvoiced()) {
+                throw new DomainException(
+                    "La cuota N° {$lockedInstallment->installment_number} del convenio ya ha sido facturada previamente " .
+                    "(Comprobante: " . ($lockedInstallment->billing_id ? "Factura/Boleta #{$lockedInstallment->billing_id}" : "Nota de Venta #{$lockedInstallment->sale_note_id}") .
+                    ") y no puede ser facturada dos veces."
+                );
+            }
+
+            $product = $this->resolveServiceProduct($lockedInstallment);
             $warehouseId = $options['warehouse_id'] ?? (Warehouse::value('id') ?? 1);
             $cashId = $user->idcaja ?? 1;
 
@@ -93,23 +106,23 @@ class AgreementInstallmentService
             $journalEntry = null;
 
             if ($voucherType === 'SALE_NOTE') {
-                $voucher = $this->createSaleNote($installment, $agreement, $product, $amount, $warehouseId, $cashId, $user, $isPaid, $options);
+                $voucher = $this->createSaleNote($lockedInstallment, $agreement, $product, $amount, $warehouseId, $cashId, $user, $isPaid, $options);
                 $detail = $voucher->details()->first();
 
                 // Attribute to productive activity if exists
                 $this->attributeRevenueToActivity($agreement, detailSaleNoteId: $detail->id, amount: $amount, date: $voucher->fecha_emision);
 
                 // Link to installment
-                $installment->sale_note_id = $voucher->id;
+                $lockedInstallment->sale_note_id = $voucher->id;
             } else {
-                $voucher = $this->createBilling($installment, $agreement, $product, $amount, $warehouseId, $cashId, $user, $isPaid, $options);
+                $voucher = $this->createBilling($lockedInstallment, $agreement, $product, $amount, $warehouseId, $cashId, $user, $isPaid, $options);
                 $detail = $voucher->details()->first();
 
                 // Attribute to productive activity if exists
                 $this->attributeRevenueToActivity($agreement, detailBillingId: $detail->id, amount: $amount, date: $voucher->fecha_emision);
 
                 // Link to installment
-                $installment->billing_id = $voucher->id;
+                $lockedInstallment->billing_id = $voucher->id;
             }
 
             // Accounting integration: generate accounting entry SOLELY through the voucher flow (Track B)
@@ -121,16 +134,16 @@ class AgreementInstallmentService
 
             // Update installment status
             $newStatus = $isPaid ? InstallmentStatus::COLLECTED : InstallmentStatus::INVOICED;
-            $installment->status = $newStatus;
-            $installment->invoiced_at = now();
+            $lockedInstallment->status = $newStatus;
+            $lockedInstallment->invoiced_at = now();
             if ($isPaid) {
-                $installment->paid_at = now();
-                $installment->payment_reference = $options['payment_reference'] ?? 'PAGO_INMEDIATO';
+                $lockedInstallment->paid_at = now();
+                $lockedInstallment->payment_reference = $options['payment_reference'] ?? 'PAGO_INMEDIATO';
             }
-            $installment->save();
+            $lockedInstallment->save();
 
             return [
-                'installment'   => $installment->fresh(['agreement', 'billing', 'saleNote']),
+                'installment'   => $lockedInstallment->fresh(['agreement', 'billing', 'saleNote']),
                 'voucher'       => $voucher,
                 'journal_entry' => $journalEntry,
             ];
@@ -151,26 +164,34 @@ class AgreementInstallmentService
         }
 
         return DB::transaction(function () use ($installment, $billingId, $saleNoteId, $user) {
-            $agreement = $installment->agreement;
+            $lockedInstallment = AgreementInstallment::where('id', $installment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (!$lockedInstallment->canBeInvoiced()) {
+                throw new DomainException("La cuota N° {$lockedInstallment->installment_number} ya cuenta con un comprobante asociado.");
+            }
+
+            $agreement = $lockedInstallment->agreement;
 
             if ($billingId) {
                 $billing = Billing::findOrFail($billingId);
-                $installment->billing_id = $billing->id;
+                $lockedInstallment->billing_id = $billing->id;
                 $detail = $billing->details()->first();
                 if ($detail) {
-                    $this->attributeRevenueToActivity($agreement, detailBillingId: $detail->id, amount: (float)$installment->amount, date: $billing->fecha_emision);
+                    $this->attributeRevenueToActivity($agreement, detailBillingId: $detail->id, amount: (float)$lockedInstallment->amount, date: $billing->fecha_emision);
                 }
             } elseif ($saleNoteId) {
                 $saleNote = SaleNote::findOrFail($saleNoteId);
-                $installment->sale_note_id = $saleNote->id;
+                $lockedInstallment->sale_note_id = $saleNote->id;
                 $detail = $saleNote->details()->first();
                 if ($detail) {
-                    $this->attributeRevenueToActivity($agreement, detailSaleNoteId: $detail->id, amount: (float)$installment->amount, date: $saleNote->fecha_emision);
+                    $this->attributeRevenueToActivity($agreement, detailSaleNoteId: $detail->id, amount: (float)$lockedInstallment->amount, date: $saleNote->fecha_emision);
                 }
             }
 
-            $installment->syncStatusFromVoucher();
-            return $installment->fresh(['billing', 'saleNote', 'agreement']);
+            $lockedInstallment->syncStatusFromVoucher();
+            return $lockedInstallment->fresh(['billing', 'saleNote', 'agreement']);
         });
     }
 
