@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AccountingPeriodClosure;
 use App\Models\ActivityPeriodClosure;
 use App\Models\Area;
 use App\Models\AssetInventory;
@@ -155,6 +156,16 @@ class DocumentApprovalService
             ];
         }
 
+        if ($document instanceof AccountingPeriodClosure) {
+            $contabilidadHead = $this->resolveRoleUser('CONTABILIDAD') ?? $this->resolveAreaHead('CONT') ?? $creator;
+            return [
+                ['role_name' => 'CONTABILIDAD', 'label' => 'Jefatura de Contabilidad', 'approver_id' => $contabilidadHead?->id, 'approver_name' => $contabilidadHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Jefatura de Administración', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Dirección General', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
+
+
         return [];
     }
 
@@ -249,6 +260,10 @@ class DocumentApprovalService
         } else {
             // All steps approved!
             $document->update(['status' => 'APROBADO']);
+
+            if ($document instanceof AccountingPeriodClosure) {
+                app(\App\Services\Accounting\PeriodClosingService::class)->finalizeApprovedClosure($document);
+            }
         }
 
         return true;
@@ -301,6 +316,9 @@ class DocumentApprovalService
         }
         if ($document instanceof \App\Models\ActivityPeriodClosure) {
             return "Cierre de Período {$document->period_month}/{$document->period_year} - {$document->activity?->name}";
+        }
+        if ($document instanceof AccountingPeriodClosure) {
+            return "Cierre de Período Contable {$document->period?->period_code} ({$document->closure_type})";
         }
 
         return "Documento N° {$document->id}";

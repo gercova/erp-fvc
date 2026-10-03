@@ -22,6 +22,7 @@ use App\Models\SaleNote;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
@@ -29,6 +30,8 @@ use Tests\TestCase;
 
 class ProductiveActivitiesIntegrationTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected User $adminUser;
     protected FundSource $fundBn;
     protected FundSource $fundCoop;

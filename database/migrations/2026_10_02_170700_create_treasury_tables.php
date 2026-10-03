@@ -87,9 +87,12 @@ return new class extends Migration
             }
         });
 
-        // Modify status to string(30) to allow both RDR enum states and extended workflow states
+        // Modify status to string(30) and widen balance columns to DECIMAL(18, 2)
         try {
             DB::statement("ALTER TABLE rdr_bank_reconciliations MODIFY COLUMN status VARCHAR(30) NOT NULL DEFAULT 'IN_REVIEW'");
+            DB::statement("ALTER TABLE rdr_bank_reconciliations MODIFY COLUMN system_calculated_balance DECIMAL(18, 2) NOT NULL DEFAULT 0.00");
+            DB::statement("ALTER TABLE rdr_bank_reconciliations MODIFY COLUMN bank_statement_balance DECIMAL(18, 2) NOT NULL DEFAULT 0.00");
+            DB::statement("ALTER TABLE rdr_bank_reconciliations MODIFY COLUMN reconciled_difference DECIMAL(18, 2) NOT NULL DEFAULT 0.00");
         } catch (\Throwable $e) {
             // Already compatible or altered
         }

@@ -148,7 +148,7 @@ class EconomicReportHistoricalImport
                     $hasAnyAmount = true;
 
                     ActivityTransaction::create([
-                        'transaction_code'       => 'IMP-' . $this->defaultYear . '-' . sprintf('%02d', $monthNumber) . '-' . strtoupper(Str::random(5)),
+                        'transaction_code'       => 'IMP-' . $this->defaultYear . '-' . sprintf('%02d', $monthNumber) . '-' . strtoupper(Str::random(10)),
                         'productive_activity_id' => $activity->id,
                         'category_id'            => $category->id,
                         'fund_source_id'         => $fundSource->id,
@@ -356,16 +356,24 @@ class EconomicReportHistoricalImport
             return null;
         }
 
+        $amount = null;
         if (is_numeric($val)) {
-            return (float) $val;
-        }
-
-        if (is_string($val)) {
+            $amount = (float) $val;
+        } elseif (is_string($val)) {
             // Remover símbolos de moneda y espacios
             $clean = str_replace(['S/', 's/', '$', ' ', ',', 'S/.'], ['', '', '', '', '', ''], trim($val));
             if (is_numeric($clean)) {
-                return (float) $clean;
+                $amount = (float) $clean;
             }
+        }
+
+        if ($amount !== null) {
+            // Protección contra desbordamiento numérico en decimal(14,2)
+            if ($amount > 999999999.99) {
+                $this->recordAssumption("Monto {$amount} excede el límite operacional; ajustado para evitar desbordamiento.");
+                return 99999999.99;
+            }
+            return $amount;
         }
 
         return null;

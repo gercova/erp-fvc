@@ -67,6 +67,8 @@ use App\Http\Controllers\Treasury\BankReconciliationController;
 use App\Http\Controllers\Treasury\AgingReportController;
 use App\Http\Controllers\Treasury\CashFlowController;
 use App\Http\Controllers\Treasury\InternalTransferController;
+use App\Http\Controllers\Accounting\FinancialStatementController;
+use App\Http\Controllers\Accounting\PeriodClosingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -798,9 +800,7 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::get('/excel',    'exportExcel')->name('accounting.trial_balance.excel')->middleware('can:accounting.export');
     });
 
-    // ==========================================
     // TREASURY MODULE (BLOCK B4)
-    // ==========================================
     Route::prefix('treasury')->group(function () {
         // Bank Accounts & Statement Imports
         Route::controller(BankAccountController::class)->prefix('bank-accounts')->group(function () {
@@ -843,5 +843,23 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
             Route::post('/cash-to-bank', 'storeCashToBank')->name('treasury.transfers.cash_to_bank')->middleware('can:accounting.view');
             Route::post('/to-cut',       'storeTransferToCut')->name('treasury.transfers.to_cut')->middleware('can:accounting.view');
         });
+    });
+
+    // FINANCIAL STATEMENTS (BLOCK B5)
+    Route::controller(FinancialStatementController::class)->prefix('statements')->group(function () {
+        Route::get('/balance-sheet',     'balanceSheet')->name('accounting.statements.balance_sheet')->middleware('can:accounting.view');
+        Route::get('/nature',            'incomeStatementNature')->name('accounting.statements.nature')->middleware('can:accounting.view');
+        Route::get('/function',          'incomeStatementFunction')->name('accounting.statements.function')->middleware('can:accounting.view');
+        Route::get('/pdf/{statement}',   'exportPdf')->name('accounting.statements.export_pdf')->middleware('can:accounting.export');
+        Route::get('/excel/{statement}', 'exportExcel')->name('accounting.statements.export_excel')->middleware('can:accounting.export');
+    });
+
+    // PERIOD CLOSING & REOPENING (BLOCK B5)
+    Route::controller(PeriodClosingController::class)->prefix('period-closing')->group(function () {
+        Route::get('/',                     'index')->name('accounting.period_closing.index')->middleware('can:accounting.view');
+        Route::post('/{id}/close',          'close')->name('accounting.period_closing.close')->middleware('can:accounting.view');
+        Route::post('/{id}/annual-close',   'annualClose')->name('accounting.period_closing.annual_close')->middleware('can:accounting.view');
+        Route::post('/{id}/reopen',         'reopen')->name('accounting.period_closing.reopen')->middleware('can:accounting.view');
+        Route::post('/{id}/submit-approval','submitApproval')->name('accounting.period_closing.submit_approval')->middleware('can:accounting.view');
     });
 });
