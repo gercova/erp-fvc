@@ -430,4 +430,173 @@ class AgreementManagementTest extends TestCase
         $this->assertEquals('Liquidación final del convenio con acta de conformidad mutua.', $auditLog->reason);
         $this->assertEquals($this->adminUser->id, $auditLog->user_id);
     }
+
+    /**
+     * Test 9: RBAC - User without 'agreements.create' cannot create an agreement (403 Forbidden).
+     */
+    public function test_unauthorized_user_without_agreements_create_cannot_create_agreement(): void
+    {
+        $docenteUser = $this->createTestUser('test_docente_rbac', 'Docente Sin Permiso', 'DOCENTE');
+
+        $payload = [
+            'name'                => 'Convenio no autorizado',
+            'type'                => 'FRAMEWORK',
+            'scope'               => 'NATIONAL',
+            'objective'           => 'Intento de registro sin permisos',
+            'client_id'           => $this->clientWithRuc->id,
+            'area_id'             => $this->areaA->id,
+            'coordinator_user_id' => $docenteUser->id,
+            'start_date'          => Carbon::now()->toDateString(),
+            'end_date'            => Carbon::now()->addYear()->toDateString(),
+            'currency'            => 'PEN',
+            'total_amount'        => 10000.00,
+        ];
+
+        $responseCreate = $this->actingAs($docenteUser)->get(route('agreements.create'));
+        $responseCreate->assertStatus(403);
+
+        $responseStore = $this->actingAs($docenteUser)->post(route('agreements.store'), $payload);
+        $responseStore->assertStatus(403);
+    }
+
+    /**
+     * Test 10: RBAC - User without 'agreements.edit' cannot modify an agreement (403 Forbidden).
+     */
+    public function test_unauthorized_user_without_agreements_edit_cannot_update_agreement(): void
+    {
+        $docenteUser = $this->createTestUser('test_docente_edit_rbac', 'Docente Sin Permiso Edit', 'DOCENTE');
+
+        $responseEdit = $this->actingAs($docenteUser)->get(route('agreements.edit', $this->agreementDeptA->id));
+        $responseEdit->assertStatus(403);
+
+        $responseUpdate = $this->actingAs($docenteUser)->put(route('agreements.update', $this->agreementDeptA->id), [
+            'name'      => 'Nombre modificado sin autorización',
+            'objective' => 'Objetivo alterado',
+        ]);
+        $responseUpdate->assertStatus(403);
+    }
+
+    /**
+     * Test 11: RBAC - User without 'agreements.manage' cannot change status or delete agreement (403 Forbidden).
+     */
+    public function test_unauthorized_user_without_agreements_manage_cannot_change_status(): void
+    {
+        $contabilidadUser = $this->createTestUser('test_conta_status_rbac', 'Contador Sin Manage', 'CONTABILIDAD');
+
+        $responseStatus = $this->actingAs($contabilidadUser)->post(
+            route('agreements.change_status', $this->agreementDeptA->id),
+            [
+                'new_status' => 'TERMINATED',
+                'reason'     => 'Intento de cancelación no autorizado',
+            ]
+        );
+        $responseStatus->assertStatus(403);
+
+        $responseDelete = $this->actingAs($contabilidadUser)->delete(route('agreements.destroy', $this->agreementDeptA->id));
+        $responseDelete->assertStatus(403);
+    }
+
+    /**
+     * Test 12: RBAC - User without 'services.view' or 'services.manage' cannot access tech services (403 Forbidden).
+     */
+    public function test_unauthorized_user_without_services_permissions_cannot_access_services(): void
+    {
+        $docenteUser = $this->createTestUser('test_docente_services_rbac', 'Docente Sin Permisos Servicios', 'DOCENTE');
+
+        $responseIndex = $this->actingAs($docenteUser)->get(route('services.engagements.index'));
+        $responseIndex->assertStatus(403);
+
+        $responseCreate = $this->actingAs($docenteUser)->get(route('services.engagements.create'));
+        $responseCreate->assertStatus(403);
+
+        $responseStore = $this->actingAs($docenteUser)->post(route('services.engagements.store'), [
+            'client_id' => $this->clientWithRuc->id,
+        ]);
+        $responseStore->assertStatus(403);
+    }
+
+    /**
+     * Test 13: RBAC Seeder Idempotence - Verifies exact permission assignments across institutional roles.
+     */
+    public function test_role_permissions_assignment_idempotence_and_integrity(): void
+    {
+        // Re-run seeder to verify idempotence
+        $this->seed(AgreementRoleAndPermissionSeeder::class);
+
+        $adminRole = Role::findByName('ADMIN');
+        $this->assertTrue($adminRole->hasPermissionTo('agreements.view'));
+        $this->assertTrue($adminRole->hasPermissionTo('agreements.create'));
+        $this->assertTrue($adminRole->hasPermissionTo('agreements.edit'));
+        $this->assertTrue($adminRole->hasPermissionTo('agreements.manage'));
+        $this->assertTrue($adminRole->hasPermissionTo('agreements.approve'));
+        $this->assertTrue($adminRole->hasPermissionTo('agreements.delete'));
+        $this->assertTrue($adminRole->hasPermissionTo('services.view'));
+        $this->assertTrue($adminRole->hasPermissionTo('services.create'));
+        $this->assertTrue($adminRole->hasPermissionTo('services.edit'));
+        $this->assertTrue($adminRole->hasPermissionTo('services.manage'));
+        $this->assertTrue($adminRole->hasPermissionTo('services.approve'));
+        $this->assertTrue($adminRole->hasPermissionTo('services.delete'));
+
+        $coordRole = Role::findByName('COORDINADOR');
+        $this->assertTrue($coordRole->hasPermissionTo('agreements.view'));
+        $this->assertTrue($coordRole->hasPermissionTo('agreements.create'));
+        $this->assertTrue($coordRole->hasPermissionTo('agreements.edit'));
+        $this->assertTrue($coordRole->hasPermissionTo('agreements.manage'));
+        $this->assertTrue($coordRole->hasPermissionTo('services.view'));
+        $this->assertTrue($coordRole->hasPermissionTo('services.manage'));
+        $this->assertFalse($coordRole->hasPermissionTo('agreements.approve'));
+
+        $contaRole = Role::findByName('CONTABILIDAD');
+        $this->assertTrue($contaRole->hasPermissionTo('agreements.view'));
+        $this->assertTrue($contaRole->hasPermissionTo('services.view'));
+        $this->assertFalse($contaRole->hasPermissionTo('agreements.manage'));
+        $this->assertFalse($contaRole->hasPermissionTo('agreements.create'));
+    }
+
+    /**
+     * Test 14: Audit Trail - Status changes log action, previous_status, new_status, reason, and user.
+     */
+    public function test_status_change_audit_records_all_transitions_and_metadata(): void
+    {
+        $agreement = $this->agreementDeptA;
+        $initialStatus = $agreement->status;
+
+        // Transition 1: DRAFT -> ACTIVE
+        $agreement->transitionStatus(
+            AgreementStatus::ACTIVE,
+            'Aprobación formal de convenio por Consejo Directivo',
+            $this->directorUser,
+            'STATUS_CHANGE_TEST',
+            ['resolution' => 'RES-2026-001']
+        );
+
+        $log1 = AgreementAuditLog::where('agreement_id', $agreement->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($log1);
+        $this->assertEquals($initialStatus->value, $log1->previous_status);
+        $this->assertEquals(AgreementStatus::ACTIVE->value, $log1->new_status);
+        $this->assertEquals('Aprobación formal de convenio por Consejo Directivo', $log1->reason);
+        $this->assertEquals($this->directorUser->id, $log1->user_id);
+        $this->assertEquals('STATUS_CHANGE_TEST', $log1->action);
+        $this->assertEquals(['resolution' => 'RES-2026-001'], $log1->metadata);
+
+        // Transition 2: ACTIVE -> EXPIRING_SOON
+        $agreement->transitionStatus(
+            AgreementStatus::EXPIRING_SOON,
+            'Convenio dentro de ventana crítica de 30 días restantes',
+            $this->adminUser,
+            'STATUS_CHANGE_EXPIRING'
+        );
+
+        $log2 = AgreementAuditLog::where('agreement_id', $agreement->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($log2);
+        $this->assertEquals(AgreementStatus::ACTIVE->value, $log2->previous_status);
+        $this->assertEquals(AgreementStatus::EXPIRING_SOON->value, $log2->new_status);
+        $this->assertEquals($this->adminUser->id, $log2->user_id);
+    }
 }

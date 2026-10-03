@@ -905,7 +905,7 @@ Route::prefix('agreements')->middleware(['auth', 'agreement.access'])->controlle
     Route::get('/{id}/edit',                                'edit')->name('agreements.edit')->middleware('can:agreements.edit');
     Route::put('/{id}',                                     'update')->name('agreements.update')->middleware('can:agreements.edit');
     Route::delete('/{id}',                                  'destroy')->name('agreements.destroy')->middleware('can:agreements.manage');
-    Route::post('/{id}/submit-approval',                    'submitApproval')->name('agreements.submit_approval');
+    Route::post('/{id}/submit-approval',                    'submitApproval')->name('agreements.submit_approval')->middleware('can:agreements.manage');
     Route::post('/{id}/addenda',                            'storeAddendum')->name('agreements.addenda.store')->middleware('can:agreements.create');
     Route::post('/{id}/obligations',                        'storeObligation')->name('agreements.obligations.store')->middleware('can:agreements.edit');
     Route::post('/{id}/obligations/{obligation}',           'updateObligationStatus')->name('agreements.obligations.update_status')->middleware('can:agreements.manage');
@@ -927,39 +927,39 @@ Route::prefix('agreements')->middleware(['auth', 'agreement.access'])->controlle
 
 // AGREEMENTS & SERVICES - FILE STORAGE & DOWNLOAD (BLOCK C1)
 Route::middleware(['auth'])->prefix('agreements')->controller(AgreementDocumentController::class)->group(function () {
-    Route::get('/documents/{document}/download',        'download')->name('agreements.documents.download');
-    Route::get('/deliverables/{deliverable}/download',  'downloadDeliverable')->name('agreements.deliverables.download');
-    Route::post('/{agreement}/documents/upload',        'upload')->name('agreements.documents.upload');
+    Route::get('/documents/{document}/download',        'download')->name('agreements.documents.download')->middleware('can:agreements.view');
+    Route::get('/deliverables/{deliverable}/download',  'downloadDeliverable')->name('agreements.deliverables.download')->middleware('can:agreements.view');
+    Route::post('/{agreement}/documents/upload',        'upload')->name('agreements.documents.upload')->middleware('can:agreements.edit');
 });
 
 // TECHNOLOGY SERVICE MANAGEMENT (BLOCK C3)
 Route::prefix('services')->middleware(['auth'])->controller(ServiceEngagementController::class)->group(function () {
-    Route::get('/engagements',                                              'index')->name('services.engagements.index');
-    Route::get('/engagements/data',                                         'data')->name('services.engagements.data');
-    Route::get('/engagements/create',                                       'create')->name('services.engagements.create');
-    Route::post('/engagements',                                             'store')->name('services.engagements.store');
-    Route::get('/engagements/{id}',                                         'show')->name('services.engagements.show');
-    Route::put('/engagements/{id}',                                         'update')->name('services.engagements.update');
-    Route::delete('/engagements/{id}',                                      'destroy')->name('services.engagements.destroy');
+    Route::get('/engagements',                                              'index')->name('services.engagements.index')->middleware('can:services.view');
+    Route::get('/engagements/data',                                         'data')->name('services.engagements.data')->middleware('can:services.view');
+    Route::get('/engagements/create',                                       'create')->name('services.engagements.create')->middleware('can:services.manage');
+    Route::post('/engagements',                                             'store')->name('services.engagements.store')->middleware('can:services.manage');
+    Route::get('/engagements/{id}',                                         'show')->name('services.engagements.show')->middleware('can:services.view');
+    Route::put('/engagements/{id}',                                         'update')->name('services.engagements.update')->middleware('can:services.manage');
+    Route::delete('/engagements/{id}',                                      'destroy')->name('services.engagements.destroy')->middleware('can:services.manage');
 
     // Training Sessions & Attendees
-    Route::post('/engagements/{id}/sessions',                               'storeSession')->name('services.engagements.sessions.store');
-    Route::post('/engagements/{id}/attendees',                              'storeAttendee')->name('services.engagements.attendees.store');
-    Route::post('/engagements/{id}/attendees/import',                       'importAttendees')->name('services.engagements.attendees.import');
-    Route::post('/engagements/{id}/sessions/{session}/attendance',          'updateAttendance')->name('services.engagements.attendance.update');
+    Route::post('/engagements/{id}/sessions',                               'storeSession')->name('services.engagements.sessions.store')->middleware('can:services.manage');
+    Route::post('/engagements/{id}/attendees',                              'storeAttendee')->name('services.engagements.attendees.store')->middleware('can:services.manage');
+    Route::post('/engagements/{id}/attendees/import',                       'importAttendees')->name('services.engagements.attendees.import')->middleware('can:services.manage');
+    Route::post('/engagements/{id}/sessions/{session}/attendance',          'updateAttendance')->name('services.engagements.attendance.update')->middleware('can:services.manage');
 
     // Certificates
-    Route::post('/engagements/{id}/attendees/{attendee}/certificate',       'issueCertificate')->name('services.engagements.certificates.issue');
-    Route::get('/engagements/{id}/attendees/{attendee}/certificate/pdf',    'downloadCertificate')->name('services.engagements.certificates.download');
+    Route::post('/engagements/{id}/attendees/{attendee}/certificate',       'issueCertificate')->name('services.engagements.certificates.issue')->middleware('can:services.manage');
+    Route::get('/engagements/{id}/attendees/{attendee}/certificate/pdf',    'downloadCertificate')->name('services.engagements.certificates.download')->middleware('can:services.view');
 
     // Technical Assistance / Hour Logs
-    Route::post('/engagements/{id}/hour-logs',                              'storeHourLog')->name('services.engagements.hour_logs.store');
+    Route::post('/engagements/{id}/hour-logs',                              'storeHourLog')->name('services.engagements.hour_logs.store')->middleware('can:services.manage');
 
     // Deliverables & Client Sign-off
-    Route::post('/engagements/{id}/deliverables',                           'storeDeliverable')->name('services.engagements.deliverables.store');
-    Route::post('/engagements/{id}/deliverables/{deliverable}/signoff',     'signoffDeliverable')->name('services.engagements.deliverables.signoff');
+    Route::post('/engagements/{id}/deliverables',                           'storeDeliverable')->name('services.engagements.deliverables.store')->middleware('can:services.manage');
+    Route::post('/engagements/{id}/deliverables/{deliverable}/signoff',     'signoffDeliverable')->name('services.engagements.deliverables.signoff')->middleware('can:services.manage');
 
     // Closure & Final Technical Report
-    Route::post('/engagements/{id}/close',                                  'closeEngagement')->name('services.engagements.close');
-    Route::get('/engagements/{id}/final-report/pdf',                        'downloadFinalReport')->name('services.engagements.final_report');
+    Route::post('/engagements/{id}/close',                                  'closeEngagement')->name('services.engagements.close')->middleware('can:services.manage');
+    Route::get('/engagements/{id}/final-report/pdf',                        'downloadFinalReport')->name('services.engagements.final_report')->middleware('can:services.view');
 });

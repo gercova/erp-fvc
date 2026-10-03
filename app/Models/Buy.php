@@ -45,41 +45,35 @@ class Buy extends Model
     ];
 
     protected $casts = [
-        'fecha_emision' => 'date',
-        'fecha_vencimiento' => 'date',
-        'cuotas' => 'array',
-        'monto_credito' => 'decimal:2',
-        'total' => 'decimal:2',
-        'igv' => 'decimal:2',
+        'fecha_emision'         => 'date',
+        'fecha_vencimiento'     => 'date',
+        'cuotas'                => 'array',
+        'monto_credito'         => 'decimal:2',
+        'total'                 => 'decimal:2',
+        'igv'                   => 'decimal:2',
     ];
 
-    public function provider(): BelongsTo
-    {
+    public function provider(): BelongsTo {
         return $this->belongsTo(Provider::class, 'idproveedor');
     }
 
-    public function warehouse(): BelongsTo
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'idalmacen');
     }
 
-    public function typeDocument(): BelongsTo
-    {
+    public function typeDocument(): BelongsTo {
         return $this->belongsTo(TypeDocument::class, 'idtipo_comprobante');
     }
 
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'idusuario');
     }
 
-    public function detailBuys(): HasMany
-    {
+    public function detailBuys(): HasMany {
         return $this->hasMany(DetailBuy::class, 'idcompra');
     }
 
-    public function accountPayable(): HasOne
-    {
+    public function accountPayable(): HasOne {
         return $this->hasOne(AccountPayable::class, 'idcompra');
     }
 }

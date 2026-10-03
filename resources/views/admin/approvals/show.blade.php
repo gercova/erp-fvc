@@ -88,6 +88,9 @@
                                     'AssetInventory'        => ['Inventario Patrimonial', 'bg-dark'],
                                     'ProductiveActivity'    => ['Actividad Productiva', 'bg-indigo text-white'],
                                     'ActivityPeriodClosure' => ['Cierre de Período', 'bg-secondary'],
+                                    'Agreement'             => ['Convenio Institucional (Tipo 12)', 'bg-dark'],
+                                    'AgreementAddendum'     => ['Adenda de Convenio (Tipo 13)', 'bg-info text-dark'],
+                                    'ServiceEngagement'     => ['Servicio Tecnológico (Tipo 13)', 'bg-success text-white'],
                                 ];
                                 $badgeInfo = $typeBadges[$docType] ?? [$docType, 'bg-secondary'];
                             @endphp
@@ -594,6 +597,146 @@
                                                 <div class="bg-light p-3 rounded border small text-dark">{{ $document->notes }}</div>
                                             </div>
                                         @endif
+                                    </div>
+
+                                <!-- 12. CONVENIO INSTITUCIONAL (TIPO 12) -->
+                                @elseif($docType === 'Agreement')
+                                    <div class="row g-3">
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Código del Convenio:</span>
+                                            <span class="fw-bold text-primary fs-5">{{ $document->code }}</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Tipo y Alcance:</span>
+                                            <span class="badge bg-secondary">{{ $document->type?->value ?? 'CONVENIO' }}</span>
+                                            <span class="badge bg-light text-dark border">{{ $document->scope ?? 'NACIONAL' }}</span>
+                                        </div>
+                                        <div class="col-12">
+                                            <span class="text-muted small d-block">Título / Objeto del Convenio:</span>
+                                            <span class="fw-bold text-dark fs-6">{{ $document->title }}</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Contraparte / Entidad Aliada:</span>
+                                            <div class="fw-semibold text-dark">{{ $document->client?->razon_social ?? $document->client?->nombres ?? 'No definida' }}</div>
+                                            <small class="text-muted">RUC/Doc: {{ $document->client?->nro_documento ?? '-' }}</small>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Coordinador Responsable:</span>
+                                            <div class="fw-semibold text-dark">{{ $document->coordinator?->nombres ?? '-' }}</div>
+                                            <small class="text-muted">Área: {{ $document->area?->name ?? 'General' }}</small>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Monto Comprometido:</span>
+                                                <span class="fw-bold text-success fs-5">S/ {{ number_format($document->total_amount ?? 0, 2) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Fecha de Inicio:</span>
+                                                <span class="fw-semibold text-dark">{{ $document->start_date ? $document->start_date->format('d/m/Y') : '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Fecha de Término:</span>
+                                                <span class="fw-semibold text-danger">{{ $document->end_date ? $document->end_date->format('d/m/Y') : '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <a href="{{ route('agreements.show', $document->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-external-link-alt me-1"></i> Abrir Expediente Completo del Convenio
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                <!-- 13a. ADENDA DE CONVENIO (TIPO 13) -->
+                                @elseif($docType === 'AgreementAddendum')
+                                    <div class="row g-3">
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Código de Adenda:</span>
+                                            <span class="fw-bold text-info fs-5">{{ $document->code }}</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Convenio Principal:</span>
+                                            <span class="fw-bold text-dark">{{ $document->agreement?->code }} - {{ $document->agreement?->title }}</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Tipo de Modificación:</span>
+                                            <span class="badge bg-secondary">{{ $document->type?->value ?? 'ADENDA' }}</span>
+                                            @if($document->resolution_number)
+                                                <span class="badge bg-light text-dark border">Res. {{ $document->resolution_number }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Nueva Fecha de Término:</span>
+                                            <span class="fw-bold text-danger">{{ $document->new_end_date ? $document->new_end_date->format('d/m/Y') : 'Sin cambio de plazo' }}</span>
+                                        </div>
+                                        <div class="col-12">
+                                            <span class="text-muted small d-block">Justificación Técnica:</span>
+                                            <div class="bg-light p-3 rounded border text-dark">{{ $document->justification }}</div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Variación de Monto:</span>
+                                                <span class="fw-bold text-success fs-5">S/ {{ number_format($document->amount_delta ?? 0, 2) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Nuevo Monto Total Convenio:</span>
+                                                <span class="fw-bold text-primary fs-5">S/ {{ number_format($document->new_total_amount ?? $document->agreement?->total_amount ?? 0, 2) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                <!-- 13b. SERVICIO TECNOLÓGICO (TIPO 13) -->
+                                @elseif($docType === 'ServiceEngagement')
+                                    <div class="row g-3">
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Código de Orden de Servicio:</span>
+                                            <span class="fw-bold text-teal fs-5">{{ $document->code }}</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Modalidad de Prestación:</span>
+                                            <span class="badge bg-secondary">{{ $document->delivery_modality ?? 'ESTÁNDAR' }}</span>
+                                        </div>
+                                        <div class="col-12">
+                                            <span class="text-muted small d-block">Servicio Tecnológico:</span>
+                                            <span class="fw-bold text-dark fs-6">{{ $document->technologicalService?->name ?? '-' }}</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Beneficiario / Cliente:</span>
+                                            <div class="fw-semibold text-dark">{{ $document->client?->razon_social ?? $document->client?->nombres ?? '-' }}</div>
+                                            <small class="text-muted">RUC/DNI: {{ $document->client?->nro_documento ?? '-' }}</small>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <span class="text-muted small d-block">Especialista / Responsable Técnico:</span>
+                                            <div class="fw-semibold text-dark">{{ $document->responsibleUser?->nombres ?? '-' }}</div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Monto Total Contratado:</span>
+                                                <span class="fw-bold text-success fs-5">S/ {{ number_format($document->total_amount ?? 0, 2) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Fecha de Inicio:</span>
+                                                <span class="fw-semibold text-dark">{{ $document->start_date ? \Carbon\Carbon::parse($document->start_date)->format('d/m/Y') : '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="bg-light p-3 rounded border text-center">
+                                                <span class="text-muted small d-block">Entrega Estimada:</span>
+                                                <span class="fw-semibold text-primary">{{ $document->expected_delivery_date ? \Carbon\Carbon::parse($document->expected_delivery_date)->format('d/m/Y') : '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <a href="{{ route('services.engagements.show', $document->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-external-link-alt me-1"></i> Abrir Gestión de la Orden de Servicio
+                                            </a>
+                                        </div>
                                     </div>
 
                                 <!-- FALLBACK GENÉRICO -->

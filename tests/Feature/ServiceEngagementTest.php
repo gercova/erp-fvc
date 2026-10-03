@@ -1039,4 +1039,126 @@ class ServiceEngagementTest extends TestCase
         $this->assertEquals('application/pdf', $pdfResp->headers->get('Content-Type'));
         $this->assertNotEmpty($pdfResp->getContent());
     }
+
+    /**
+     * Non-Duplication: Registering an attendee with the same document number updates existing record without duplicate rows.
+     */
+    public function test_service_engagement_attendee_registration_does_not_duplicate_records(): void
+    {
+        $engagement = ServiceEngagement::create([
+            'client_id'                   => $this->client->id,
+            'technological_service_id'    => $this->techService->id,
+            'productive_activity_id'      => $this->activity->id,
+            'responsible_user_id'         => $this->specialistUser->id,
+            'description'                 => 'Servicio de prueba no duplicación de participantes',
+            'delivery_modality'           => 'IN_PERSON',
+            'contracted_hours'            => 20.00,
+            'consumed_hours'              => 0.00,
+            'hourly_rate'                 => 100.00,
+            'quantity'                    => 1.00,
+            'unit_price'                  => 2000.00,
+            'total_amount'                => 2000.00,
+            'currency'                    => 'PEN',
+            'start_date'                  => now()->toDateString(),
+            'expected_delivery_date'      => now()->addDays(30)->toDateString(),
+            'status'                      => ServiceEngagementStatus::IN_PROGRESS,
+            'min_attendance_percent'      => 80.00,
+            'low_balance_threshold_hours' => 5.00,
+        ]);
+
+        $session = ServiceSession::create([
+            'service_engagement_id' => $engagement->id,
+            'instructor_user_id'    => $this->specialistUser->id,
+            'topic'                 => 'Sesión 1: Taller de Catación',
+            'session_date'          => now()->toDateString(),
+            'start_time'            => '09:00',
+            'end_time'              => '13:00',
+            'duration_hours'        => 4.00,
+            'location'              => 'Aula Magna',
+            'status'                => 'SCHEDULED',
+        ]);
+
+        // First registration
+        $resp1 = $this->actingAs($this->adminUser)->post(route('services.engagements.attendees.store', $engagement->id), [
+            'service_session_id' => $session->id,
+            'dni_or_document'    => '44556677',
+            'full_name'          => 'Pedro Infante Martínez',
+            'email'              => 'pedro@example.com',
+            'organization'       => 'Cooperativa Agraria Naranjillo',
+        ]);
+        $resp1->assertRedirect();
+
+        // Second registration with same DNI but updated organization
+        $resp2 = $this->actingAs($this->adminUser)->post(route('services.engagements.attendees.store', $engagement->id), [
+            'service_session_id' => $session->id,
+            'dni_or_document'    => '44556677',
+            'full_name'          => 'Pedro Infante Martínez Actualizado',
+            'email'              => 'pedro.actualizado@example.com',
+            'organization'    => 'Cooperativa Agraria Cafetalera',
+        ]);
+        $resp2->assertRedirect();
+
+        // Must still have exactly 1 record for this DNI
+        $count = ServiceAttendee::where('service_engagement_id', $engagement->id)
+            ->where('dni_or_document', '44556677')
+            ->count();
+        $this->assertEquals(1, $count, 'Attendee record must not be duplicated for the same engagement and document.');
+
+        $attendee = ServiceAttendee::where('service_engagement_id', $engagement->id)
+            ->where('dni_or_document', '44556677')
+            ->first();
+        $this->assertEquals('Pedro Infante Martínez Actualizado', $attendee->full_name);
+        $this->assertEquals('Cooperativa Agraria Cafetalera', $attendee->organization);
+    }
+
+    /**
+     * RBAC: User with services.view can list and view, but cannot modify without services.manage.
+     */
+    public function test_role_based_access_to_service_engagements_and_reports(): void
+    {
+        $cashId = (int) (DB::table('cashes')->value('id') ?? 1);
+        $warehouseId = (int) (DB::table('warehouses')->value('id') ?? 1);
+
+        $viewerUser = User::firstOrCreate(
+            ['user' => 'test_service_viewer'],
+            [
+                'nombres'   => 'Lector de Servicios',
+                'password'  => bcrypt('password123'),
+                'estado'    => 1,
+                'idcaja'    => $cashId,
+                'idalmacen' => $warehouseId,
+            ]
+        );
+        $viewerUser->assignRole('CONTABILIDAD'); // Has services.view, but NOT services.manage
+
+        $engagement = ServiceEngagement::create([
+            'client_id'                   => $this->client->id,
+            'technological_service_id'    => $this->techService->id,
+            'productive_activity_id'      => $this->activity->id,
+            'responsible_user_id'         => $this->specialistUser->id,
+            'description'                 => 'Servicio de prueba RBAC de servicios',
+            'delivery_modality'           => 'REMOTE',
+            'contracted_hours'            => 15.00,
+            'consumed_hours'              => 0.00,
+            'hourly_rate'                 => 100.00,
+            'quantity'                    => 1.00,
+            'unit_price'                  => 1500.00,
+            'total_amount'                => 1500.00,
+            'currency'                    => 'PEN',
+            'start_date'                  => now()->toDateString(),
+            'expected_delivery_date'      => now()->addDays(30)->toDateString(),
+            'status'                      => ServiceEngagementStatus::IN_PROGRESS,
+            'min_attendance_percent'      => 80.00,
+            'low_balance_threshold_hours' => 5.00,
+        ]);
+
+        // Can view index and show
+        $this->actingAs($viewerUser)->get(route('services.engagements.index'))->assertOk();
+        $this->actingAs($viewerUser)->get(route('services.engagements.show', $engagement->id))->assertOk();
+
+        // CANNOT create, update or close
+        $this->actingAs($viewerUser)->get(route('services.engagements.create'))->assertStatus(403);
+        $this->actingAs($viewerUser)->post(route('services.engagements.store'), [])->assertStatus(403);
+        $this->actingAs($viewerUser)->post(route('services.engagements.close', $engagement->id), [])->assertStatus(403);
+    }
 }

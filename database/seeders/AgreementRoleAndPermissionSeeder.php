@@ -13,14 +13,21 @@ class AgreementRoleAndPermissionSeeder extends Seeder
      * Idempotent permission and role seeder for Agreements and Technological Services module.
      */
     public function run(): void {
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         $permissions = [
             'agreements.view'    => 'Visualizar catálogo de convenios, adendas y compromisos',
             'agreements.create'  => 'Crear nuevos convenios y adendas institucionales',
             'agreements.edit'    => 'Modificar convenios, adendas y cronogramas de facturación',
             'agreements.manage'  => 'Gestionar aprobaciones, estados y liquidaciones de convenios',
             'agreements.approve' => 'Aprobar visaciones y convenios institucionales en cadena de firmas',
+            'agreements.delete'  => 'Anular o eliminar convenios institucionales',
             'services.view'      => 'Visualizar catálogo de servicios tecnológicos y órdenes de servicio',
+            'services.create'    => 'Crear órdenes de servicio tecnológico',
+            'services.edit'      => 'Modificar órdenes de servicio, sesiones y entregables',
             'services.manage'    => 'Gestionar órdenes de servicio, sesiones, asistencias y entregables',
+            'services.approve'   => 'Aprobar o visar órdenes y reportes de servicios tecnológicos',
+            'services.delete'    => 'Anular o eliminar órdenes de servicio tecnológico',
         ];
 
         foreach ($permissions as $name => $description) {
@@ -49,9 +56,22 @@ class AgreementRoleAndPermissionSeeder extends Seeder
         $admin->givePermissionTo($allPermissions);
         $directorGeneral->givePermissionTo($allPermissions);
 
-        $administracion->givePermissionTo(['agreements.view', 'agreements.manage', 'agreements.approve', 'services.view', 'services.manage']);
-        $contabilidad->givePermissionTo(['agreements.view', 'services.view']);
-        $coordinador->givePermissionTo(['agreements.view', 'agreements.create', 'agreements.edit', 'agreements.manage', 'services.view', 'services.manage']);
-        $jefeArea->givePermissionTo(['agreements.view', 'agreements.create', 'agreements.edit', 'agreements.manage', 'agreements.approve', 'services.view', 'services.manage']);
+        $administracion->givePermissionTo([
+            'agreements.view', 'agreements.manage', 'agreements.approve',
+            'services.view', 'services.manage', 'services.approve'
+        ]);
+        $contabilidad->givePermissionTo([
+            'agreements.view', 'services.view'
+        ]);
+        $coordinador->givePermissionTo([
+            'agreements.view', 'agreements.create', 'agreements.edit', 'agreements.manage',
+            'services.view', 'services.create', 'services.edit', 'services.manage'
+        ]);
+        $jefeArea->givePermissionTo([
+            'agreements.view', 'agreements.create', 'agreements.edit', 'agreements.manage', 'agreements.approve',
+            'services.view', 'services.create', 'services.edit', 'services.manage', 'services.approve'
+        ]);
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

@@ -87,6 +87,9 @@
                         <option value="vehicle_exit_slip">Papeleta de Salida de Vehículos</option>
                         <option value="vacation_exit_slip">Papeleta de Salida por Vacaciones</option>
                         <option value="fuel_control_slip">Vale de Control de Combustible</option>
+                        <option value="agreement">Convenio Institucional (Tipo 12)</option>
+                        <option value="agreement_addendum">Adenda de Convenio (Tipo 13)</option>
+                        <option value="service_engagement">Servicio Tecnológico (Tipo 13)</option>
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2">

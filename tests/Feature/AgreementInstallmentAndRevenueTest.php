@@ -665,4 +665,76 @@ class AgreementInstallmentAndRevenueTest extends TestCase
         $respOblPdf->assertStatus(200);
         $this->assertStringContainsString('application/pdf', $respOblPdf->headers->get('Content-Type'));
     }
+
+    /**
+     * Non-Duplication: Sale Note voucher links to installment without duplicate journal entries or attributions,
+     * and strictly blocks any subsequent re-invoicing attempts.
+     */
+    public function test_sale_note_voucher_links_without_duplicate_entries_and_blocks_double_invoicing(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $installment = AgreementInstallment::create([
+            'agreement_id'             => $this->agreement->id,
+            'installment_number'       => 15,
+            'amount'                   => 3200.00,
+            'due_date'                 => Carbon::now()->addDays(10)->toDateString(),
+            'status'                   => InstallmentStatus::PENDING,
+            'currency'                 => 'PEN',
+            'milestone_condition'      => 'Aprobación de informe de campo',
+            'technological_service_id' => $this->techService->id,
+        ]);
+
+        // 1. Emit Sale Note
+        $resp = $this->postJson(route('agreements.installments.generate_voucher', [
+            'id'          => $this->agreement->id,
+            'installment' => $installment->id,
+        ]), [
+            'voucher_type' => 'SALE_NOTE',
+            'is_paid'      => false,
+        ]);
+
+        $resp->assertStatus(201);
+        $installment->refresh();
+
+        $this->assertEquals(InstallmentStatus::INVOICED, $installment->status);
+        $this->assertNotNull($installment->sale_note_id);
+        $this->assertNull($installment->billing_id);
+
+        $saleNote = $installment->saleNote;
+        $this->assertNotNull($saleNote);
+        $this->assertEquals(3200.00, (float) $saleNote->total);
+
+        // 2. Verify non-duplication of journal entries
+        $duplicateJournal = JournalEntry::where('source_type', 'AGREEMENT_INSTALLMENT')
+            ->where('source_id', $installment->id)
+            ->exists();
+        $this->assertFalse($duplicateJournal, 'Must not create duplicate agreement installment journal entries.');
+
+        // 3. Verify non-duplication of productive activity attribution
+        $detail = $saleNote->details()->first();
+        $this->assertNotNull($detail);
+        $attributions = ActivitySalesAttribution::where('detail_sale_note_id', $detail->id)->get();
+        $this->assertCount(1, $attributions, 'Revenue attribution must be created exactly once.');
+        $this->assertEquals(3200.00, (float) $attributions->first()->attributed_amount);
+
+        // 4. Repeated attempt to generate another voucher must be strictly rejected
+        $repeatResp = $this->postJson(route('agreements.installments.generate_voucher', [
+            'id'          => $this->agreement->id,
+            'installment' => $installment->id,
+        ]), [
+            'voucher_type' => 'BILLING',
+        ]);
+        $repeatResp->assertStatus(422);
+
+        // 5. Attempt to link an existing voucher to this already-invoiced installment must also fail
+        $linkResp = $this->postJson(route('agreements.installments.link_voucher', [
+            'id'          => $this->agreement->id,
+            'installment' => $installment->id,
+        ]), [
+            'voucher_type' => 'SALE_NOTE',
+            'voucher_id'   => $saleNote->id,
+        ]);
+        $linkResp->assertStatus(422);
+    }
 }

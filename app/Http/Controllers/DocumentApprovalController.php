@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agreement;
+use App\Models\AgreementAddendum;
 use App\Models\DocumentApproval;
 use App\Models\ExitSlip;
 use App\Models\ExpenseDeclaration;
 use App\Models\FuelControlSlip;
 use App\Models\Requisition;
+use App\Models\ServiceEngagement;
 use App\Models\User;
 use App\Models\VacationExitSlip;
 use App\Models\VehicleExitSlip;
@@ -53,7 +56,9 @@ class DocumentApprovalController extends Controller
                     'vehicle_exit_slip'     => VehicleExitSlip::class,
                     'vacation_exit_slip'    => VacationExitSlip::class,
                     'fuel_control_slip'     => FuelControlSlip::class,
-                    'agreement'             => \App\Models\Agreement::class,
+                    'agreement'             => Agreement::class,
+                    'agreement_addendum'    => AgreementAddendum::class,
+                    'service_engagement'    => ServiceEngagement::class,
                 ];
                 if (isset($classMap[$type])) {
                     $q->where('document_type', $classMap[$type]);
@@ -97,7 +102,9 @@ class DocumentApprovalController extends Controller
                     'VehicleExitSlip'       => '<span class="badge bg-warning text-dark">Papeleta Vehículo</span>',
                     'VacationExitSlip'      => '<span class="badge bg-purple text-white" style="background:#6f42c1;">Papeleta Vacaciones</span>',
                     'FuelControlSlip'       => '<span class="badge bg-danger">Vale Combustible</span>',
-                    'Agreement'             => '<span class="badge bg-dark">Convenio</span>',
+                    'Agreement'             => '<span class="badge bg-dark">Convenio (Tipo 12)</span>',
+                    'AgreementAddendum'     => '<span class="badge bg-info text-dark">Adenda Convenio (Tipo 13)</span>',
+                    'ServiceEngagement'     => '<span class="badge text-white" style="background:#20c997;">Servicio Tecnológico (Tipo 13)</span>',
                 ];
                 return $types[$type] ?? '<span class="badge bg-secondary">' . e($type) . '</span>';
             })
@@ -108,7 +115,7 @@ class DocumentApprovalController extends Controller
             ->addColumn('solicitante', function ($approval) {
                 $doc = $approval->document;
                 if (!$doc) return '-';
-                $name = $doc->de ?? $doc->servidor_nombres ?? $doc->nombres_apellidos ?? $doc->solicitante_nombre ?? $doc->apellidos_nombres ?? ($doc->coordinator?->nombres ?? ($doc->user?->nombres ?? '-'));
+                $name = $doc->de ?? $doc->servidor_nombres ?? $doc->nombres_apellidos ?? $doc->solicitante_nombre ?? $doc->apellidos_nombres ?? ($doc->coordinator?->nombres ?? ($doc->responsibleUser?->nombres ?? ($doc->specialist?->nombres ?? ($doc->user?->nombres ?? '-'))));
                 return '<div class="fw-semibold">' . e($name) . '</div>';
             })
             ->editColumn('label', function ($approval) {
@@ -186,6 +193,12 @@ class DocumentApprovalController extends Controller
             $pdfUrl = route($pdfRouteName, $approval->document_id);
         } elseif (class_basename($approval->document_type) === 'AssetInventory' && $document) {
             $pdfUrl = route('inventory.pdf', ['area_id' => $document->area_id, 'periodo' => $document->periodo]);
+        } elseif (class_basename($approval->document_type) === 'Agreement' && $document) {
+            $pdfUrl = route('agreements.show', $document->id);
+        } elseif (class_basename($approval->document_type) === 'AgreementAddendum' && $document) {
+            $pdfUrl = route('agreements.show', $document->agreement_id);
+        } elseif (class_basename($approval->document_type) === 'ServiceEngagement' && $document) {
+            $pdfUrl = route('services.engagements.show', $document->id);
         } else {
             $pdfUrl = '#';
         }

@@ -194,6 +194,16 @@
                 'services.view',
                 'services.manage',
             ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'ADMINISTRACION', 'CONTABILIDAD', 'COORDINADOR', 'JEFE_AREA']);
+            $expiringAgreementsCount = Schema::hasTable('agreements')
+                ? \App\Models\Agreement::where(function ($q) {
+                    $q->where('status', \App\Enums\AgreementStatus::EXPIRING_SOON)
+                      ->orWhere(function ($sub) {
+                          $sub->where('status', \App\Enums\AgreementStatus::ACTIVE)
+                              ->whereNotNull('end_date')
+                              ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()]);
+                      });
+                })->count()
+                : 0;
             $openPeriodsCount = Schema::hasTable('accounting_periods')
                 ? \App\Models\AccountingPeriod::where('status', 'OPEN')->count()
                 : 0;
@@ -641,6 +651,9 @@
                                 aria-controls="collapseAgreements">
                                 <div class="nav-link-icon"><i data-feather="file-text"></i></div>
                                 Convenios y Servicios
+                                @if ($expiringAgreementsCount > 0)
+                                    <span class="badge bg-warning text-dark ms-auto me-2" title="{{ $expiringAgreementsCount }} convenios por vencer">{{ $expiringAgreementsCount }} por vencer</span>
+                                @endif
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
                             <div class="collapse {{ $isAgreementsGroup ? 'show' : '' }}"
@@ -649,6 +662,9 @@
                                     <a class="nav-link {{ request()->routeIs('agreements.*') ? 'active' : '' }}"
                                         href="{{ route('agreements.index') }}">
                                         Catálogo de Convenios
+                                        @if ($expiringAgreementsCount > 0)
+                                            <span class="badge bg-warning text-dark ms-auto">{{ $expiringAgreementsCount }}</span>
+                                        @endif
                                     </a>
                                     <a class="nav-link {{ request()->routeIs('services.engagements.*') ? 'active' : '' }}"
                                         href="{{ route('services.engagements.index') }}">

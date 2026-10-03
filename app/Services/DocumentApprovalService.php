@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Enums\AgreementStatus;
+use App\Enums\ServiceEngagementStatus;
 use App\Models\Agreement;
+use App\Models\AgreementAddendum;
 use App\Models\AccountingPeriodClosure;
 use App\Models\ActivityPeriodClosure;
 use App\Models\Area;
@@ -16,6 +18,7 @@ use App\Models\ExpenseDeclaration;
 use App\Models\FuelControlSlip;
 use App\Models\ProductiveActivity;
 use App\Models\Requisition;
+use App\Models\ServiceEngagement;
 use App\Models\User;
 use App\Models\VacationExitSlip;
 use App\Models\VehicleExitSlip;
@@ -175,10 +178,34 @@ class DocumentApprovalService
         }
 
         if ($document instanceof Agreement) {
+            // Type 12: Convenio Institucional
             $areaHead = $document->area?->head ?? $this->resolveImmediateHead($area, $creator);
             return [
                 ['role_name' => 'SOLICITANTE', 'label' => 'Coordinador del Convenio / Responsable Técnico', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
                 ['role_name' => 'JEFE_AREA', 'label' => 'Jefe de Área / Unidad Responsable', 'approver_id' => $areaHead?->id, 'approver_name' => $areaHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Jefatura de Administración IESTP "FVC"', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Dirección General IESTP "FVC"', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
+
+        if ($document instanceof AgreementAddendum) {
+            // Type 13a: Adenda de Convenio
+            $agreement = $document->agreement;
+            $areaHead = $agreement?->area?->head ?? $this->resolveImmediateHead($area, $creator);
+            return [
+                ['role_name' => 'SOLICITANTE', 'label' => 'Coordinador del Convenio / Solicitante de Adenda', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
+                ['role_name' => 'JEFE_AREA', 'label' => 'Jefe de Área Responsable', 'approver_id' => $areaHead?->id, 'approver_name' => $areaHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Jefatura de Administración IESTP "FVC"', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Dirección General IESTP "FVC"', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
+
+        if ($document instanceof ServiceEngagement) {
+            // Type 13b: Servicio Tecnológico / Orden de Servicio
+            $areaHead = $document->technologicalService?->area?->head ?? $this->resolveImmediateHead($area, $creator);
+            return [
+                ['role_name' => 'SOLICITANTE', 'label' => 'Especialista / Responsable del Servicio', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
+                ['role_name' => 'JEFE_AREA', 'label' => 'Jefe de Área / Coordinador de Servicios', 'approver_id' => $areaHead?->id, 'approver_name' => $areaHead?->nombres],
                 ['role_name' => 'ADMINISTRACION', 'label' => 'Jefatura de Administración IESTP "FVC"', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
                 ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Dirección General IESTP "FVC"', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
             ];
@@ -295,6 +322,10 @@ class DocumentApprovalService
                     'FINAL_APPROVAL',
                     ['approved_by' => $user->id, 'approved_at' => now()->toIso8601String()]
                 );
+            } elseif ($document instanceof AgreementAddendum) {
+                $document->applyToAgreement($user);
+            } elseif ($document instanceof ServiceEngagement) {
+                $document->update(['status' => ServiceEngagementStatus::IN_PROGRESS->value]);
             } else {
                 $document->update(['status' => 'APROBADO']);
             }
@@ -351,6 +382,8 @@ class DocumentApprovalService
                 $status === 'RECHAZADO' ? 'APPROVAL_REJECTED' : 'APPROVAL_OBSERVED',
                 ['status' => $status, 'observations' => $observations]
             );
+        } elseif ($document instanceof ServiceEngagement) {
+            $document->update(['status' => $status === 'RECHAZADO' ? ServiceEngagementStatus::CANCELLED->value : ServiceEngagementStatus::DRAFT->value]);
         } else {
             $document->update(['status' => $status]);
         }
@@ -396,7 +429,13 @@ class DocumentApprovalService
             return "Aprobación de Presupuesto {$document->budget?->code} ({$document->budget?->fiscal_year})";
         }
         if ($document instanceof Agreement) {
-            return "Convenio {$document->code} - {$document->name}";
+            return "Convenio {$document->code} - " . ($document->title ?? $document->name ?? 'Convenio Institucional');
+        }
+        if ($document instanceof AgreementAddendum) {
+            return "Adenda {$document->code} - Convenio " . ($document->agreement?->code ?? '');
+        }
+        if ($document instanceof ServiceEngagement) {
+            return "Servicio Tecnológico {$document->code} - " . ($document->technologicalService?->name ?? 'Orden de Servicio');
         }
 
         return "Documento N° {$document->id}";
