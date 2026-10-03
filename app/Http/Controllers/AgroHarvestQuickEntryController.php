@@ -23,8 +23,7 @@ use Illuminate\Support\Facades\DB;
 
 class AgroHarvestQuickEntryController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request): View {
         $activities = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
         $selectedActivityId = $request->input('activity_id', $activities->first()?->id);
 
@@ -78,8 +77,7 @@ class AgroHarvestQuickEntryController extends Controller
         ));
     }
 
-    public function get(Request $request): JsonResponse
-    {
+    public function get(Request $request): JsonResponse {
         $query = ProductionHarvest::with([
             'producedItem.activity',
             'campaign',
@@ -158,8 +156,7 @@ class AgroHarvestQuickEntryController extends Controller
             ->make(true);
     }
 
-    public function store(AgroHarvestQuickEntryValidate $request): RedirectResponse
-    {
+    public function store(AgroHarvestQuickEntryValidate $request): RedirectResponse {
         $data = $request->validated();
         $data['registered_by_user_id'] = Auth::id() ?? 1;
 
@@ -219,11 +216,12 @@ class AgroHarvestQuickEntryController extends Controller
         return redirect()->back()->with('success', 'Cosecha registrada con éxito. Se actualizó el producto terminado de Bloque C e inventario central.');
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         $harvest = ProductionHarvest::findOrFail($request->input('id'));
         $harvest->delete();
-
-        return response()->json(['success' => true, 'message' => 'Cosecha eliminada correctamente.']);
+        return response()->json([
+            'success' => true, 
+            'message' => 'Cosecha eliminada correctamente.'
+        ]);
     }
 }

@@ -15,8 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ActivityOrderController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request): View {
         $activities = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
         $selectedActivityId = $request->input('activity_id', $activities->first()?->id);
 
@@ -30,10 +29,10 @@ class ActivityOrderController extends Controller
             $queryBase->where('productive_activity_id', $selectedActivityId);
         }
 
-        $totalOrders = (clone $queryBase)->count();
-        $pendingOrders = (clone $queryBase)->where('status', 'pending')->count();
-        $confirmedOrders = (clone $queryBase)->where('status', 'confirmed')->count();
-        $totalAmount = (clone $queryBase)->where('status', '!=', 'cancelled')->sum('total_amount');
+        $totalOrders        = (clone $queryBase)->count();
+        $pendingOrders      = (clone $queryBase)->where('status', 'pending')->count();
+        $confirmedOrders    = (clone $queryBase)->where('status', 'confirmed')->count();
+        $totalAmount        = (clone $queryBase)->where('status', '!=', 'cancelled')->sum('total_amount');
 
         return view('admin.commercialization.orders.index', compact(
             'activities',
@@ -47,8 +46,7 @@ class ActivityOrderController extends Controller
         ));
     }
 
-    public function get(Request $request): JsonResponse
-    {
+    public function get(Request $request): JsonResponse {
         $query = ActivityOrder::with(['client', 'activity', 'producedItem', 'creator']);
 
         if ($request->filled('activity_id')) {
@@ -63,8 +61,8 @@ class ActivityOrderController extends Controller
             $term = trim($request->input('search_term'));
             $query->where(function ($q) use ($term) {
                 $q->where('order_code', 'like', "%{$term}%")
-                  ->orWhereHas('client', fn($c) => $c->where('nombres', 'like', "%{$term}%")->orWhere('nro_documento', 'like', "%{$term}%"))
-                  ->orWhereHas('producedItem', fn($p) => $p->where('name', 'like', "%{$term}%"));
+                    ->orWhereHas('client', fn($c) => $c->where('nombres', 'like', "%{$term}%")->orWhere('nro_documento', 'like', "%{$term}%"))
+                    ->orWhereHas('producedItem', fn($p) => $p->where('name', 'like', "%{$term}%"));
             });
         }
 
@@ -130,8 +128,7 @@ class ActivityOrderController extends Controller
             ->make(true);
     }
 
-    public function store(ActivityOrderValidate $request): RedirectResponse
-    {
+    public function store(ActivityOrderValidate $request): RedirectResponse {
         $data = $request->validated();
         $data['created_by_user_id'] = Auth::id() ?? 1;
 
@@ -144,8 +141,7 @@ class ActivityOrderController extends Controller
         return redirect()->back()->with('success', 'Pedido / Preventa registrada exitosamente.');
     }
 
-    public function updateStatus(Request $request): JsonResponse
-    {
+    public function updateStatus(Request $request): JsonResponse {
         $request->validate([
             'id'     => 'required|integer|exists:activity_orders,id',
             'status' => 'required|string|in:pending,confirmed,delivered,invoiced,cancelled',
@@ -157,8 +153,7 @@ class ActivityOrderController extends Controller
         return response()->json(['success' => true, 'message' => 'Estado del pedido actualizado a ' . $order->status . '.']);
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         $order = ActivityOrder::findOrFail($request->input('id'));
         $order->delete();
 

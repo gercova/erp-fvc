@@ -25,14 +25,13 @@ class AgroReportsController extends Controller
     /**
      * Reporte 1: Comparativo Interanual de Producción (Year-over-Year)
      */
-    public function yearOverYear(Request $request): View
-    {
-        $activities = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
+    public function yearOverYear(Request $request): View {
+        $activities         = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
         $selectedActivityId = $request->input('activity_id');
-        $selectedPlotId = $request->input('plot_id');
+        $selectedPlotId     = $request->input('plot_id');
 
-        $currentYear = (int) $request->input('current_year', date('Y'));
-        $previousYear = $currentYear - 1;
+        $currentYear    = (int) $request->input('current_year', date('Y'));
+        $previousYear   = $currentYear - 1;
 
         $plots = AgriculturalPlot::when($selectedActivityId, fn($q) => $q->where('productive_activity_id', $selectedActivityId))
             ->orderBy('name')

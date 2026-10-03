@@ -18,14 +18,13 @@ use Illuminate\Support\Facades\Auth;
 
 class AgroLivestockController extends Controller
 {
-    public function index(Request $request): View
-    {
-        $activities = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
+    public function index(Request $request): View {
+        $activities         = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
         $selectedActivityId = $request->input('activity_id');
-        $selectedSpecies = $request->input('species');
+        $selectedSpecies    = $request->input('species');
 
-        $rawMaterials = ProductionRawMaterial::where('is_active', true)->orderBy('name')->get();
-        $productiveUnits = ProductiveUnit::where('status', 'ACTIVE')->orderBy('name')->get();
+        $rawMaterials       = ProductionRawMaterial::where('is_active', true)->orderBy('name')->get();
+        $productiveUnits    = ProductiveUnit::where('status', 'ACTIVE')->orderBy('name')->get();
 
         $queryBase = LivestockUnit::query();
         if ($selectedActivityId) {
@@ -35,12 +34,12 @@ class AgroLivestockController extends Controller
             $queryBase->where('species', $selectedSpecies);
         }
 
-        $totalUnits = (clone $queryBase)->count();
-        $totalHeadsActive = (clone $queryBase)->where('status', 'ACTIVE')->sum('batch_head_count');
-        $cattleCount = (clone $queryBase)->where('species', 'CATTLE')->where('status', 'ACTIVE')->sum('batch_head_count');
-        $pigsCount = (clone $queryBase)->where('species', 'PIG')->where('status', 'ACTIVE')->sum('batch_head_count');
-        $guineaPigsCount = (clone $queryBase)->where('species', 'GUINEA_PIG')->where('status', 'ACTIVE')->sum('batch_head_count');
-        $poultryCount = (clone $queryBase)->where('species', 'POULTRY')->where('status', 'ACTIVE')->sum('batch_head_count');
+        $totalUnits         = (clone $queryBase)->count();
+        $totalHeadsActive   = (clone $queryBase)->where('status', 'ACTIVE')->sum('batch_head_count');
+        $cattleCount        = (clone $queryBase)->where('species', 'CATTLE')->where('status', 'ACTIVE')->sum('batch_head_count');
+        $pigsCount          = (clone $queryBase)->where('species', 'PIG')->where('status', 'ACTIVE')->sum('batch_head_count');
+        $guineaPigsCount    = (clone $queryBase)->where('species', 'GUINEA_PIG')->where('status', 'ACTIVE')->sum('batch_head_count');
+        $poultryCount       = (clone $queryBase)->where('species', 'POULTRY')->where('status', 'ACTIVE')->sum('batch_head_count');
 
         return view('admin.agrolivestock.livestock.index', compact(
             'activities',
@@ -57,8 +56,7 @@ class AgroLivestockController extends Controller
         ));
     }
 
-    public function get(Request $request): JsonResponse
-    {
+    public function get(Request $request): JsonResponse {
         $query = LivestockUnit::with(['activity', 'productiveUnit']);
 
         if ($request->filled('activity_id')) {
@@ -77,8 +75,8 @@ class AgroLivestockController extends Controller
             $term = trim($request->input('search_term'));
             $query->where(function ($q) use ($term) {
                 $q->where('identifier_code', 'like', "%{$term}%")
-                  ->orWhere('breed', 'like', "%{$term}%")
-                  ->orWhere('notes', 'like', "%{$term}%");
+                    ->orWhere('breed', 'like', "%{$term}%")
+                    ->orWhere('notes', 'like', "%{$term}%");
             });
         }
 
@@ -152,14 +150,13 @@ class AgroLivestockController extends Controller
             ->make(true);
     }
 
-    public function show(int $id): View
-    {
-        $unit = LivestockUnit::with(['activity', 'productiveUnit', 'events.rawMaterial', 'events.recordedByUser'])->findOrFail($id);
-        $rawMaterials = ProductionRawMaterial::where('is_active', true)->orderBy('name')->get();
+    public function show(int $id): View {
+        $unit           = LivestockUnit::with(['activity', 'productiveUnit', 'events.rawMaterial', 'events.recordedByUser'])->findOrFail($id);
+        $rawMaterials   = ProductionRawMaterial::where('is_active', true)->orderBy('name')->get();
 
-        $totalEventCost = $unit->events->sum('total_cost');
-        $healthEventsCount = $unit->events->whereIn('event_type', ['HEALTH_TREATMENT', 'VACCINATION'])->count();
-        $feedEventsCount = $unit->events->where('event_type', 'FEEDING_LOG')->count();
+        $totalEventCost     = $unit->events->sum('total_cost');
+        $healthEventsCount  = $unit->events->whereIn('event_type', ['HEALTH_TREATMENT', 'VACCINATION'])->count();
+        $feedEventsCount    = $unit->events->where('event_type', 'FEEDING_LOG')->count();
 
         return view('admin.agrolivestock.livestock.show', compact(
             'unit',
@@ -170,50 +167,43 @@ class AgroLivestockController extends Controller
         ));
     }
 
-    public function store(LivestockUnitValidate $request): RedirectResponse
-    {
+    public function store(LivestockUnitValidate $request): RedirectResponse {
         LivestockUnit::create($request->validated());
-
         return redirect()->back()->with('success', 'Unidad pecuaria registrada correctamente.');
     }
 
-    public function update(LivestockUnitValidate $request, int $id): RedirectResponse
-    {
+    public function update(LivestockUnitValidate $request, int $id): RedirectResponse {
         $unit = LivestockUnit::findOrFail($id);
         $unit->update($request->validated());
 
         return redirect()->back()->with('success', 'Unidad pecuaria actualizada exitosamente.');
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         $unit = LivestockUnit::findOrFail($request->input('id'));
         $unit->delete();
-
         return response()->json(['success' => true, 'message' => 'Unidad pecuaria eliminada correctamente.']);
     }
 
-    public function storeEvent(LivestockEventValidate $request): RedirectResponse
-    {
-        $data = $request->validated();
-        $data['recorded_by_user_id'] = Auth::id() ?? 1;
-
-        $event = LivestockEvent::create($data);
+    public function storeEvent(LivestockEventValidate $request): RedirectResponse {
+        $data                           = $request->validated();
+        $data['recorded_by_user_id']    = Auth::id() ?? 1;
+        $event                          = LivestockEvent::create($data);
 
         // Si se vinculó a un insumo de Bloque C con cantidad y costo, registrar consumo automático en la actividad
         if (!empty($data['production_raw_material_id']) && !empty($data['input_quantity_used'])) {
             $unit = LivestockUnit::find($data['livestock_unit_id']);
             if ($unit && $unit->productive_activity_id) {
                 ProductionInputMovement::create([
-                    'productive_activity_id' => $unit->productive_activity_id,
-                    'production_raw_material_id' => $data['production_raw_material_id'],
-                    'movement_type' => 'outflow_consumption',
-                    'movement_date' => $data['event_date'],
-                    'quantity' => $data['input_quantity_used'],
-                    'unit_cost' => ($data['input_quantity_used'] > 0) ? round(($data['input_cost'] ?? 0) / $data['input_quantity_used'], 2) : 0,
-                    'total_cost' => $data['input_cost'] ?? 0,
-                    'notes' => 'Consumo pecuario: Evento ' . $event->event_type . ' en ' . $unit->identifier_code,
-                    'registered_by_user_id' => Auth::id() ?? 1,
+                    'productive_activity_id'        => $unit->productive_activity_id,
+                    'production_raw_material_id'    => $data['production_raw_material_id'],
+                    'movement_type'                 => 'outflow_consumption',
+                    'movement_date'                 => $data['event_date'],
+                    'quantity'                      => $data['input_quantity_used'],
+                    'unit_cost'                     => ($data['input_quantity_used'] > 0) ? round(($data['input_cost'] ?? 0) / $data['input_quantity_used'], 2) : 0,
+                    'total_cost'                    => $data['input_cost'] ?? 0,
+                    'notes'                         => 'Consumo pecuario: Evento ' . $event->event_type . ' en ' . $unit->identifier_code,
+                    'registered_by_user_id'         => Auth::id() ?? 1,
                 ]);
             }
         }
@@ -229,11 +219,12 @@ class AgroLivestockController extends Controller
         return redirect()->back()->with('success', 'Evento pecuario registrado exitosamente.');
     }
 
-    public function deleteEvent(Request $request): JsonResponse
-    {
+    public function deleteEvent(Request $request): JsonResponse {
         $event = LivestockEvent::findOrFail($request->input('id'));
         $event->delete();
-
-        return response()->json(['success' => true, 'message' => 'Evento pecuario eliminado correctamente.']);
+        return response()->json([
+            'success' => true, 
+            'message' => 'Evento pecuario eliminado correctamente.'
+        ]);
     }
 }

@@ -69,6 +69,7 @@ use App\Http\Controllers\Treasury\CashFlowController;
 use App\Http\Controllers\Treasury\InternalTransferController;
 use App\Http\Controllers\Accounting\FinancialStatementController;
 use App\Http\Controllers\Accounting\PeriodClosingController;
+use App\Http\Controllers\Accounting\BudgetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -861,5 +862,21 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::post('/{id}/annual-close',   'annualClose')->name('accounting.period_closing.annual_close')->middleware('can:accounting.view');
         Route::post('/{id}/reopen',         'reopen')->name('accounting.period_closing.reopen')->middleware('can:accounting.view');
         Route::post('/{id}/submit-approval','submitApproval')->name('accounting.period_closing.submit_approval')->middleware('can:accounting.view');
+    });
+
+    // BUDGET MANAGEMENT (BLOCK B6)
+    Route::controller(BudgetController::class)->prefix('budgets')->group(function () {
+        Route::get('/',                          'index')->name('accounting.budgets.index')->middleware('can:accounting.view');
+        Route::get('/create',                    'create')->name('accounting.budgets.create')->middleware('can:accounting.create');
+        Route::post('/',                         'store')->name('accounting.budgets.store')->middleware('can:accounting.create');
+        Route::get('/{id}',                      'show')->name('accounting.budgets.show')->middleware('can:accounting.view');
+        Route::post('/{id}/lines',               'storeLine')->name('accounting.budgets.lines.store')->middleware('can:accounting.create');
+        Route::post('/{id}/modifications',       'storeModification')->name('accounting.budgets.modifications.store')->middleware('can:accounting.create');
+        Route::post('/{id}/submit-approval',     'submitApproval')->name('accounting.budgets.submit_approval')->middleware('can:accounting.view');
+        Route::post('/{id}/activate',            'activate')->name('accounting.budgets.activate')->middleware('can:accounting.view');
+        Route::get('/{id}/kpi-dashboard',        'kpiDashboard')->name('accounting.budgets.kpi_dashboard')->middleware('can:accounting.view');
+        Route::post('/{id}/check-alerts',        'checkAlerts')->name('accounting.budgets.check_alerts')->middleware('can:accounting.view');
+        Route::get('/{id}/excel',                'exportExcel')->name('accounting.budgets.export_excel')->middleware('can:accounting.export');
+        Route::get('/{id}/pdf',                  'exportPdf')->name('accounting.budgets.export_pdf')->middleware('can:accounting.export');
     });
 });

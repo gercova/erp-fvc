@@ -14,20 +14,18 @@ use Illuminate\Http\Request;
 
 class AgroPlotController extends Controller
 {
-    public function index(Request $request): View
-    {
-        $activities = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
+    public function index(Request $request): View {
+        $activities         = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
         $selectedActivityId = $request->input('activity_id');
-
-        $queryBase = AgriculturalPlot::query();
+        $queryBase          = AgriculturalPlot::query();
         if ($selectedActivityId) {
             $queryBase->where('productive_activity_id', $selectedActivityId);
         }
 
-        $totalPlots = (clone $queryBase)->count();
-        $totalHectares = (clone $queryBase)->sum('area_hectares');
+        $totalPlots     = (clone $queryBase)->count();
+        $totalHectares  = (clone $queryBase)->sum('area_hectares');
         $activeHectares = (clone $queryBase)->where('status', 'IN_PRODUCTION')->sum('area_hectares');
-        $fallowPlots = (clone $queryBase)->where('status', 'FALLOW_REST')->count();
+        $fallowPlots    = (clone $queryBase)->where('status', 'FALLOW_REST')->count();
 
         return view('admin.agrolivestock.plots.index', compact(
             'activities',
@@ -39,8 +37,7 @@ class AgroPlotController extends Controller
         ));
     }
 
-    public function get(Request $request): JsonResponse
-    {
+    public function get(Request $request): JsonResponse {
         $query = AgriculturalPlot::with(['activity', 'plantations']);
 
         if ($request->filled('activity_id')) {
@@ -123,13 +120,12 @@ class AgroPlotController extends Controller
             ->make(true);
     }
 
-    public function show(int $id): View
-    {
+    public function show(int $id): View {
         $plot = AgriculturalPlot::with(['activity', 'plantations', 'harvests.producedItem', 'yieldLogs'])->findOrFail($id);
 
-        $totalHarvestedTon = $plot->harvests->sum('quantity');
-        $plantationsCount = $plot->plantations->count();
-        $yieldLogsCount = $plot->yieldLogs->count();
+        $totalHarvestedTon  = $plot->harvests->sum('quantity');
+        $plantationsCount   = $plot->plantations->count();
+        $yieldLogsCount     = $plot->yieldLogs->count();
 
         return view('admin.agrolivestock.plots.show', compact(
             'plot',
@@ -139,41 +135,31 @@ class AgroPlotController extends Controller
         ));
     }
 
-    public function store(AgriculturalPlotValidate $request): RedirectResponse
-    {
+    public function store(AgriculturalPlotValidate $request): RedirectResponse {
         AgriculturalPlot::create($request->validated());
-
         return redirect()->back()->with('success', 'Parcela agrícola registrada exitosamente.');
     }
 
-    public function update(AgriculturalPlotValidate $request, int $id): RedirectResponse
-    {
+    public function update(AgriculturalPlotValidate $request, int $id): RedirectResponse {
         $plot = AgriculturalPlot::findOrFail($id);
         $plot->update($request->validated());
-
         return redirect()->back()->with('success', 'Parcela agrícola actualizada exitosamente.');
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         $plot = AgriculturalPlot::findOrFail($request->input('id'));
         $plot->delete();
-
         return response()->json(['success' => true, 'message' => 'Parcela eliminada correctamente.']);
     }
 
-    public function storePlantation(AgriculturalPlantationValidate $request): RedirectResponse
-    {
+    public function storePlantation(AgriculturalPlantationValidate $request): RedirectResponse {
         AgriculturalPlantation::create($request->validated());
-
         return redirect()->back()->with('success', 'Cultivo / Plantación registrada en la parcela.');
     }
 
-    public function deletePlantation(Request $request): JsonResponse
-    {
+    public function deletePlantation(Request $request): JsonResponse {
         $plantation = AgriculturalPlantation::findOrFail($request->input('id'));
         $plantation->delete();
-
         return response()->json(['success' => true, 'message' => 'Cultivo / Plantación eliminada de la parcela.']);
     }
 }

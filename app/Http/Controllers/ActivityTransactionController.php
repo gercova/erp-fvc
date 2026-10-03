@@ -19,15 +19,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ActivityTransactionController extends Controller
 {
-    public function index(Request $request): View
-    {
-        $activities = ProductiveActivity::orderBy('name')->get();
-        $categories = ActivityTransactionCategory::with('parent')->where('is_active', true)->orderBy('code')->get();
-        $fundSources = FundSource::where('is_active', true)->orderBy('name')->get();
+    public function index(Request $request): View {
+        $activities     = ProductiveActivity::orderBy('name')->get();
+        $categories     = ActivityTransactionCategory::with('parent')->where('is_active', true)->orderBy('code')->get();
+        $fundSources    = FundSource::where('is_active', true)->orderBy('name')->get();
 
         $selectedActivityId = $request->input('activity_id');
-        $selectedType = $request->input('type'); // INCOME, EXPENSE, or null
-        $selectedYear = $request->input('year', date('Y'));
+        $selectedType       = $request->input('type'); // INCOME, EXPENSE, or null
+        $selectedYear       = $request->input('year', date('Y'));
 
         // Métricas de transacciones para el filtro
         $baseQuery = ActivityTransaction::where('period_year', $selectedYear)->where('status', '!=', 'ANULLED');
@@ -35,9 +34,9 @@ class ActivityTransactionController extends Controller
             $baseQuery->where('productive_activity_id', $selectedActivityId);
         }
 
-        $totalIncome = (clone $baseQuery)->where('transaction_type', 'INCOME')->sum('amount');
-        $totalExpense = (clone $baseQuery)->where('transaction_type', 'EXPENSE')->sum('amount');
-        $netBalance = $totalIncome - $totalExpense;
+        $totalIncome    = (clone $baseQuery)->where('transaction_type', 'INCOME')->sum('amount');
+        $totalExpense   = (clone $baseQuery)->where('transaction_type', 'EXPENSE')->sum('amount');
+        $netBalance     = $totalIncome - $totalExpense;
 
         return view('admin.productive_activities.transactions.index', compact(
             'activities',
@@ -52,8 +51,7 @@ class ActivityTransactionController extends Controller
         ));
     }
 
-    public function get(Request $request): JsonResponse
-    {
+    public function get(Request $request): JsonResponse {
         $query = ActivityTransaction::with([
             'activity',
             'productiveUnit',
@@ -133,8 +131,7 @@ class ActivityTransactionController extends Controller
             ->make(true);
     }
 
-    public function store(ActivityTransactionValidate $request): JsonResponse
-    {
+    public function store(ActivityTransactionValidate $request): JsonResponse {
         $data = $request->validated();
         $data['registered_by_user_id'] = Auth::id();
 
@@ -151,16 +148,15 @@ class ActivityTransactionController extends Controller
         }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Movimiento ' . $trx->transaction_code . ' registrado exitosamente.',
-            'trx' => $trx->load(['activity', 'category', 'fundSource'])
+            'success'   => true,
+            'message'   => 'Movimiento ' . $trx->transaction_code . ' registrado exitosamente.',
+            'trx'       => $trx->load(['activity', 'category', 'fundSource'])
         ]);
     }
 
-    public function update(ActivityTransactionValidate $request, int $id): JsonResponse
-    {
-        $trx = ActivityTransaction::findOrFail($id);
-        $data = $request->validated();
+    public function update(ActivityTransactionValidate $request, int $id): JsonResponse {
+        $trx    = ActivityTransaction::findOrFail($id);
+        $data   = $request->validated();
 
         // Revertir impacto previo en fondo si cambió monto o fuente
         $oldFund = FundSource::find($trx->fund_source_id);
@@ -190,8 +186,7 @@ class ActivityTransactionController extends Controller
         ]);
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         $request->validate(['id' => 'required|exists:activity_transactions,id']);
         $trx = ActivityTransaction::findOrFail($request->id);
 
@@ -217,12 +212,10 @@ class ActivityTransactionController extends Controller
     /**
      * Búsqueda rápida para autocompletar comprobantes existentes del sistema core
      */
-    public function searchCoreDocuments(Request $request): JsonResponse
-    {
-        $query = $request->input('q', '');
-        $type = $request->input('type'); // 'billings', 'sale_notes', 'buys'
-
-        $results = [];
+    public function searchCoreDocuments(Request $request): JsonResponse {
+        $query      = $request->input('q', '');
+        $type       = $request->input('type'); // 'billings', 'sale_notes', 'buys'
+        $results    = [];
 
         if ($type === 'billings') {
             $items = Billing::where('correlativo', 'like', "%{$query}%")
@@ -230,11 +223,11 @@ class ActivityTransactionController extends Controller
                 ->latest()->limit(15)->get();
             foreach ($items as $item) {
                 $results[] = [
-                    'id' => $item->id,
-                    'text' => "{$item->serie}-{$item->correlativo} (Total: S/ {$item->total}) - {$item->cliente_nombre}",
-                    'amount' => $item->total,
-                    'voucher_type' => 'COMPROBANTE_SUNAT',
-                    'voucher_number' => "{$item->serie}-{$item->correlativo}",
+                    'id'                => $item->id,
+                    'text'              => "{$item->serie}-{$item->correlativo} (Total: S/ {$item->total}) - {$item->cliente_nombre}",
+                    'amount'            => $item->total,
+                    'voucher_type'      => 'COMPROBANTE_SUNAT',
+                    'voucher_number'    => "{$item->serie}-{$item->correlativo}",
                 ];
             }
         } elseif ($type === 'sale_notes') {
@@ -242,11 +235,11 @@ class ActivityTransactionController extends Controller
                 ->latest()->limit(15)->get();
             foreach ($items as $item) {
                 $results[] = [
-                    'id' => $item->id,
-                    'text' => "Nota de Venta #{$item->id} (Total: S/ {$item->total})",
-                    'amount' => $item->total,
-                    'voucher_type' => 'NOTA_VENTA',
-                    'voucher_number' => "NV-{$item->id}",
+                    'id'                => $item->id,
+                    'text'              => "Nota de Venta #{$item->id} (Total: S/ {$item->total})",
+                    'amount'            => $item->total,
+                    'voucher_type'      => 'NOTA_VENTA',
+                    'voucher_number'    => "NV-{$item->id}",
                 ];
             }
         } elseif ($type === 'buys') {
@@ -254,11 +247,11 @@ class ActivityTransactionController extends Controller
                 ->latest()->limit(15)->get();
             foreach ($items as $item) {
                 $results[] = [
-                    'id' => $item->id,
-                    'text' => "Compra #{$item->id} ({$item->tipo_comprobante} {$item->numero_documento}) - Total: S/ {$item->total}",
-                    'amount' => $item->total,
-                    'voucher_type' => $item->tipo_comprobante ?? 'COMPRA',
-                    'voucher_number' => $item->numero_documento ?? "OC-{$item->id}",
+                    'id'                => $item->id,
+                    'text'              => "Compra #{$item->id} ({$item->tipo_comprobante} {$item->numero_documento}) - Total: S/ {$item->total}",
+                    'amount'            => $item->total,
+                    'voucher_type'      => $item->tipo_comprobante ?? 'COMPRA',
+                    'voucher_number'    => $item->numero_documento ?? "OC-{$item->id}",
                 ];
             }
         }

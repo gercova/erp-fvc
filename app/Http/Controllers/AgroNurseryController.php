@@ -14,24 +14,20 @@ use Illuminate\Http\Request;
 
 class AgroNurseryController extends Controller
 {
-    public function index(Request $request): View
-    {
-        $activities = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
+    public function index(Request $request): View {
+        $activities         = ProductiveActivity::where('status', 'ACTIVA')->orderBy('order_index')->get();
         $selectedActivityId = $request->input('activity_id');
-
-        $batches = ProductionBatch::where('status', '!=', 'completed')->orderBy('batch_code')->get();
-        $users = User::orderBy('nombres')->get();
-
-        $queryBase = AgriculturalNursery::query();
+        $batches            = ProductionBatch::where('status', '!=', 'completed')->orderBy('batch_code')->get();
+        $users              = User::orderBy('nombres')->get();
+        $queryBase          = AgriculturalNursery::query();
         if ($selectedActivityId) {
             $queryBase->where('productive_activity_id', $selectedActivityId);
         }
 
-        $totalNurseries = (clone $queryBase)->count();
+        $totalNurseries        = (clone $queryBase)->count();
         $totalSeedlingsCurrent = (clone $queryBase)->sum('current_quantity');
-        $readyForFieldCount = (clone $queryBase)->where('stage', 'READY_FOR_FIELD')->sum('current_quantity');
-        $avgSurvivalRate = (clone $queryBase)->avg('survival_rate') ?? 100.00;
-
+        $readyForFieldCount    = (clone $queryBase)->where('stage', 'READY_FOR_FIELD')->sum('current_quantity');
+        $avgSurvivalRate       = (clone $queryBase)->avg('survival_rate') ?? 100.00;
         return view('admin.agrolivestock.nurseries.index', compact(
             'activities',
             'selectedActivityId',
@@ -44,8 +40,7 @@ class AgroNurseryController extends Controller
         ));
     }
 
-    public function get(Request $request): JsonResponse
-    {
+    public function get(Request $request): JsonResponse {
         $query = AgriculturalNursery::with(['activity', 'batch', 'inChargeUser']);
 
         if ($request->filled('activity_id')) {
@@ -60,8 +55,8 @@ class AgroNurseryController extends Controller
             $term = trim($request->input('search_term'));
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('species_name', 'like', "%{$term}%")
-                  ->orWhere('location', 'like', "%{$term}%");
+                    ->orWhere('species_name', 'like', "%{$term}%")
+                    ->orWhere('location', 'like', "%{$term}%");
             });
         }
 
@@ -122,22 +117,19 @@ class AgroNurseryController extends Controller
             ->make(true);
     }
 
-    public function store(AgriculturalNurseryValidate $request): RedirectResponse
-    {
+    public function store(AgriculturalNurseryValidate $request): RedirectResponse {
         $data = $request->validated();
         if ($data['initial_quantity'] > 0) {
             $data['survival_rate'] = round(($data['current_quantity'] / $data['initial_quantity']) * 100, 2);
         }
 
         AgriculturalNursery::create($data);
-
         return redirect()->back()->with('success', 'Vivero registrado exitosamente.');
     }
 
-    public function update(AgriculturalNurseryValidate $request, int $id): RedirectResponse
-    {
-        $nursery = AgriculturalNursery::findOrFail($id);
-        $data = $request->validated();
+    public function update(AgriculturalNurseryValidate $request, int $id): RedirectResponse {
+        $nursery    = AgriculturalNursery::findOrFail($id);
+        $data       = $request->validated();
         if ($data['initial_quantity'] > 0) {
             $data['survival_rate'] = round(($data['current_quantity'] / $data['initial_quantity']) * 100, 2);
         }
@@ -147,11 +139,9 @@ class AgroNurseryController extends Controller
         return redirect()->back()->with('success', 'Vivero actualizado exitosamente.');
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         $nursery = AgriculturalNursery::findOrFail($request->input('id'));
         $nursery->delete();
-
         return response()->json(['success' => true, 'message' => 'Vivero eliminado correctamente.']);
     }
 }

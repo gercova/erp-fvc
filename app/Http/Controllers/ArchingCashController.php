@@ -22,9 +22,9 @@ use Illuminate\Support\Facades\File;
 class ArchingCashController extends Controller
 {
     public function index(): View {
-        $user = Auth::user()->loadMissing(['roles', 'activeWarehouse']);
-        $assignedCash = $this->resolveAssignedCash($user);
-        $openArchings = $this->accessibleArchingsQuery()
+        $user           = Auth::user()->loadMissing(['roles', 'activeWarehouse']);
+        $assignedCash   = $this->resolveAssignedCash($user);
+        $openArchings   = $this->accessibleArchingsQuery()
             ->with(['cash', 'user'])
             ->where('idusuario', $user->id)
             ->where('estado', 1)
@@ -202,31 +202,30 @@ class ArchingCashController extends Controller
         }
 
         ArchingCash::create([
-            'idcaja' => $cash->id,
-            'idusuario' => $user->id,
-            'idalmacen' => (int) ($user->idalmacen ?: 0) ?: null,
-            'fecha_inicio' => date('Y-m-d'),
-            'fecha_fin' => null,
+            'idcaja'        => $cash->id,
+            'idusuario'     => $user->id,
+            'idalmacen'     => (int) ($user->idalmacen ?: 0) ?: null,
+            'fecha_inicio'  => date('Y-m-d'),
+            'fecha_fin'     => null,
             'monto_inicial' => round((float) $montoInicial, 2),
-            'monto_final' => null,
-            'total_ventas' => 0,
-            'estado' => 1,
+            'monto_final'   => null,
+            'total_ventas'  => 0,
+            'estado'        => 1,
         ]);
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Caja aperturada correctamente.',
-            'type' => 'success'
+            'status'    => true,
+            'msg'       => 'Caja aperturada correctamente.',
+            'type'      => 'success'
         ]);
     }
 
-    public function detail_cash(Request $request)
-    {
+    public function detail_cash(Request $request) {
         if (! $request->ajax() && ! $request->expectsJson()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning'
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning'
             ]);
         }
 

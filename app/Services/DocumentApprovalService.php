@@ -6,6 +6,8 @@ use App\Models\AccountingPeriodClosure;
 use App\Models\ActivityPeriodClosure;
 use App\Models\Area;
 use App\Models\AssetInventory;
+use App\Models\Budget;
+use App\Models\BudgetApproval;
 use App\Models\DocumentApproval;
 use App\Models\ExitSlip;
 use App\Models\ExpenseDeclaration;
@@ -165,6 +167,15 @@ class DocumentApprovalService
             ];
         }
 
+        if ($document instanceof Budget || $document instanceof BudgetApproval) {
+            $contabilidadHead = $this->resolveRoleUser('CONTABILIDAD') ?? $this->resolveAreaHead('CONT') ?? $creator;
+            return [
+                ['role_name' => 'CONTABILIDAD', 'label' => 'Jefatura de Contabilidad y Presupuesto', 'approver_id' => $contabilidadHead?->id, 'approver_name' => $contabilidadHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Jefatura de Administración', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Dirección General', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
+
 
         return [];
     }
@@ -264,6 +275,26 @@ class DocumentApprovalService
             if ($document instanceof AccountingPeriodClosure) {
                 app(\App\Services\Accounting\PeriodClosingService::class)->finalizeApprovedClosure($document);
             }
+
+            if ($document instanceof Budget) {
+                $document->update([
+                    'status' => 'APPROVED',
+                    'approved_at' => now(),
+                    'approved_by_user_id' => $user->id,
+                ]);
+            }
+
+            if ($document instanceof BudgetApproval) {
+                $document->update([
+                    'status' => 'APROBADO',
+                    'approved_at' => now(),
+                ]);
+                $document->budget?->update([
+                    'status' => 'APPROVED',
+                    'approved_at' => now(),
+                    'approved_by_user_id' => $user->id,
+                ]);
+            }
         }
 
         return true;
@@ -319,6 +350,12 @@ class DocumentApprovalService
         }
         if ($document instanceof AccountingPeriodClosure) {
             return "Cierre de Período Contable {$document->period?->period_code} ({$document->closure_type})";
+        }
+        if ($document instanceof Budget) {
+            return "Aprobación de Presupuesto {$document->code} ({$document->fiscal_year})";
+        }
+        if ($document instanceof BudgetApproval) {
+            return "Aprobación de Presupuesto {$document->budget?->code} ({$document->budget?->fiscal_year})";
         }
 
         return "Documento N° {$document->id}";

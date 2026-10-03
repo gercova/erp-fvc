@@ -792,6 +792,14 @@
                                         href="{{ route('accounting.chart_of_accounts.index') }}">
                                         Plan de Cuentas (PCGE)
                                     </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.budgets.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.budgets.index') }}">
+                                        Presupuestos (PIM / PIA)
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.statements.balance_sheet') ? 'active' : '' }}"
+                                        href="{{ route('accounting.statements.balance_sheet') }}">
+                                        Balance General
+                                    </a>
                                     <a class="nav-link {{ request()->routeIs('accounting.failures.*') ? 'active' : '' }}"
                                         href="{{ route('accounting.failures.index') }}">
                                         Fallos de Asiento

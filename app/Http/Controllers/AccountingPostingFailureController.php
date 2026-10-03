@@ -19,19 +19,16 @@ class AccountingPostingFailureController extends Controller
     /**
      * Display the failures view.
      */
-    public function index(): View
-    {
-        $pendingCount = AccountingPostingFailure::where('status', 'FAILED')->count();
-        $reprocessedCount = AccountingPostingFailure::where('status', 'REPROCESSED')->count();
-
+    public function index(): View {
+        $pendingCount       = AccountingPostingFailure::where('status', 'FAILED')->count();
+        $reprocessedCount   = AccountingPostingFailure::where('status', 'REPROCESSED')->count();
         return view('admin.accounting.failures.index', compact('pendingCount', 'reprocessedCount'));
     }
 
     /**
      * DataTables endpoint for failures list.
      */
-    public function data(Request $request): JsonResponse
-    {
+    public function data(Request $request): JsonResponse {
         $query = AccountingPostingFailure::query()->latest('id');
 
         if ($status = $request->input('status')) {
@@ -73,8 +70,7 @@ class AccountingPostingFailureController extends Controller
     /**
      * Reprocess a specific failed record.
      */
-    public function reprocess(int $id): JsonResponse
-    {
+    public function reprocess(int $id): JsonResponse {
         try {
             $this->postingService->reprocessFailure($id);
 
@@ -93,11 +89,10 @@ class AccountingPostingFailureController extends Controller
     /**
      * Reprocess all pending failures.
      */
-    public function reprocessAll(): JsonResponse
-    {
-        $failures = AccountingPostingFailure::where('status', 'FAILED')->get();
-        $success = 0;
-        $failed = 0;
+    public function reprocessAll(): JsonResponse {
+        $failures   = AccountingPostingFailure::where('status', 'FAILED')->get();
+        $success    = 0;
+        $failed     = 0;
 
         foreach ($failures as $failure) {
             try {
@@ -109,8 +104,8 @@ class AccountingPostingFailureController extends Controller
         }
 
         return response()->json([
-            'success' => true,
-            'message' => "Reprocesados: {$success} exitosos, {$failed} fallidos.",
+            'success'       => true,
+            'message'       => "Reprocesados: {$success} exitosos, {$failed} fallidos.",
             'success_count' => $success,
             'failed_count'  => $failed,
         ]);
