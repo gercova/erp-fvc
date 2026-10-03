@@ -27,13 +27,18 @@ class ServiceDeliverable extends Model
         'approved_by_user_id',
         'approval_date',
         'rejection_reason',
+        'client_signoff_date',
+        'client_signoff_name',
+        'client_signoff_notes',
+        'client_signoff_user_id',
     ];
 
     protected $casts = [
-        'due_date'        => 'date',
-        'submission_date' => 'date',
-        'approval_date'   => 'datetime',
-        'status'          => ServiceDeliverableStatus::class,
+        'due_date'            => 'date',
+        'submission_date'     => 'date',
+        'approval_date'       => 'datetime',
+        'client_signoff_date' => 'datetime',
+        'status'              => ServiceDeliverableStatus::class,
     ];
 
     protected static function booted(): void {
@@ -50,5 +55,13 @@ class ServiceDeliverable extends Model
 
     public function approver(): BelongsTo {
         return $this->belongsTo(User::class, 'approved_by_user_id');
+    }
+
+    public function clientSignoffUser(): BelongsTo {
+        return $this->belongsTo(User::class, 'client_signoff_user_id');
+    }
+
+    public function isApproved(): bool {
+        return $this->status === ServiceDeliverableStatus::APPROVED;
     }
 }

@@ -15,8 +15,7 @@ class CheckAgreementAccess
      * Roles con alcance institucional amplio (SUPERADMIN, ADMIN, DIRECTOR_GENERAL, ADMINISTRACION, CONTABILIDAD).
      * Acceso restringido por departamento/responsable para otros usuarios (análogo a activity.access).
      */
-    public function handle(Request $request, Closure $next): Response
-    {
+    public function handle(Request $request, Closure $next): Response {
         $user = $request->user();
 
         if (!$user) {

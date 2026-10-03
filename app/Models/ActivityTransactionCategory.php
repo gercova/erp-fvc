@@ -29,8 +29,7 @@ class ActivityTransactionCategory extends Model
         'is_active' => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ActivityTransactionCategory $cat) {
             if (empty($cat->uuid)) {
                 $cat->uuid = (string) Str::uuid();
@@ -38,18 +37,15 @@ class ActivityTransactionCategory extends Model
         });
     }
 
-    public function parent(): BelongsTo
-    {
+    public function parent(): BelongsTo {
         return $this->belongsTo(ActivityTransactionCategory::class, 'parent_id');
     }
 
-    public function children(): HasMany
-    {
+    public function children(): HasMany {
         return $this->hasMany(ActivityTransactionCategory::class, 'parent_id');
     }
 
-    public function transactions(): HasMany
-    {
+    public function transactions(): HasMany {
         return $this->hasMany(ActivityTransaction::class, 'category_id');
     }
 }

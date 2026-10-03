@@ -32,13 +32,11 @@ class AccountingPeriodAuditLog extends Model
         'created_at' => 'datetime',
     ];
 
-    public function period(): BelongsTo
-    {
+    public function period(): BelongsTo {
         return $this->belongsTo(AccountingPeriod::class, 'accounting_period_id');
     }
 
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'user_id');
     }
 }

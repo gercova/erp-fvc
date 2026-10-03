@@ -28,31 +28,27 @@ class AccountPayable extends Model
     ];
 
     protected $casts = [
-        'monto_total' => 'decimal:2',
-        'monto_pagado' => 'decimal:2',
-        'saldo' => 'decimal:2',
-        'fecha_emision' => 'date',
+        'monto_total'       => 'decimal:2',
+        'monto_pagado'      => 'decimal:2',
+        'saldo'             => 'decimal:2',
+        'fecha_emision'     => 'date',
         'fecha_vencimiento' => 'date',
-        'cuotas' => 'array',
+        'cuotas'            => 'array',
     ];
 
-    public function buy(): BelongsTo
-    {
+    public function buy(): BelongsTo {
         return $this->belongsTo(Buy::class, 'idcompra');
     }
 
-    public function provider(): BelongsTo
-    {
+    public function provider(): BelongsTo {
         return $this->belongsTo(Provider::class, 'idproveedor');
     }
 
-    public function warehouse(): BelongsTo
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'idalmacen');
     }
 
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'idusuario');
     }
 }

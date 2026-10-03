@@ -72,6 +72,7 @@ use App\Http\Controllers\Accounting\PeriodClosingController;
 use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AgreementDocumentController;
+use App\Http\Controllers\ServiceEngagementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -551,6 +552,9 @@ Route::controller(DocumentApprovalController::class)->prefix('approvals')->middl
 Route::get('/inventory/verify/{uuid}',      [AssetController::class, 'publicVerify'])->name('inventory.public_verify');
 Route::get('/inventory/qr-svg/{uuid}',      [AssetController::class, 'qrSvg'])->name('inventory.qr_svg');
 
+# Verificación Pública de Certificados de Capacitación (BLOCK C3 - Sin login requerido)
+Route::get('/certificates/verify/{code}',   [ServiceEngagementController::class, 'verifyPublicCertificate'])->name('services.certificates.verify_public');
+
 Route::controller(AssetController::class)->prefix('inventory')->middleware(['auth', 'can:assets.index', 'asset.access'])->group(function() {
     Route::get('/',                         'index')->name('inventory.index');
     Route::get('/get',                      'get')->name('inventory.get');
@@ -906,4 +910,36 @@ Route::middleware(['auth'])->prefix('agreements')->controller(AgreementDocumentC
     Route::get('/documents/{document}/download',        'download')->name('agreements.documents.download');
     Route::get('/deliverables/{deliverable}/download',  'downloadDeliverable')->name('agreements.deliverables.download');
     Route::post('/{agreement}/documents/upload',        'upload')->name('agreements.documents.upload');
+});
+
+// TECHNOLOGY SERVICE MANAGEMENT (BLOCK C3)
+Route::prefix('services')->middleware(['auth'])->controller(ServiceEngagementController::class)->group(function () {
+    Route::get('/engagements',                                              'index')->name('services.engagements.index');
+    Route::get('/engagements/data',                                         'data')->name('services.engagements.data');
+    Route::get('/engagements/create',                                       'create')->name('services.engagements.create');
+    Route::post('/engagements',                                             'store')->name('services.engagements.store');
+    Route::get('/engagements/{id}',                                         'show')->name('services.engagements.show');
+    Route::put('/engagements/{id}',                                         'update')->name('services.engagements.update');
+    Route::delete('/engagements/{id}',                                      'destroy')->name('services.engagements.destroy');
+
+    // Training Sessions & Attendees
+    Route::post('/engagements/{id}/sessions',                               'storeSession')->name('services.engagements.sessions.store');
+    Route::post('/engagements/{id}/attendees',                              'storeAttendee')->name('services.engagements.attendees.store');
+    Route::post('/engagements/{id}/attendees/import',                       'importAttendees')->name('services.engagements.attendees.import');
+    Route::post('/engagements/{id}/sessions/{session}/attendance',          'updateAttendance')->name('services.engagements.attendance.update');
+
+    // Certificates
+    Route::post('/engagements/{id}/attendees/{attendee}/certificate',       'issueCertificate')->name('services.engagements.certificates.issue');
+    Route::get('/engagements/{id}/attendees/{attendee}/certificate/pdf',    'downloadCertificate')->name('services.engagements.certificates.download');
+
+    // Technical Assistance / Hour Logs
+    Route::post('/engagements/{id}/hour-logs',                              'storeHourLog')->name('services.engagements.hour_logs.store');
+
+    // Deliverables & Client Sign-off
+    Route::post('/engagements/{id}/deliverables',                           'storeDeliverable')->name('services.engagements.deliverables.store');
+    Route::post('/engagements/{id}/deliverables/{deliverable}/signoff',     'signoffDeliverable')->name('services.engagements.deliverables.signoff');
+
+    // Closure & Final Technical Report
+    Route::post('/engagements/{id}/close',                                  'closeEngagement')->name('services.engagements.close');
+    Route::get('/engagements/{id}/final-report/pdf',                        'downloadFinalReport')->name('services.engagements.final_report');
 });

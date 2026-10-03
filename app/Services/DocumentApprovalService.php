@@ -21,37 +21,34 @@ use App\Models\VacationExitSlip;
 use App\Models\VehicleExitSlip;
 use App\Notifications\DocumentPendingApprovalNotification;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Notification;
 
 class DocumentApprovalService
 {
     /**
      * Build the approval chain for any newly created document.
      */
-    public function generateWorkflow(Model $document, User $creator): void
-    {
-        $area = $document->area_id ? Area::find($document->area_id) : $creator->primaryArea;
-        $steps = $this->getStepDefinitions($document, $area, $creator);
-
-        $firstPending = null;
+    public function generateWorkflow(Model $document, User $creator): void {
+        $area           = $document->area_id ? Area::find($document->area_id) : $creator->primaryArea;
+        $steps          = $this->getStepDefinitions($document, $area, $creator);
+        $firstPending   = null;
 
         foreach ($steps as $index => $step) {
             $stepOrder = $index + 1;
             $isAutoApproved = $step['role_name'] === 'SOLICITANTE';
 
             $approval = DocumentApproval::create([
-                'document_type' => get_class($document),
-                'document_id' => $document->id,
-                'step_order' => $stepOrder,
-                'role_name' => $step['role_name'],
-                'label' => $step['label'],
-                'approver_id' => $isAutoApproved ? $creator->id : ($step['approver_id'] ?? null),
-                'approver_name' => $isAutoApproved ? $creator->nombres : ($step['approver_name'] ?? null),
-                'approver_cargo' => $isAutoApproved ? ($document->cargo ?? 'Solicitante') : null,
-                'status' => $isAutoApproved ? 'APROBADO' : 'PENDIENTE',
-                'signature_token' => $isAutoApproved ? strtoupper(bin2hex(random_bytes(6))) : null,
-                'signed_at' => $isAutoApproved ? now() : null,
-                'ip_address' => request()->ip(),
+                'document_type'     => get_class($document),
+                'document_id'       => $document->id,
+                'step_order'        => $stepOrder,
+                'role_name'         => $step['role_name'],
+                'label'             => $step['label'],
+                'approver_id'       => $isAutoApproved ? $creator->id : ($step['approver_id'] ?? null),
+                'approver_name'     => $isAutoApproved ? $creator->nombres : ($step['approver_name'] ?? null),
+                'approver_cargo'    => $isAutoApproved ? ($document->cargo ?? 'Solicitante') : null,
+                'status'            => $isAutoApproved ? 'APROBADO' : 'PENDIENTE',
+                'signature_token'   => $isAutoApproved ? strtoupper(bin2hex(random_bytes(6))) : null,
+                'signed_at'         => $isAutoApproved ? now() : null,
+                'ip_address'        => request()->ip(),
             ]);
 
             if (!$isAutoApproved && $firstPending === null) {
@@ -68,8 +65,7 @@ class DocumentApprovalService
     /**
      * Get the defined steps according to the document type and official templates.
      */
-    protected function getStepDefinitions(Model $document, ?Area $area, User $creator): array
-    {
+    protected function getStepDefinitions(Model $document, ?Area $area, User $creator): array {
         $immediateHead      = $this->resolveImmediateHead($area, $creator);
         $adminHead          = $this->resolveAreaHead('ADM') ?? $this->resolveRoleUser('ADMINISTRACION');
         $directorGeneral    = $this->resolveAreaHead('DG') ?? $this->resolveRoleUser('DIRECTOR_GENERAL');

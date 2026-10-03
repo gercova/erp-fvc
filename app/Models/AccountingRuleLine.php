@@ -26,13 +26,11 @@ class AccountingRuleLine extends Model
         'percentage' => 'decimal:2',
     ];
 
-    public function rule(): BelongsTo
-    {
+    public function rule(): BelongsTo {
         return $this->belongsTo(AccountingRule::class, 'accounting_rule_id');
     }
 
-    public function account(): BelongsTo
-    {
+    public function account(): BelongsTo {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }
 }

@@ -39,69 +39,59 @@ class ActivityTransaction extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'transaction_date' => 'date',
-        'period_month' => 'integer',
-        'period_year' => 'integer',
+        'amount'            => 'decimal:2',
+        'transaction_date'  => 'date',
+        'period_month'      => 'integer',
+        'period_year'       => 'integer',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ActivityTransaction $trx) {
             if (empty($trx->uuid)) {
                 $trx->uuid = (string) Str::uuid();
             }
             if (empty($trx->transaction_code)) {
-                $year = $trx->period_year ?? date('Y');
-                $count = static::where('period_year', $year)->count() + 1;
-                $prefix = $trx->transaction_type === 'INCOME' ? 'ING' : 'EGR';
-                $trx->transaction_code = sprintf('%s-%s-%05d', $prefix, $year, $count);
+                $year                   = $trx->period_year ?? date('Y');
+                $count                  = static::where('period_year', $year)->count() + 1;
+                $prefix                 = $trx->transaction_type === 'INCOME' ? 'ING' : 'EGR';
+                $trx->transaction_code  = sprintf('%s-%s-%05d', $prefix, $year, $count);
             }
         });
     }
 
-    public function activity(): BelongsTo
-    {
+    public function activity(): BelongsTo {
         return $this->belongsTo(ProductiveActivity::class, 'productive_activity_id');
     }
 
-    public function productiveUnit(): BelongsTo
-    {
+    public function productiveUnit(): BelongsTo {
         return $this->belongsTo(ProductiveUnit::class, 'productive_unit_id');
     }
 
-    public function category(): BelongsTo
-    {
+    public function category(): BelongsTo {
         return $this->belongsTo(ActivityTransactionCategory::class, 'category_id');
     }
 
-    public function fundSource(): BelongsTo
-    {
+    public function fundSource(): BelongsTo {
         return $this->belongsTo(FundSource::class, 'fund_source_id');
     }
 
-    public function cash(): BelongsTo
-    {
+    public function cash(): BelongsTo {
         return $this->belongsTo(Cash::class, 'cash_id');
     }
 
-    public function buy(): BelongsTo
-    {
+    public function buy(): BelongsTo {
         return $this->belongsTo(Buy::class, 'buy_id');
     }
 
-    public function saleNote(): BelongsTo
-    {
+    public function saleNote(): BelongsTo {
         return $this->belongsTo(SaleNote::class, 'sale_note_id');
     }
 
-    public function billing(): BelongsTo
-    {
+    public function billing(): BelongsTo {
         return $this->belongsTo(Billing::class, 'billing_id');
     }
 
-    public function registeredByUser(): BelongsTo
-    {
+    public function registeredByUser(): BelongsTo {
         return $this->belongsTo(User::class, 'registered_by_user_id');
     }
 }

@@ -25,6 +25,7 @@ class ServiceSession extends Model
         'session_date',
         'start_time',
         'end_time',
+        'duration_hours',
         'location',
         'status',
         'observations',
@@ -33,6 +34,7 @@ class ServiceSession extends Model
     protected $casts = [
         'session_number' => 'integer',
         'session_date'   => 'date',
+        'duration_hours' => 'decimal:2',
         'status'         => ServiceSessionStatus::class,
     ];
 
@@ -45,6 +47,23 @@ class ServiceSession extends Model
                 $max = static::where('service_engagement_id', $session->service_engagement_id)->max('session_number');
                 $session->session_number = ($max ?? 0) + 1;
             }
+            if (empty($session->duration_hours) && !empty($session->start_time) && !empty($session->end_time)) {
+                try {
+                    $start = Carbon::parse($session->start_time);
+                    $end = Carbon::parse($session->end_time);
+                    $session->duration_hours = round(max(0, $end->diffInMinutes($start) / 60), 2);
+                } catch (\Throwable $e) {
+                    // Ignore parse error
+                }
+            }
+        });
+
+        static::saved(function (ServiceSession $session) {
+            $session->engagement?->recalculateConsumedHours();
+        });
+
+        static::deleted(function (ServiceSession $session) {
+            $session->engagement?->recalculateConsumedHours();
         });
     }
 

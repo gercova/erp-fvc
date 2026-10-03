@@ -24,12 +24,11 @@ class ActivityTrackingLog extends Model
     ];
 
     protected $casts = [
-        'progress_percent' => 'decimal:2',
-        'log_date' => 'date',
+        'progress_percent'  => 'decimal:2',
+        'log_date'          => 'date',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ActivityTrackingLog $log) {
             if (empty($log->uuid)) {
                 $log->uuid = (string) Str::uuid();
@@ -37,13 +36,11 @@ class ActivityTrackingLog extends Model
         });
     }
 
-    public function activity(): BelongsTo
-    {
+    public function activity(): BelongsTo {
         return $this->belongsTo(ProductiveActivity::class, 'productive_activity_id');
     }
 
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'user_id');
     }
 }

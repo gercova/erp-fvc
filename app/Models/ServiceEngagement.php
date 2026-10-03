@@ -38,16 +38,33 @@ class ServiceEngagement extends Model
         'billing_id',
         'sale_note_id',
         'settlement_notes',
+        'delivery_modality',
+        'contracted_hours',
+        'consumed_hours',
+        'hourly_rate',
+        'allow_pool_overage',
+        'min_attendance_percent',
+        'low_balance_threshold_hours',
+        'closure_summary',
+        'closed_at',
+        'closed_by_user_id',
     ];
 
     protected $casts = [
-        'quantity'               => 'decimal:2',
-        'unit_price'             => 'decimal:2',
-        'total_amount'           => 'decimal:2',
-        'start_date'             => 'date',
-        'expected_delivery_date' => 'date',
-        'actual_delivery_date'   => 'date',
-        'status'                 => ServiceEngagementStatus::class,
+        'quantity'                     => 'decimal:2',
+        'unit_price'                   => 'decimal:2',
+        'total_amount'                 => 'decimal:2',
+        'contracted_hours'             => 'decimal:2',
+        'consumed_hours'               => 'decimal:2',
+        'hourly_rate'                  => 'decimal:2',
+        'allow_pool_overage'           => 'boolean',
+        'min_attendance_percent'       => 'decimal:2',
+        'low_balance_threshold_hours'  => 'decimal:2',
+        'start_date'                   => 'date',
+        'expected_delivery_date'       => 'date',
+        'actual_delivery_date'         => 'date',
+        'closed_at'                    => 'datetime',
+        'status'                       => ServiceEngagementStatus::class,
     ];
 
     protected static function booted(): void {
@@ -89,6 +106,10 @@ class ServiceEngagement extends Model
         return $this->belongsTo(User::class, 'responsible_user_id');
     }
 
+    public function closedBy(): BelongsTo {
+        return $this->belongsTo(User::class, 'closed_by_user_id');
+    }
+
     public function billing(): BelongsTo {
         return $this->belongsTo(Billing::class, 'billing_id');
     }
@@ -109,7 +130,60 @@ class ServiceEngagement extends Model
         return $this->hasMany(ServiceDeliverable::class, 'service_engagement_id');
     }
 
+    public function hourLogs(): HasMany {
+        return $this->hasMany(ServiceHourLog::class, 'service_engagement_id')->latest('log_date');
+    }
+
     public function isUnderAgreement(): bool {
         return !is_null($this->agreement_id);
+    }
+
+    public function remainingHours(): float {
+        return (float) max(0, (float)$this->contracted_hours - (float)$this->consumed_hours);
+    }
+
+    public function isLowBalance(): bool {
+        return (float)$this->contracted_hours > 0 &&
+               ((float)$this->contracted_hours - (float)$this->consumed_hours) <= (float)$this->low_balance_threshold_hours;
+    }
+
+    public function canConsumeHours(float $hoursToConsume, bool $isAuthorized = false): bool {
+        if ((float)$this->contracted_hours <= 0) {
+            return true;
+        }
+        if ($this->allow_pool_overage || $isAuthorized) {
+            return true;
+        }
+        return round((float)$this->consumed_hours + $hoursToConsume, 2) <= (float)$this->contracted_hours;
+    }
+
+    public function recalculateConsumedHours(): void {
+        $loggedHours = (float) $this->hourLogs()->sum('hours');
+        $sessionHours = (float) $this->sessions()->where('status', 'CONDUCTED')->sum('duration_hours');
+        $this->updateQuietly(['consumed_hours' => round($loggedHours + $sessionHours, 2)]);
+    }
+
+    public function calculateAttendancePercent(string $dni): float {
+        $conductedSessionIds = $this->sessions()
+            ->whereIn('status', ['CONDUCTED', 'SCHEDULED'])
+            ->pluck('id');
+
+        $totalSessions = $conductedSessionIds->count();
+        if ($totalSessions === 0) {
+            return 0.00;
+        }
+
+        $attendedCount = $this->attendees()
+            ->whereIn('service_session_id', $conductedSessionIds)
+            ->where('dni_or_document', $dni)
+            ->where('attended', true)
+            ->count();
+
+        return round(($attendedCount / $totalSessions) * 100, 2);
+    }
+
+    public function isEligibleForCertificate(string $dni): bool {
+        $percent = $this->calculateAttendancePercent($dni);
+        return $percent >= (float) ($this->min_attendance_percent ?? 80.00);
     }
 }

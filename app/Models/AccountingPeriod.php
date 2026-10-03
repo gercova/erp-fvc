@@ -39,73 +39,59 @@ class AccountingPeriod extends Model
         'reopened_at' => 'datetime',
     ];
 
-    public function closedBy(): BelongsTo
-    {
+    public function closedBy(): BelongsTo {
         return $this->belongsTo(User::class, 'closed_by_user_id');
     }
 
-    public function reopenedBy(): BelongsTo
-    {
+    public function reopenedBy(): BelongsTo {
         return $this->belongsTo(User::class, 'reopened_by_user_id');
     }
 
-    public function closingEntry(): BelongsTo
-    {
+    public function closingEntry(): BelongsTo {
         return $this->belongsTo(JournalEntry::class, 'closing_entry_id');
     }
 
-    public function openingEntry(): BelongsTo
-    {
+    public function openingEntry(): BelongsTo {
         return $this->belongsTo(JournalEntry::class, 'opening_entry_id');
     }
 
-    public function journalEntries(): HasMany
-    {
+    public function journalEntries(): HasMany {
         return $this->hasMany(JournalEntry::class, 'accounting_period_id');
     }
 
-    public function closures(): HasMany
-    {
+    public function closures(): HasMany {
         return $this->hasMany(AccountingPeriodClosure::class, 'accounting_period_id')->latest();
     }
 
-    public function auditLogs(): HasMany
-    {
+    public function auditLogs(): HasMany {
         return $this->hasMany(AccountingPeriodAuditLog::class, 'accounting_period_id')->latest('created_at');
     }
 
-    public function scopeOpen(Builder $query): Builder
-    {
+    public function scopeOpen(Builder $query): Builder {
         return $query->where('status', 'OPEN');
     }
 
-    public function scopeForYear(Builder $query, int $year): Builder
-    {
+    public function scopeForYear(Builder $query, int $year): Builder {
         return $query->where('fiscal_year', $year);
     }
 
-    public function isOpen(): bool
-    {
+    public function isOpen(): bool {
         return $this->status === 'OPEN';
     }
 
-    public function isSoftClosed(): bool
-    {
+    public function isSoftClosed(): bool {
         return $this->status === 'SOFT_CLOSED';
     }
 
-    public function isClosed(): bool
-    {
+    public function isClosed(): bool {
         return in_array($this->status, ['CLOSED', 'LOCKED']);
     }
 
-    public function isLocked(): bool
-    {
+    public function isLocked(): bool {
         return $this->status === 'LOCKED';
     }
 
-    public function canPost(): bool
-    {
+    public function canPost(): bool {
         return $this->isOpen();
     }
 }

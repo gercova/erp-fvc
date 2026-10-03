@@ -36,17 +36,16 @@ class ActivityOrder extends Model
     ];
 
     protected $casts = [
-        'order_date' => 'date',
-        'expected_delivery_date' => 'date',
-        'quantity' => 'decimal:3',
-        'unit_price' => 'decimal:2',
-        'total_amount' => 'decimal:2',
-        'advance_payment' => 'decimal:2',
-        'balance_pending' => 'decimal:2',
+        'order_date'                => 'date',
+        'expected_delivery_date'    => 'date',
+        'quantity'                  => 'decimal:3',
+        'unit_price'                => 'decimal:2',
+        'total_amount'              => 'decimal:2',
+        'advance_payment'           => 'decimal:2',
+        'balance_pending'           => 'decimal:2',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ActivityOrder $order) {
             if (empty($order->uuid)) {
                 $order->uuid = (string) Str::uuid();
@@ -66,38 +65,31 @@ class ActivityOrder extends Model
         });
     }
 
-    public function activity(): BelongsTo
-    {
+    public function activity(): BelongsTo {
         return $this->belongsTo(ProductiveActivity::class, 'productive_activity_id');
     }
 
-    public function client(): BelongsTo
-    {
+    public function client(): BelongsTo {
         return $this->belongsTo(Client::class, 'client_id');
     }
 
-    public function producedItem(): BelongsTo
-    {
+    public function producedItem(): BelongsTo {
         return $this->belongsTo(ProducedItem::class, 'produced_item_id');
     }
 
-    public function saleNote(): BelongsTo
-    {
+    public function saleNote(): BelongsTo {
         return $this->belongsTo(SaleNote::class, 'sale_note_id');
     }
 
-    public function billing(): BelongsTo
-    {
+    public function billing(): BelongsTo {
         return $this->belongsTo(Billing::class, 'billing_id');
     }
 
-    public function creator(): BelongsTo
-    {
+    public function creator(): BelongsTo {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
-    public function getStatusBadgeAttribute(): string
-    {
+    public function getStatusBadgeAttribute(): string {
         return match ($this->status) {
             'pending'   => '<span class="badge bg-warning text-dark">Pendiente</span>',
             'confirmed' => '<span class="badge bg-info text-white">Confirmado</span>',

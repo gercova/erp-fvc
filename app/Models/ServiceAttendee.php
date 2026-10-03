@@ -25,13 +25,20 @@ class ServiceAttendee extends Model
         'attended',
         'evaluation_score',
         'certificate_code',
+        'certificate_issued_at',
+        'certificate_hash',
         'notes',
     ];
 
     protected $casts = [
-        'attended'         => 'boolean',
-        'evaluation_score' => 'decimal:2',
+        'attended'              => 'boolean',
+        'evaluation_score'      => 'decimal:2',
+        'certificate_issued_at' => 'datetime',
     ];
+
+    public function getPublicVerificationUrlAttribute(): string {
+        return route('services.certificates.verify_public', ['code' => $this->certificate_code ?? $this->uuid]);
+    }
 
     protected static function booted(): void {
         static::creating(function (ServiceAttendee $attendee) {

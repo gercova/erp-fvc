@@ -29,23 +29,19 @@ class AccountingRule extends Model
         'priority'  => 'integer',
     ];
 
-    public function ruleLines(): HasMany
-    {
+    public function ruleLines(): HasMany {
         return $this->hasMany(AccountingRuleLine::class, 'accounting_rule_id');
     }
 
-    public function paymentMethod(): BelongsTo
-    {
+    public function paymentMethod(): BelongsTo {
         return $this->belongsTo(PayMode::class, 'payment_method_id');
     }
 
-    public function scopeActive(Builder $query): Builder
-    {
+    public function scopeActive(Builder $query): Builder {
         return $query->where('is_active', true);
     }
 
-    public function scopeForEvent(Builder $query, string $eventCode): Builder
-    {
+    public function scopeForEvent(Builder $query, string $eventCode): Builder {
         return $query->where('event_code', $eventCode);
     }
 }

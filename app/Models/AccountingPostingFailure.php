@@ -33,23 +33,19 @@ class AccountingPostingFailure extends Model
         'reprocessed_at'  => 'datetime',
     ];
 
-    public function source(): MorphTo
-    {
+    public function source(): MorphTo {
         return $this->morphTo();
     }
 
-    public function isFailed(): bool
-    {
+    public function isFailed(): bool {
         return $this->status === 'FAILED';
     }
 
-    public function isReprocessed(): bool
-    {
+    public function isReprocessed(): bool {
         return $this->status === 'REPROCESSED';
     }
 
-    public function markAsReprocessed(): void
-    {
+    public function markAsReprocessed(): void {
         $this->update([
             'status'         => 'REPROCESSED',
             'reprocessed_at' => now(),

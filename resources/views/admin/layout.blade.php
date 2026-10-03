@@ -630,17 +630,17 @@
                             </div>
                         @endif
 
-                        <!-- Sidenav Accordion (Convenios y Alianzas)-->
+                        <!-- Sidenav Accordion (Convenios y Servicios Tecnológicos)-->
                         @if ($canAgreements)
                             @php
-                                $isAgreementsGroup = request()->is('agreements*');
+                                $isAgreementsGroup = request()->is('agreements*') || request()->is('services*');
                             @endphp
                             <a class="nav-link {{ $isAgreementsGroup ? '' : 'collapsed' }}"
                                 href="javascript:void(0);" data-bs-toggle="collapse"
                                 data-bs-target="#collapseAgreements" aria-expanded="{{ $isAgreementsGroup ? 'true' : 'false' }}"
                                 aria-controls="collapseAgreements">
                                 <div class="nav-link-icon"><i data-feather="file-text"></i></div>
-                                Convenios
+                                Convenios y Servicios
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
                             <div class="collapse {{ $isAgreementsGroup ? 'show' : '' }}"
@@ -649,6 +649,10 @@
                                     <a class="nav-link {{ request()->routeIs('agreements.*') ? 'active' : '' }}"
                                         href="{{ route('agreements.index') }}">
                                         Catálogo de Convenios
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('services.engagements.*') ? 'active' : '' }}"
+                                        href="{{ route('services.engagements.index') }}">
+                                        Servicios Tecnológicos
                                     </a>
                                 </nav>
                             </div>

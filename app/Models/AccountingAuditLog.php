@@ -34,13 +34,11 @@ class AccountingAuditLog extends Model
         'created_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function auditable(): MorphTo
-    {
+    public function auditable(): MorphTo {
         return $this->morphTo();
     }
 }

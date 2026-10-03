@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AddendumType;
+use App\Enums\AgreementStatus;
 use App\Services\Agreements\AgreementCodeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -103,10 +104,9 @@ class AgreementAddendum extends Model
         }
 
         $oldEndDate = $agreement->end_date;
-        $oldAmount = (float) $agreement->total_amount;
-
+        $oldAmount  = (float) $agreement->total_amount;
         $newEndDate = $this->new_end_date ?? $oldEndDate;
-        $newAmount = $this->new_total_amount !== null
+        $newAmount  = $this->new_total_amount !== null
             ? (float) $this->new_total_amount
             : round($oldAmount + (float) ($this->amount_delta ?? 0), 2);
 
@@ -116,14 +116,14 @@ class AgreementAddendum extends Model
         $previousStatus = $agreement->status;
 
         // Recalculate status based on new validity period
-        if (in_array($agreement->status, [\App\Enums\AgreementStatus::ACTIVE, \App\Enums\AgreementStatus::EXPIRING_SOON, \App\Enums\AgreementStatus::EXPIRED], true)) {
+        if (in_array($agreement->status, [AgreementStatus::ACTIVE, AgreementStatus::EXPIRING_SOON, AgreementStatus::EXPIRED], true)) {
             $days = $agreement->daysRemaining();
             if ($days > 30) {
-                $agreement->status = \App\Enums\AgreementStatus::ACTIVE;
+                $agreement->status = AgreementStatus::ACTIVE;
             } elseif ($days >= 0) {
-                $agreement->status = \App\Enums\AgreementStatus::EXPIRING_SOON;
+                $agreement->status = AgreementStatus::EXPIRING_SOON;
             } else {
-                $agreement->status = \App\Enums\AgreementStatus::EXPIRED;
+                $agreement->status = AgreementStatus::EXPIRED;
             }
         }
 
@@ -131,7 +131,7 @@ class AgreementAddendum extends Model
 
         // Audit log entry
         $actingUser = $user ?? auth()->user() ?? $this->creator;
-        \App\Models\AgreementAuditLog::create([
+        AgreementAuditLog::create([
             'agreement_id'    => $agreement->id,
             'user_id'         => $actingUser?->id ?? 1,
             'action'          => 'ADDENDUM_APPLIED',
