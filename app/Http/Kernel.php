@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'asset.access' => \App\Http\Middleware\CheckAssetAccess::class,
         'activity.access' => \App\Http\Middleware\CheckProductiveActivityAccess::class,
+        'accounting.period.open' => \App\Http\Middleware\CheckAccountingPeriodOpen::class,
     ];
 }

@@ -61,6 +61,14 @@ class PeriodClosingService
                 ],
             ]);
 
+            AccountingAuditService::log(
+                'CLOSE_PERIOD',
+                $period,
+                User::find($userId),
+                $notes ?? 'Cierre mensual regular de operaciones contables',
+                ['from_status' => $fromStatus, 'to_status' => 'CLOSED']
+            );
+
             return $period;
         });
     }
@@ -337,6 +345,14 @@ class PeriodClosingService
                 ],
             ]);
 
+            AccountingAuditService::log(
+                'ANNUAL_CLOSE',
+                $period,
+                User::find($userId),
+                $notes ?? "Cierre anual definitivo y apertura de ejercicio {$nextYear}",
+                ['fiscal_year' => $fiscalYear, 'net_result' => $netResult]
+            );
+
             return [
                 'period'                 => $period,
                 'net_result'             => $netResult,
@@ -384,6 +400,14 @@ class PeriodClosingService
                     'month'       => $period->month,
                 ],
             ]);
+
+            AccountingAuditService::log(
+                'REOPEN_PERIOD',
+                $period,
+                User::find($userId),
+                $trimmedReason,
+                ['from_status' => $fromStatus, 'to_status' => 'OPEN']
+            );
 
             return $period;
         });

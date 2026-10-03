@@ -5,18 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Product;
-
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 
 class CategoryController extends Controller
 {
-    public function index() {
+    public function index(): View {
         return view('admin.categories.list');
     }
 
-    public function get(Request $request) {
-        $categories     = Category::query()->orderBy('id', 'DESC');
-
-
+    public function get(Request $request): JsonResponse {
+        $categories = Category::query()->orderBy('id', 'DESC');
         return Datatables()
             ->of($categories)
             ->addColumn('acciones', function ($categories) {
@@ -42,7 +41,7 @@ class CategoryController extends Controller
             ->toJson();
     }
 
-    public function save(Request $request) {
+    public function save(Request $request): JsonResponse {
         if (!$request->ajax()) {
             return response()->json([
                 'status'    => false,
@@ -76,8 +75,7 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function detail(Request $request)
-    {
+    public function detail(Request $request): JsonResponse {
         if (!$request->ajax()) {
             return response()->json([
                 'status'    => false,
@@ -91,7 +89,7 @@ class CategoryController extends Controller
         return response()->json(['status'  => true, 'category' => $category]);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request): JsonResponse {
         if (!$request->ajax()) {
             return response()->json([
                 'status'    => false,
@@ -113,8 +111,7 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function delete(Request $request)
-    {
+    public function delete(Request $request): JsonResponse {
         if (!$request->ajax()) {
             return response()->json([
                 'status'    => false,

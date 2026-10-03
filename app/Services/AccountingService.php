@@ -9,6 +9,7 @@ use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\User;
+use App\Services\Accounting\AccountingAuditService;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -170,6 +171,16 @@ class AccountingService
             foreach ($preparedLines as $lineData) {
                 $lineData['journal_entry_id'] = $entry->id;
                 JournalEntryLine::create($lineData);
+            }
+
+            if ($entry->isPosted()) {
+                AccountingAuditService::log(
+                    'POST_ENTRY',
+                    $entry,
+                    auth()->user() ?? User::find($entry->posted_by_user_id),
+                    "Publicación de asiento contable {$entry->entry_number}",
+                    ['total_debit' => $totalDebit, 'total_credit' => $totalCredit]
+                );
             }
 
             return $entry->load(['lines.account', 'period']);

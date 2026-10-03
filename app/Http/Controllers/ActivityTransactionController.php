@@ -9,7 +9,6 @@ use App\Models\Billing;
 use App\Models\Buy;
 use App\Models\FundSource;
 use App\Models\ProductiveActivity;
-use App\Models\ProductiveUnit;
 use App\Models\SaleNote;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;

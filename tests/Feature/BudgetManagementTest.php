@@ -64,19 +64,23 @@ class BudgetManagementTest extends TestCase
         $viewPerm   = Permission::firstOrCreate(['name' => 'accounting.view'], ['descripcion' => 'Ver contabilidad']);
         $createPerm = Permission::firstOrCreate(['name' => 'accounting.create'], ['descripcion' => 'Crear contabilidad']);
         $exportPerm = Permission::firstOrCreate(['name' => 'accounting.export'], ['descripcion' => 'Exportar contabilidad']);
+        $budgetManagePerm  = Permission::firstOrCreate(['name' => 'budget.manage'], ['descripcion' => 'Gestionar presupuestos']);
+        $budgetApprovePerm = Permission::firstOrCreate(['name' => 'budget.approve'], ['descripcion' => 'Aprobar presupuestos']);
+
+        $allBudgetPerms = [$viewPerm, $createPerm, $exportPerm, $budgetManagePerm, $budgetApprovePerm];
 
         // Roles
         $roleAdmin = Role::firstOrCreate(['name' => 'ADMIN']);
-        $roleAdmin->syncPermissions([$viewPerm, $createPerm, $exportPerm]);
+        $roleAdmin->syncPermissions($allBudgetPerms);
 
         $roleCont = Role::firstOrCreate(['name' => 'CONTABILIDAD']);
-        $roleCont->syncPermissions([$viewPerm, $createPerm, $exportPerm]);
+        $roleCont->syncPermissions($allBudgetPerms);
 
         $roleAdm = Role::firstOrCreate(['name' => 'ADMINISTRACION']);
-        $roleAdm->syncPermissions([$viewPerm, $createPerm, $exportPerm]);
+        $roleAdm->syncPermissions($allBudgetPerms);
 
         $roleDg = Role::firstOrCreate(['name' => 'DIRECTOR_GENERAL']);
-        $roleDg->syncPermissions([$viewPerm, $createPerm, $exportPerm]);
+        $roleDg->syncPermissions($allBudgetPerms);
 
         // Users
         $this->adminUser = User::firstOrCreate(
@@ -90,7 +94,7 @@ class BudgetManagementTest extends TestCase
             ]
         );
         $this->adminUser->syncRoles(['ADMIN']);
-        $this->adminUser->syncPermissions([$viewPerm, $createPerm, $exportPerm]);
+        $this->adminUser->syncPermissions($allBudgetPerms);
 
         $this->contabilidadUser = User::firstOrCreate(
             ['user' => 'cont_budget_test'],

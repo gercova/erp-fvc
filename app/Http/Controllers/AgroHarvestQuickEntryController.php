@@ -11,7 +11,6 @@ use App\Models\ProductiveActivity;
 use App\Models\ProductionBatch;
 use App\Models\ProductionCampaign;
 use App\Models\ProductionHarvest;
-use App\Models\StockProduct;
 use App\Models\Warehouse;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;

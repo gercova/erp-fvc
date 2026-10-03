@@ -806,22 +806,22 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         // Bank Accounts & Statement Imports
         Route::controller(BankAccountController::class)->prefix('bank-accounts')->group(function () {
             Route::get('/',                 'index')->name('treasury.bank_accounts.index')->middleware('can:accounting.view');
-            Route::post('/',                'store')->name('treasury.bank_accounts.store')->middleware('can:accounting.view');
+            Route::post('/',                'store')->name('treasury.bank_accounts.store')->middleware(['can:treasury.manage', 'accounting.period.open']);
             Route::get('/template/download', 'downloadTemplate')->name('treasury.bank_accounts.template')->middleware('can:accounting.export');
             Route::get('/{id}',             'show')->name('treasury.bank_accounts.show')->middleware('can:accounting.view');
-            Route::post('/{id}/import',     'importStatement')->name('treasury.bank_accounts.import')->middleware('can:accounting.view');
+            Route::post('/{id}/import',     'importStatement')->name('treasury.bank_accounts.import')->middleware(['can:treasury.manage', 'accounting.period.open']);
         });
 
         // Bank Reconciliation (Extends RDR)
         Route::controller(BankReconciliationController::class)->prefix('reconciliations')->group(function () {
             Route::get('/',                 'index')->name('treasury.reconciliations.index')->middleware('can:accounting.view');
-            Route::post('/',                'store')->name('treasury.reconciliations.store')->middleware('can:accounting.view');
+            Route::post('/',                'store')->name('treasury.reconciliations.store')->middleware(['can:treasury.reconcile', 'accounting.period.open']);
             Route::get('/{id}',             'show')->name('treasury.reconciliations.show')->middleware('can:accounting.view');
             Route::get('/{id}/suggestions', 'suggestions')->name('treasury.reconciliations.suggestions')->middleware('can:accounting.view');
-            Route::post('/{id}/match',       'match')->name('treasury.reconciliations.match')->middleware('can:accounting.view');
-            Route::post('/{id}/items',       'addItem')->name('treasury.reconciliations.add_item')->middleware('can:accounting.view');
-            Route::post('/{id}/adjustment',  'postAdjustment')->name('treasury.reconciliations.adjustment')->middleware('can:accounting.view');
-            Route::post('/{id}/close',       'close')->name('treasury.reconciliations.close')->middleware('can:accounting.view');
+            Route::post('/{id}/match',       'match')->name('treasury.reconciliations.match')->middleware(['can:treasury.reconcile', 'accounting.period.open']);
+            Route::post('/{id}/items',       'addItem')->name('treasury.reconciliations.add_item')->middleware(['can:treasury.reconcile', 'accounting.period.open']);
+            Route::post('/{id}/adjustment',  'postAdjustment')->name('treasury.reconciliations.adjustment')->middleware(['can:treasury.reconcile', 'accounting.period.open']);
+            Route::post('/{id}/close',       'close')->name('treasury.reconciliations.close')->middleware(['can:treasury.reconcile', 'accounting.period.open']);
         });
 
         // Aging Views (AR & AP)
@@ -840,9 +840,9 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         // Internal Transfers (Account-to-account, Cash-to-bank, Transfer-to-CUT)
         Route::controller(InternalTransferController::class)->prefix('transfers')->group(function () {
             Route::get('/',             'index')->name('treasury.transfers.index')->middleware('can:accounting.view');
-            Route::post('/bank-to-bank', 'storeBankToBank')->name('treasury.transfers.bank_to_bank')->middleware('can:accounting.view');
-            Route::post('/cash-to-bank', 'storeCashToBank')->name('treasury.transfers.cash_to_bank')->middleware('can:accounting.view');
-            Route::post('/to-cut',       'storeTransferToCut')->name('treasury.transfers.to_cut')->middleware('can:accounting.view');
+            Route::post('/bank-to-bank', 'storeBankToBank')->name('treasury.transfers.bank_to_bank')->middleware(['can:treasury.manage', 'accounting.period.open']);
+            Route::post('/cash-to-bank', 'storeCashToBank')->name('treasury.transfers.cash_to_bank')->middleware(['can:treasury.manage', 'accounting.period.open']);
+            Route::post('/to-cut',       'storeTransferToCut')->name('treasury.transfers.to_cut')->middleware(['can:treasury.manage', 'accounting.period.open']);
         });
     });
 
@@ -858,22 +858,22 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
     // PERIOD CLOSING & REOPENING (BLOCK B5)
     Route::controller(PeriodClosingController::class)->prefix('period-closing')->group(function () {
         Route::get('/',                     'index')->name('accounting.period_closing.index')->middleware('can:accounting.view');
-        Route::post('/{id}/close',          'close')->name('accounting.period_closing.close')->middleware('can:accounting.view');
-        Route::post('/{id}/annual-close',   'annualClose')->name('accounting.period_closing.annual_close')->middleware('can:accounting.view');
-        Route::post('/{id}/reopen',         'reopen')->name('accounting.period_closing.reopen')->middleware('can:accounting.view');
-        Route::post('/{id}/submit-approval','submitApproval')->name('accounting.period_closing.submit_approval')->middleware('can:accounting.view');
+        Route::post('/{id}/close',          'close')->name('accounting.period_closing.close')->middleware('can:accounting.close');
+        Route::post('/{id}/annual-close',   'annualClose')->name('accounting.period_closing.annual_close')->middleware('can:accounting.close');
+        Route::post('/{id}/reopen',         'reopen')->name('accounting.period_closing.reopen')->middleware('can:accounting.reopen');
+        Route::post('/{id}/submit-approval','submitApproval')->name('accounting.period_closing.submit_approval')->middleware('can:accounting.close');
     });
 
     // BUDGET MANAGEMENT (BLOCK B6)
     Route::controller(BudgetController::class)->prefix('budgets')->group(function () {
         Route::get('/',                          'index')->name('accounting.budgets.index')->middleware('can:accounting.view');
-        Route::get('/create',                    'create')->name('accounting.budgets.create')->middleware('can:accounting.create');
-        Route::post('/',                         'store')->name('accounting.budgets.store')->middleware('can:accounting.create');
+        Route::get('/create',                    'create')->name('accounting.budgets.create')->middleware('can:budget.manage');
+        Route::post('/',                         'store')->name('accounting.budgets.store')->middleware('can:budget.manage');
         Route::get('/{id}',                      'show')->name('accounting.budgets.show')->middleware('can:accounting.view');
-        Route::post('/{id}/lines',               'storeLine')->name('accounting.budgets.lines.store')->middleware('can:accounting.create');
-        Route::post('/{id}/modifications',       'storeModification')->name('accounting.budgets.modifications.store')->middleware('can:accounting.create');
-        Route::post('/{id}/submit-approval',     'submitApproval')->name('accounting.budgets.submit_approval')->middleware('can:accounting.view');
-        Route::post('/{id}/activate',            'activate')->name('accounting.budgets.activate')->middleware('can:accounting.view');
+        Route::post('/{id}/lines',               'storeLine')->name('accounting.budgets.lines.store')->middleware('can:budget.manage');
+        Route::post('/{id}/modifications',       'storeModification')->name('accounting.budgets.modifications.store')->middleware('can:budget.manage');
+        Route::post('/{id}/submit-approval',     'submitApproval')->name('accounting.budgets.submit_approval')->middleware('can:budget.approve');
+        Route::post('/{id}/activate',            'activate')->name('accounting.budgets.activate')->middleware('can:budget.manage');
         Route::get('/{id}/kpi-dashboard',        'kpiDashboard')->name('accounting.budgets.kpi_dashboard')->middleware('can:accounting.view');
         Route::post('/{id}/check-alerts',        'checkAlerts')->name('accounting.budgets.check_alerts')->middleware('can:accounting.view');
         Route::get('/{id}/excel',                'exportExcel')->name('accounting.budgets.export_excel')->middleware('can:accounting.export');

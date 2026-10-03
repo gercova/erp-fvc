@@ -148,6 +148,7 @@ class FinancialStatementsTest extends TestCase
                 'status'      => 'OPEN',
             ]
         );
+        $this->periodPrev->update(['status' => 'OPEN']);
 
         $this->periodCurrent = AccountingPeriod::firstOrCreate(
             ['period_code' => '2026-10'],
@@ -159,6 +160,7 @@ class FinancialStatementsTest extends TestCase
                 'status'      => 'OPEN',
             ]
         );
+        $this->periodCurrent->update(['status' => 'OPEN']);
 
         // Chart of Accounts (standard PCGE)
         $this->accCash = ChartOfAccount::firstOrCreate(

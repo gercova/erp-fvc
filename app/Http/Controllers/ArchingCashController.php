@@ -9,7 +9,6 @@ use App\Models\Business;
 use App\Models\Cash;
 use App\Models\CashMovement;
 use App\Models\DetailPayment;
-use App\Models\PayMode;
 use App\Models\SaleNote;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;

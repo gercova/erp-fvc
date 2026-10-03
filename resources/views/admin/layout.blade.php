@@ -95,21 +95,18 @@
             </div>
         </form>
         @php
-            $authUser = Auth::user();
-            $currentWarehouse = $authUser?->activeWarehouse;
-            $availableWarehousesCount = $authUser ? $authUser->warehouses()->count() : 0;
-            $primaryRole = optional($authUser?->roles?->first())->name ?: 'USUARIO';
-            $canDashboard = $authUser?->can('admin.home');
-            $canArching = $authUser?->can('admin.arching_cashes');
-            $isBillingReportScreen = request()->routeIs('report.billings.*');
-            $isCreditNoteListScreen =
+            $authUser                   = Auth::user();
+            $currentWarehouse           = $authUser?->activeWarehouse;
+            $availableWarehousesCount   = $authUser ? $authUser->warehouses()->count() : 0;
+            $primaryRole                = optional($authUser?->roles?->first())->name ?: 'USUARIO';
+            $canDashboard               = $authUser?->can('admin.home');
+            $canArching                 = $authUser?->can('admin.arching_cashes');
+            $isBillingReportScreen      = request()->routeIs('report.billings.*');
+            $isCreditNoteListScreen     =
                 request()->routeIs('admin.billing_credit_notes') || request()->routeIs('billings.credit_notes.get');
-            $isDebitNoteListScreen =
-                request()->routeIs('admin.billing_debit_notes') || request()->routeIs('billings.debit_notes.get');
-            $isShipmentGuideScreen = request()->is('shipment-guides') || request()->is('shipment-guides/*');
-            $isBillingScreen =
-                (request()->is('billings') ||
-                    (request()->is('billings/*') &&
+            $isDebitNoteListScreen      = request()->routeIs('admin.billing_debit_notes') || request()->routeIs('billings.debit_notes.get');
+            $isShipmentGuideScreen      = request()->is('shipment-guides') || request()->is('shipment-guides/*');
+            $isBillingScreen            = (request()->is('billings') || (request()->is('billings/*') &&
                         !request()->is('billings/reports*') &&
                         !request()->is('billings/credit-notes*') &&
                         !request()->is('billings/debit-notes*'))) &&
@@ -123,8 +120,8 @@
                 'admin.billings',
                 'admin.shipment_guides',
             ]);
-            $canCompras = $authUser?->canany(['admin.providers', 'admin.buys']);
-            $canInventario = $authUser?->canany([
+            $canCompras     = $authUser?->canany(['admin.providers', 'admin.buys']);
+            $canInventario  = $authUser?->canany([
                 'admin.products',
                 'admin.categories',
                 'admin.warehouses',
@@ -179,8 +176,21 @@
             ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'JEFE_AREA', 'ADMINISTRACION', 'CONTABILIDAD', 'RESPONSABLE_ACTIVIDAD']);
             $canContabilidad = $authUser?->canany([
                 'accounting.view',
+                'accounting.post',
+                'accounting.close',
+                'accounting.reopen',
                 'accounting.export',
-            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'CONTABILIDAD']);
+                'treasury.manage',
+                'treasury.reconcile',
+                'budget.manage',
+                'budget.approve',
+            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'CONTABILIDAD', 'ADMINISTRACION', 'DIRECTOR_GENERAL', 'TESORERO', 'TREASURER']);
+            $openPeriodsCount = Schema::hasTable('accounting_periods')
+                ? \App\Models\AccountingPeriod::where('status', 'OPEN')->count()
+                : 0;
+            $pendingReconciliationsCount = \Illuminate\Support\Facades\Schema::hasTable('rdr_bank_reconciliations')
+                ? \App\Models\RdrBankReconciliation::whereIn('status', ['PENDIENTE', 'PENDING', 'IN_REVIEW'])->count()
+                : 0;
             $pendingApprovalsCount = $authUser ? $authUser->pendingApprovalsCount() : 0;
             $totalNotificationsCount = ($productos_agotar ?? 0) + $pendingApprovalsCount;
         @endphp
@@ -771,6 +781,9 @@
                                 aria-controls="collapseAccounting">
                                 <div class="nav-link-icon"><i data-feather="book-open"></i></div>
                                 Contabilidad
+                                @if ($openPeriodsCount > 0)
+                                    <span class="badge bg-success ms-auto me-2" title="{{ $openPeriodsCount }} períodos abiertos">{{ $openPeriodsCount }} Abierto{{ $openPeriodsCount > 1 ? 's' : '' }}</span>
+                                @endif
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
                             <div class="collapse {{ $isAccountingGroup ? 'show' : '' }}"
@@ -799,6 +812,24 @@
                                     <a class="nav-link {{ request()->routeIs('accounting.statements.balance_sheet') ? 'active' : '' }}"
                                         href="{{ route('accounting.statements.balance_sheet') }}">
                                         Balance General
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('accounting.period_closing.*') ? 'active' : '' }}"
+                                        href="{{ route('accounting.period_closing.index') }}">
+                                        Cierre de Período
+                                        @if ($openPeriodsCount > 0)
+                                            <span class="badge bg-primary ms-auto">{{ $openPeriodsCount }}</span>
+                                        @endif
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('treasury.reconciliations.*') ? 'active' : '' }}"
+                                        href="{{ route('treasury.reconciliations.index') }}">
+                                        Conciliación Bancaria
+                                        @if ($pendingReconciliationsCount > 0)
+                                            <span class="badge bg-warning text-dark ms-auto">{{ $pendingReconciliationsCount }}</span>
+                                        @endif
+                                    </a>
+                                    <a class="nav-link {{ request()->routeIs('treasury.transfers.*') ? 'active' : '' }}"
+                                        href="{{ route('treasury.transfers.index') }}">
+                                        Transferencias Tesorería
                                     </a>
                                     <a class="nav-link {{ request()->routeIs('accounting.failures.*') ? 'active' : '' }}"
                                         href="{{ route('accounting.failures.index') }}">

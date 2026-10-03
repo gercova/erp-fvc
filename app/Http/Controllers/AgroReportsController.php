@@ -5,20 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\AgriculturalPlot;
 use App\Models\AgriculturalYieldLog;
 use App\Models\Billing;
-use App\Models\DetailBilling;
-use App\Models\DetailSaleNote;
 use App\Models\LivestockEvent;
-use App\Models\ProducedItem;
 use App\Models\ProductiveActivity;
 use App\Models\ProductionHarvest;
 use App\Models\ProductionInputMovement;
 use App\Models\ProductionLaborCost;
-use App\Models\SaleNote;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AgroReportsController extends Controller
 {
