@@ -33,8 +33,7 @@ class Requisition extends Model
         'total' => 'decimal:2',
     ];
 
-    public function items(): HasMany
-    {
+    public function items(): HasMany {
         return $this->hasMany(RequisitionItem::class);
     }
 }

@@ -26,11 +26,10 @@ class ProductionRawMaterial extends Model
 
     protected $casts = [
         'default_unit_cost' => 'decimal:2',
-        'is_active' => 'boolean',
+        'is_active'         => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ProductionRawMaterial $material) {
             if (empty($material->uuid)) {
                 $material->uuid = (string) Str::uuid();
@@ -38,13 +37,11 @@ class ProductionRawMaterial extends Model
         });
     }
 
-    public function movements(): HasMany
-    {
+    public function movements(): HasMany {
         return $this->hasMany(ProductionInputMovement::class, 'production_raw_material_id');
     }
 
-    public function getCategoryLabelAttribute(): string
-    {
+    public function getCategoryLabelAttribute(): string {
         return match ($this->category) {
             'fertilizer'            => 'Fertilizante / Abono',
             'seed'                  => 'Semilla / Plantón',

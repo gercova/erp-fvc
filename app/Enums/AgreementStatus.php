@@ -11,6 +11,7 @@ enum AgreementStatus: string
     case EXPIRED        = 'EXPIRED';        // Plazo concluido sin finiquito
     case SETTLED        = 'SETTLED';        // Liquidado formalmente con acta
     case TERMINATED     = 'TERMINATED';     // Rescindido / cancelado unilateralmente
+    case REJECTED       = 'REJECTED';       // Rechazado en cadena de aprobación
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum AgreementStatus: string
             self::EXPIRED       => 'Vencido',
             self::SETTLED       => 'Liquidado',
             self::TERMINATED    => 'Rescindido',
+            self::REJECTED      => 'Rechazado',
         };
     }
 
@@ -35,6 +37,7 @@ enum AgreementStatus: string
             self::EXPIRED       => 'danger',
             self::SETTLED       => 'primary',
             self::TERMINATED    => 'dark',
+            self::REJECTED      => 'danger',
         };
     }
 }

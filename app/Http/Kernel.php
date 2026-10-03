@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'asset.access' => \App\Http\Middleware\CheckAssetAccess::class,
         'activity.access' => \App\Http\Middleware\CheckProductiveActivityAccess::class,
         'accounting.period.open' => \App\Http\Middleware\CheckAccountingPeriodOpen::class,
+        'agreement.access' => \App\Http\Middleware\CheckAgreementAccess::class,
     ];
 }

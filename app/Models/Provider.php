@@ -30,39 +30,32 @@ class Provider extends Model
         'correo',
     ];
 
-    public function tipoDocumento(): BelongsTo
-    {
+    public function tipoDocumento(): BelongsTo {
         return $this->belongsTo(IdentityDocumentType::class, 'iddoc');
     }
 
-    public function district(): BelongsTo
-    {
+    public function district(): BelongsTo {
         return $this->belongsTo(District::class, 'ubigeo', 'codigo');
     }
 
-    public function getDocumentoCompletoAttribute(): string
-    {
+    public function getDocumentoCompletoAttribute(): string {
         $tipo = $this->tipoDocumento?->descripcion ?? 'DOC';
         return "{$tipo}: {$this->nro_documento}";
     }
 
-    public function getIdubigeoAttribute(): ?string
-    {
+    public function getIdubigeoAttribute(): ?string {
         return $this->ubigeo;
     }
 
-    public function setIdubigeoAttribute(?string $value): void
-    {
+    public function setIdubigeoAttribute(?string $value): void {
         $this->attributes['ubigeo'] = $value;
     }
 
-    public function getCorreoAttribute(): ?string
-    {
+    public function getCorreoAttribute(): ?string {
         return $this->email;
     }
 
-    public function setCorreoAttribute(?string $value): void
-    {
+    public function setCorreoAttribute(?string $value): void {
         $this->attributes['email'] = $value;
     }
 }

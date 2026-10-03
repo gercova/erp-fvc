@@ -26,6 +26,7 @@ class Agreement extends Model
         'type',
         'parent_agreement_id',
         'title',
+        'name',
         'objective',
         'client_id',
         'counterparty_signatory_name',
@@ -49,6 +50,14 @@ class Agreement extends Model
         'created_by_user_id',
     ];
 
+    public function getNameAttribute(): ?string {
+        return $this->attributes['title'] ?? null;
+    }
+
+    public function setNameAttribute(?string $value): void {
+        $this->attributes['title'] = $value;
+    }
+
     protected $casts = [
         'type'                         => AgreementType::class,
         'status'                       => AgreementStatus::class,
@@ -67,6 +76,9 @@ class Agreement extends Model
         static::creating(function (Agreement $agreement) {
             if (empty($agreement->uuid)) {
                 $agreement->uuid = (string) Str::uuid();
+            }
+            if (empty($agreement->title) && !empty($agreement->name)) {
+                $agreement->title = $agreement->name;
             }
             if (empty($agreement->code)) {
                 $year = $agreement->start_date ? Carbon::parse($agreement->start_date)->year : (int) date('Y');
@@ -171,6 +183,42 @@ class Agreement extends Model
 
     public function isSettled(): bool {
         return $this->status === AgreementStatus::SETTLED;
+    }
+
+    public function user(): BelongsTo {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function auditLogs(): HasMany {
+        return $this->hasMany(AgreementAuditLog::class, 'agreement_id')->latest();
+    }
+
+    public function transitionStatus(
+        AgreementStatus|string $newStatus,
+        ?string $reason = null,
+        ?User $user = null,
+        string $action = 'STATUS_CHANGE',
+        ?array $metadata = null
+    ): void {
+        $previousStatus = $this->status instanceof AgreementStatus ? $this->status->value : (string) $this->status;
+        $targetStatus = $newStatus instanceof AgreementStatus ? $newStatus : (AgreementStatus::tryFrom((string)$newStatus) ?? AgreementStatus::DRAFT);
+
+        $userId = $user?->id ?? auth()->id() ?? $this->created_by_user_id ?? 1;
+
+        $this->update([
+            'status' => $targetStatus,
+        ]);
+
+        AgreementAuditLog::create([
+            'agreement_id'    => $this->id,
+            'user_id'         => $userId,
+            'action'          => $action,
+            'previous_status' => $previousStatus,
+            'new_status'      => $targetStatus->value,
+            'reason'          => $reason,
+            'ip_address'      => request()?->ip(),
+            'metadata'        => $metadata,
+        ]);
     }
 
     public function daysRemaining(): int {

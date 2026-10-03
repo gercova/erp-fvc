@@ -70,6 +70,7 @@ use App\Http\Controllers\Treasury\InternalTransferController;
 use App\Http\Controllers\Accounting\FinancialStatementController;
 use App\Http\Controllers\Accounting\PeriodClosingController;
 use App\Http\Controllers\Accounting\BudgetController;
+use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AgreementDocumentController;
 
 /*
@@ -880,6 +881,24 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::get('/{id}/excel',                'exportExcel')->name('accounting.budgets.export_excel')->middleware('can:accounting.export');
         Route::get('/{id}/pdf',                  'exportPdf')->name('accounting.budgets.export_pdf')->middleware('can:accounting.export');
     });
+});
+
+// INSTITUTIONAL AGREEMENTS (BLOCK C2)
+Route::prefix('agreements')->middleware(['auth', 'agreement.access'])->controller(AgreementController::class)->group(function () {
+    Route::get('/',                              'index')->name('agreements.index')->middleware('can:agreements.view');
+    Route::get('/data',                          'data')->name('agreements.data')->middleware('can:agreements.view');
+    Route::get('/create',                        'create')->name('agreements.create')->middleware('can:agreements.create');
+    Route::post('/',                             'store')->name('agreements.store')->middleware('can:agreements.create');
+    Route::get('/{id}',                          'show')->name('agreements.show')->middleware('can:agreements.view');
+    Route::get('/{id}/edit',                     'edit')->name('agreements.edit')->middleware('can:agreements.edit');
+    Route::put('/{id}',                          'update')->name('agreements.update')->middleware('can:agreements.edit');
+    Route::delete('/{id}',                       'destroy')->name('agreements.destroy')->middleware('can:agreements.manage');
+    Route::post('/{id}/submit-approval',         'submitApproval')->name('agreements.submit_approval');
+    Route::post('/{id}/addenda',                 'storeAddendum')->name('agreements.addenda.store')->middleware('can:agreements.create');
+    Route::post('/{id}/obligations',             'storeObligation')->name('agreements.obligations.store')->middleware('can:agreements.edit');
+    Route::post('/{id}/obligations/{obligation}','updateObligationStatus')->name('agreements.obligations.update_status')->middleware('can:agreements.manage');
+    Route::post('/{id}/change-status',           'changeStatus')->name('agreements.change_status')->middleware('can:agreements.manage');
+    Route::post('/{id}/documents',               'uploadDocument')->name('agreements.documents.store')->middleware('can:agreements.edit');
 });
 
 // AGREEMENTS & SERVICES - FILE STORAGE & DOWNLOAD (BLOCK C1)

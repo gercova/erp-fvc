@@ -33,10 +33,10 @@ class ProductionCampaign extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'target_quantity' => 'decimal:2',
-        'budget_allocated' => 'decimal:2',
+        'start_date'        => 'date',
+        'end_date'          => 'date',
+        'target_quantity'   => 'decimal:2',
+        'budget_allocated'  => 'decimal:2',
     ];
 
     protected static function booted(): void {

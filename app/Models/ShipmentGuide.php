@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShipmentGuide extends Model
 {
@@ -50,18 +52,15 @@ class ShipmentGuide extends Model
         'peso_total' => 'decimal:3',
     ];
 
-    public function client()
-    {
+    public function client(): BelongsTo {
         return $this->belongsTo(Client::class, 'idcliente');
     }
 
-    public function warehouse()
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'idalmacen');
     }
 
-    public function items()
-    {
+    public function items(): HasMany {
         return $this->hasMany(ShipmentGuideItem::class, 'shipment_guide_id');
     }
 }

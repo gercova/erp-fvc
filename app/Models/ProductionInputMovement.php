@@ -33,13 +33,12 @@ class ProductionInputMovement extends Model
 
     protected $casts = [
         'movement_date' => 'date',
-        'quantity' => 'decimal:3',
-        'unit_cost' => 'decimal:2',
-        'total_cost' => 'decimal:2',
+        'quantity'      => 'decimal:3',
+        'unit_cost'     => 'decimal:2',
+        'total_cost'    => 'decimal:2',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ProductionInputMovement $movement) {
             if (empty($movement->uuid)) {
                 $movement->uuid = (string) Str::uuid();
@@ -50,43 +49,35 @@ class ProductionInputMovement extends Model
         });
     }
 
-    public function rawMaterial(): BelongsTo
-    {
+    public function rawMaterial(): BelongsTo {
         return $this->belongsTo(ProductionRawMaterial::class, 'production_raw_material_id');
     }
 
-    public function activity(): BelongsTo
-    {
+    public function activity(): BelongsTo {
         return $this->belongsTo(ProductiveActivity::class, 'productive_activity_id');
     }
 
-    public function campaign(): BelongsTo
-    {
+    public function campaign(): BelongsTo {
         return $this->belongsTo(ProductionCampaign::class, 'production_campaign_id');
     }
 
-    public function batch(): BelongsTo
-    {
+    public function batch(): BelongsTo {
         return $this->belongsTo(ProductionBatch::class, 'production_batch_id');
     }
 
-    public function buy(): BelongsTo
-    {
+    public function buy(): BelongsTo {
         return $this->belongsTo(Buy::class, 'buy_id');
     }
 
-    public function detailBuy(): BelongsTo
-    {
+    public function detailBuy(): BelongsTo {
         return $this->belongsTo(DetailBuy::class, 'detail_buy_id');
     }
 
-    public function registeredByUser(): BelongsTo
-    {
+    public function registeredByUser(): BelongsTo {
         return $this->belongsTo(User::class, 'registered_by_user_id');
     }
 
-    public function getMovementTypeBadgeAttribute(): string
-    {
+    public function getMovementTypeBadgeAttribute(): string {
         return match ($this->movement_type) {
             'inflow_purchase'    => '<span class="badge bg-success text-white">Ingreso / Compra</span>',
             'outflow_consumption'=> '<span class="badge bg-danger text-white">Consumo en Campo</span>',

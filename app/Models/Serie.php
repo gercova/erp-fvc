@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Serie extends Model
 {
@@ -22,18 +23,15 @@ class Serie extends Model
         'estado'
     ];
 
-    public function warehouse()
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'idalmacen');
     }
 
-    public function typeDocument()
-    {
+    public function typeDocument():BelongsTo {
         return $this->belongsTo(TypeDocument::class, 'idtipo_documento');
     }
 
-    public function cash()
-    {
+    public function cash(): BelongsTo {
         return $this->belongsTo(Cash::class, 'idcaja');
     }
 }

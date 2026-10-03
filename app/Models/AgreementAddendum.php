@@ -79,6 +79,10 @@ class AgreementAddendum extends Model
                 $addendum->created_by_user_id = auth()->id() ?? $agreement?->coordinator_user_id ?? 1;
             }
         });
+
+        static::created(function (AgreementAddendum $addendum) {
+            $addendum->applyToAgreement();
+        });
     }
 
     public function agreement(): BelongsTo {
@@ -87,5 +91,63 @@ class AgreementAddendum extends Model
 
     public function creator(): BelongsTo {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    /**
+     * Apply addendum term and amount extension to parent agreement with validity recalculation.
+     */
+    public function applyToAgreement(?User $user = null): void {
+        $agreement = $this->agreement ?? Agreement::find($this->agreement_id);
+        if (!$agreement) {
+            return;
+        }
+
+        $oldEndDate = $agreement->end_date;
+        $oldAmount = (float) $agreement->total_amount;
+
+        $newEndDate = $this->new_end_date ?? $oldEndDate;
+        $newAmount = $this->new_total_amount !== null
+            ? (float) $this->new_total_amount
+            : round($oldAmount + (float) ($this->amount_delta ?? 0), 2);
+
+        $agreement->end_date = $newEndDate;
+        $agreement->total_amount = $newAmount;
+
+        $previousStatus = $agreement->status;
+
+        // Recalculate status based on new validity period
+        if (in_array($agreement->status, [\App\Enums\AgreementStatus::ACTIVE, \App\Enums\AgreementStatus::EXPIRING_SOON, \App\Enums\AgreementStatus::EXPIRED], true)) {
+            $days = $agreement->daysRemaining();
+            if ($days > 30) {
+                $agreement->status = \App\Enums\AgreementStatus::ACTIVE;
+            } elseif ($days >= 0) {
+                $agreement->status = \App\Enums\AgreementStatus::EXPIRING_SOON;
+            } else {
+                $agreement->status = \App\Enums\AgreementStatus::EXPIRED;
+            }
+        }
+
+        $agreement->save();
+
+        // Audit log entry
+        $actingUser = $user ?? auth()->user() ?? $this->creator;
+        \App\Models\AgreementAuditLog::create([
+            'agreement_id'    => $agreement->id,
+            'user_id'         => $actingUser?->id ?? 1,
+            'action'          => 'ADDENDUM_APPLIED',
+            'previous_status' => $previousStatus instanceof \App\Enums\AgreementStatus ? $previousStatus->value : (string) $previousStatus,
+            'new_status'      => $agreement->status instanceof \App\Enums\AgreementStatus ? $agreement->status->value : (string) $agreement->status,
+            'reason'          => "Adenda {$this->code} aplicada: plazo extendido hasta " . ($this->new_end_date ? $this->new_end_date->format('d/m/Y') : 'N/A') . " (variación monto: {$this->amount_delta})",
+            'metadata'        => [
+                'addendum_id'           => $this->id,
+                'addendum_code'         => $this->code,
+                'previous_end_date'     => $oldEndDate?->format('Y-m-d'),
+                'new_end_date'          => $this->new_end_date?->format('Y-m-d'),
+                'previous_total_amount' => $oldAmount,
+                'new_total_amount'      => $newAmount,
+                'amount_delta'          => (float) $this->amount_delta,
+            ],
+            'ip_address'      => request()?->ip(),
+        ]);
     }
 }

@@ -185,6 +185,15 @@
                 'budget.manage',
                 'budget.approve',
             ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'CONTABILIDAD', 'ADMINISTRACION', 'DIRECTOR_GENERAL', 'TESORERO', 'TREASURER']);
+            $canAgreements = $authUser?->canany([
+                'agreements.view',
+                'agreements.create',
+                'agreements.edit',
+                'agreements.manage',
+                'agreements.approve',
+                'services.view',
+                'services.manage',
+            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'ADMINISTRACION', 'CONTABILIDAD', 'COORDINADOR', 'JEFE_AREA']);
             $openPeriodsCount = Schema::hasTable('accounting_periods')
                 ? \App\Models\AccountingPeriod::where('status', 'OPEN')->count()
                 : 0;
@@ -616,6 +625,30 @@
                                     <a class="nav-link {{ request()->routeIs('productive_activities.rdr.*') ? 'active' : '' }}"
                                         href="{{ route('productive_activities.rdr.index') }}">
                                         Módulo RDR / CUT
+                                    </a>
+                                </nav>
+                            </div>
+                        @endif
+
+                        <!-- Sidenav Accordion (Convenios y Alianzas)-->
+                        @if ($canAgreements)
+                            @php
+                                $isAgreementsGroup = request()->is('agreements*');
+                            @endphp
+                            <a class="nav-link {{ $isAgreementsGroup ? '' : 'collapsed' }}"
+                                href="javascript:void(0);" data-bs-toggle="collapse"
+                                data-bs-target="#collapseAgreements" aria-expanded="{{ $isAgreementsGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseAgreements">
+                                <div class="nav-link-icon"><i data-feather="file-text"></i></div>
+                                Convenios
+                                <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse {{ $isAgreementsGroup ? 'show' : '' }}"
+                                id="collapseAgreements" data-bs-parent="#accordionSidenav">
+                                <nav class="sidenav-menu-nested nav">
+                                    <a class="nav-link {{ request()->routeIs('agreements.*') ? 'active' : '' }}"
+                                        href="{{ route('agreements.index') }}">
+                                        Catálogo de Convenios
                                     </a>
                                 </nav>
                             </div>

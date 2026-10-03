@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Quote extends Model
 {
@@ -33,38 +35,31 @@ class Quote extends Model
         'total' => 'decimal:2',
     ];
 
-    public function client()
-    {
+    public function client(): BelongsTo {
         return $this->belongsTo(Client::class, 'idcliente');
     }
 
-    public function cliente()
-    {
+    public function cliente(): BelongsTo {
         return $this->belongsTo(Client::class, 'idcliente');
     }
 
-    public function details()
-    {
+    public function details(): HasMany {
         return $this->hasMany(DetailQuote::class, 'idcotizacion');
     }
 
-    public function detailQuotes()
-    {
+    public function detailQuotes(): HasMany {
         return $this->hasMany(DetailQuote::class, 'idcotizacion');
     }
 
-    public function payMode()
-    {
+    public function payMode(): BelongsTo {
         return $this->belongsTo(PayMode::class, 'idpago');
     }
 
-    public function user()
-    {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class, 'idusuario');
     }
 
-    public function usuario()
-    {
+    public function usuario(): BelongsTo {
         return $this->belongsTo(User::class, 'idusuario');
     }
 }

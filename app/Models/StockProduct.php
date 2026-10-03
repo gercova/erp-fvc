@@ -26,21 +26,19 @@ class StockProduct extends Model
     ];
 
     protected $casts = [
-        'stock_minimo' => 'integer',
-        'stock_actual' => 'integer',
-        'stock_entrada' => 'integer',
-        'precio_compra' => 'decimal:2',
-        'precio_venta' => 'decimal:2',
-        'fecha_registro' => 'date',
+        'stock_minimo'      => 'integer',
+        'stock_actual'      => 'integer',
+        'stock_entrada'     => 'integer',
+        'precio_compra'     => 'decimal:2',
+        'precio_venta'      => 'decimal:2',
+        'fecha_registro'    => 'date',
     ];
 
-    public function product(): BelongsTo
-    {
+    public function product(): BelongsTo {
         return $this->belongsTo(Product::class, 'idproducto');
     }
 
-    public function warehouse(): BelongsTo
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'idalmacen');
     }
 }

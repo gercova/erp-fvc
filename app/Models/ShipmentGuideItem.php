@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShipmentGuideItem extends Model
 {
@@ -24,13 +25,11 @@ class ShipmentGuideItem extends Model
         'cantidad' => 'decimal:2',
     ];
 
-    public function guide()
-    {
+    public function guide(): BelongsTo {
         return $this->belongsTo(ShipmentGuide::class, 'shipment_guide_id');
     }
 
-    public function product()
-    {
+    public function product(): BelongsTo {
         return $this->belongsTo(Product::class, 'product_id');
     }
 }

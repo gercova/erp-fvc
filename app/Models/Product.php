@@ -30,28 +30,23 @@ class Product extends Model
         'stock_actual',
     ];
 
-    public function unit(): BelongsTo
-    {
+    public function unit(): BelongsTo {
         return $this->belongsTo(Unit::class, 'idunidad');
     }
 
-    public function category(): BelongsTo
-    {
+    public function category(): BelongsTo {
         return $this->belongsTo(Category::class, 'idcategoria');
     }
 
-    public function igvTypeAffection(): BelongsTo
-    {
+    public function igvTypeAffection(): BelongsTo {
         return $this->belongsTo(IgvTypeAffection::class, 'idcodigo_igv');
     }
 
-    public function stockProducts(): HasMany
-    {
+    public function stockProducts(): HasMany {
         return $this->hasMany(StockProduct::class, 'idproducto');
     }
 
-    public function isService(): bool
-    {
+    public function isService(): bool {
         return (int) $this->opcion === 2;
     }
 

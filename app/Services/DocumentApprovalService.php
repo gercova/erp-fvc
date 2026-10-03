@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\AgreementStatus;
+use App\Models\Agreement;
 use App\Models\AccountingPeriodClosure;
 use App\Models\ActivityPeriodClosure;
 use App\Models\Area;
@@ -176,6 +178,15 @@ class DocumentApprovalService
             ];
         }
 
+        if ($document instanceof Agreement) {
+            $areaHead = $document->area?->head ?? $this->resolveImmediateHead($area, $creator);
+            return [
+                ['role_name' => 'SOLICITANTE', 'label' => 'Coordinador del Convenio / Responsable Técnico', 'approver_id' => $creator->id, 'approver_name' => $creator->nombres],
+                ['role_name' => 'JEFE_AREA', 'label' => 'Jefe de Área / Unidad Responsable', 'approver_id' => $areaHead?->id, 'approver_name' => $areaHead?->nombres],
+                ['role_name' => 'ADMINISTRACION', 'label' => 'Jefatura de Administración IESTP "FVC"', 'approver_id' => $adminHead?->id, 'approver_name' => $adminHead?->nombres],
+                ['role_name' => 'DIRECTOR_GENERAL', 'label' => 'Dirección General IESTP "FVC"', 'approver_id' => $directorGeneral?->id, 'approver_name' => $directorGeneral?->nombres],
+            ];
+        }
 
         return [];
     }
@@ -266,11 +277,31 @@ class DocumentApprovalService
             ->first();
 
         if ($nextPending) {
-            $document->update(['status' => 'EN_REVISION']);
+            if ($document instanceof Agreement) {
+                $document->transitionStatus(
+                    AgreementStatus::IN_APPROVAL,
+                    "Visación de paso {$approval->step_order} ({$approval->label}) realizada por {$user->nombres}",
+                    $user,
+                    'STEP_APPROVED',
+                    ['step_order' => $approval->step_order, 'role' => $approval->role_name]
+                );
+            } else {
+                $document->update(['status' => 'EN_REVISION']);
+            }
             $this->notifyApprovers($nextPending, $document, $document->user);
         } else {
             // All steps approved!
-            $document->update(['status' => 'APROBADO']);
+            if ($document instanceof Agreement) {
+                $document->transitionStatus(
+                    AgreementStatus::ACTIVE,
+                    'Aprobación final de la cadena de firmas institucionales (Dirección General)',
+                    $user,
+                    'FINAL_APPROVAL',
+                    ['approved_by' => $user->id, 'approved_at' => now()->toIso8601String()]
+                );
+            } else {
+                $document->update(['status' => 'APROBADO']);
+            }
 
             if ($document instanceof AccountingPeriodClosure) {
                 app(\App\Services\Accounting\PeriodClosingService::class)->finalizeApprovedClosure($document);
@@ -315,7 +346,18 @@ class DocumentApprovalService
         ]);
 
         $document = $approval->document;
-        $document->update(['status' => $status]);
+        if ($document instanceof Agreement) {
+            $newStatus = ($status === 'RECHAZADO') ? AgreementStatus::REJECTED : AgreementStatus::DRAFT;
+            $document->transitionStatus(
+                $newStatus,
+                "Paso {$approval->step_order} ({$approval->label}) {$status}: {$observations}",
+                $user,
+                $status === 'RECHAZADO' ? 'APPROVAL_REJECTED' : 'APPROVAL_OBSERVED',
+                ['status' => $status, 'observations' => $observations]
+            );
+        } else {
+            $document->update(['status' => $status]);
+        }
 
         return true;
     }
@@ -356,6 +398,9 @@ class DocumentApprovalService
         }
         if ($document instanceof BudgetApproval) {
             return "Aprobación de Presupuesto {$document->budget?->code} ({$document->budget?->fiscal_year})";
+        }
+        if ($document instanceof Agreement) {
+            return "Convenio {$document->code} - {$document->name}";
         }
 
         return "Documento N° {$document->id}";

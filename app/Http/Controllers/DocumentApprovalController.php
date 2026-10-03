@@ -53,6 +53,7 @@ class DocumentApprovalController extends Controller
                     'vehicle_exit_slip'     => VehicleExitSlip::class,
                     'vacation_exit_slip'    => VacationExitSlip::class,
                     'fuel_control_slip'     => FuelControlSlip::class,
+                    'agreement'             => \App\Models\Agreement::class,
                 ];
                 if (isset($classMap[$type])) {
                     $q->where('document_type', $classMap[$type]);
@@ -96,17 +97,18 @@ class DocumentApprovalController extends Controller
                     'VehicleExitSlip'       => '<span class="badge bg-warning text-dark">Papeleta Vehículo</span>',
                     'VacationExitSlip'      => '<span class="badge bg-purple text-white" style="background:#6f42c1;">Papeleta Vacaciones</span>',
                     'FuelControlSlip'       => '<span class="badge bg-danger">Vale Combustible</span>',
+                    'Agreement'             => '<span class="badge bg-dark">Convenio</span>',
                 ];
                 return $types[$type] ?? '<span class="badge bg-secondary">' . e($type) . '</span>';
             })
             ->addColumn('documento_correlativo', function ($approval) {
                 $doc = $approval->document;
-                return $doc ? '<span class="fw-bold">' . e($doc->correlativo ?? "ID: {$doc->id}") . '</span>' : '-';
+                return $doc ? '<span class="fw-bold">' . e($doc->code ?? $doc->correlativo ?? "ID: {$doc->id}") . '</span>' : '-';
             })
             ->addColumn('solicitante', function ($approval) {
                 $doc = $approval->document;
                 if (!$doc) return '-';
-                $name = $doc->de ?? $doc->servidor_nombres ?? $doc->nombres_apellidos ?? $doc->solicitante_nombre ?? $doc->apellidos_nombres ?? ($doc->user?->nombres ?? '-');
+                $name = $doc->de ?? $doc->servidor_nombres ?? $doc->nombres_apellidos ?? $doc->solicitante_nombre ?? $doc->apellidos_nombres ?? ($doc->coordinator?->nombres ?? ($doc->user?->nombres ?? '-'));
                 return '<div class="fw-semibold">' . e($name) . '</div>';
             })
             ->editColumn('label', function ($approval) {

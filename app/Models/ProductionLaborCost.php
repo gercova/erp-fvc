@@ -28,14 +28,13 @@ class ProductionLaborCost extends Model
     ];
 
     protected $casts = [
-        'task_date' => 'date',
-        'hours_worked' => 'decimal:2',
-        'hourly_rate' => 'decimal:2',
-        'labor_cost' => 'decimal:2',
+        'task_date'     => 'date',
+        'hours_worked'  => 'decimal:2',
+        'hourly_rate'   => 'decimal:2',
+        'labor_cost'    => 'decimal:2',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ProductionLaborCost $labor) {
             if (empty($labor->uuid)) {
                 $labor->uuid = (string) Str::uuid();
@@ -46,13 +45,11 @@ class ProductionLaborCost extends Model
         });
     }
 
-    public function batch(): BelongsTo
-    {
+    public function batch(): BelongsTo {
         return $this->belongsTo(ProductionBatch::class, 'production_batch_id');
     }
 
-    public function workerUser(): BelongsTo
-    {
+    public function workerUser(): BelongsTo {
         return $this->belongsTo(User::class, 'worker_user_id');
     }
 }

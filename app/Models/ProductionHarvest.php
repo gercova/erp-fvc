@@ -34,14 +34,13 @@ class ProductionHarvest extends Model
     ];
 
     protected $casts = [
-        'harvest_date' => 'date',
-        'quantity' => 'decimal:3',
-        'field_weight_kg' => 'decimal:3',
-        'unit_cost_calculated' => 'decimal:2',
+        'harvest_date'          => 'date',
+        'quantity'              => 'decimal:3',
+        'field_weight_kg'       => 'decimal:3',
+        'unit_cost_calculated'  => 'decimal:2',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ProductionHarvest $harvest) {
             if (empty($harvest->uuid)) {
                 $harvest->uuid = (string) Str::uuid();
@@ -49,43 +48,35 @@ class ProductionHarvest extends Model
         });
     }
 
-    public function producedItem(): BelongsTo
-    {
+    public function producedItem(): BelongsTo {
         return $this->belongsTo(ProducedItem::class, 'produced_item_id');
     }
 
-    public function campaign(): BelongsTo
-    {
+    public function campaign(): BelongsTo {
         return $this->belongsTo(ProductionCampaign::class, 'production_campaign_id');
     }
 
-    public function batch(): BelongsTo
-    {
+    public function batch(): BelongsTo {
         return $this->belongsTo(ProductionBatch::class, 'production_batch_id');
     }
 
-    public function plot(): BelongsTo
-    {
+    public function plot(): BelongsTo {
         return $this->belongsTo(AgriculturalPlot::class, 'agricultural_plot_id');
     }
 
-    public function nursery(): BelongsTo
-    {
+    public function nursery(): BelongsTo {
         return $this->belongsTo(AgriculturalNursery::class, 'agricultural_nursery_id');
     }
 
-    public function warehouse(): BelongsTo
-    {
+    public function warehouse(): BelongsTo {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
-    public function stockProduct(): BelongsTo
-    {
+    public function stockProduct(): BelongsTo {
         return $this->belongsTo(StockProduct::class, 'stock_product_id');
     }
 
-    public function registeredByUser(): BelongsTo
-    {
+    public function registeredByUser(): BelongsTo {
         return $this->belongsTo(User::class, 'registered_by_user_id');
     }
 }

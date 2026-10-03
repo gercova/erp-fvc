@@ -25,8 +25,7 @@ class ProductiveUnit extends Model
         'description',
     ];
 
-    protected static function booted(): void
-    {
+    protected static function booted(): void {
         static::creating(function (ProductiveUnit $unit) {
             if (empty($unit->uuid)) {
                 $unit->uuid = (string) Str::uuid();
@@ -34,18 +33,15 @@ class ProductiveUnit extends Model
         });
     }
 
-    public function activity(): BelongsTo
-    {
+    public function activity(): BelongsTo {
         return $this->belongsTo(ProductiveActivity::class, 'productive_activity_id');
     }
 
-    public function inChargeUser(): BelongsTo
-    {
+    public function inChargeUser(): BelongsTo {
         return $this->belongsTo(User::class, 'in_charge_user_id');
     }
 
-    public function transactions(): HasMany
-    {
+    public function transactions(): HasMany {
         return $this->hasMany(ActivityTransaction::class, 'productive_unit_id');
     }
 }

@@ -23,8 +23,7 @@ class RequisitionItem extends Model
         'item_number'       => 'integer',
     ];
 
-    public function requisition(): BelongsTo
-    {
+    public function requisition(): BelongsTo {
         return $this->belongsTo(Requisition::class);
     }
 }
