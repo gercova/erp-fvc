@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AreaValidate;
 use App\Models\Area;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AreaController extends Controller
 {
-    public function index()
-    {
+    public function index(): View {
         return view('admin.areas.list', [
             'areas' => Area::query()->orderBy('name')->get(['id', 'code', 'name']),
             'heads' => User::query()->where('estado', 1)->orderBy('nombres')->get(['id', 'nombres', 'user']),
@@ -19,8 +19,7 @@ class AreaController extends Controller
         ]);
     }
 
-    public function get()
-    {
+    public function get(): JsonResponse {
         $areas = Area::query()
             ->with(['parent:id,code,name', 'head:id,nombres,user'])
             ->orderBy('level')
@@ -94,48 +93,52 @@ class AreaController extends Controller
             ->toJson();
     }
 
-    public function save(AreaValidate $request): JsonResponse
-    {
+    public function save(AreaValidate $request): JsonResponse {
         $data = $request->validated();
-
         $area = Area::create([
-            'code' => mb_strtoupper(trim((string) $data['code'])),
-            'name' => trim((string) $data['name']),
-            'type' => (string) $data['type'],
-            'parent_id' => ! empty($data['parent_id']) ? (int) $data['parent_id'] : null,
-            'head_user_id' => ! empty($data['head_user_id']) ? (int) $data['head_user_id'] : null,
-            'level' => ! empty($data['level']) ? (int) $data['level'] : 1,
-            'is_advisory' => $request->boolean('is_advisory'),
+            'code'          => mb_strtoupper(trim((string) $data['code'])),
+            'name'          => trim((string) $data['name']),
+            'type'          => (string) $data['type'],
+            'parent_id'     => ! empty($data['parent_id']) ? (int) $data['parent_id'] : null,
+            'head_user_id'  => ! empty($data['head_user_id']) ? (int) $data['head_user_id'] : null,
+            'level'         => ! empty($data['level']) ? (int) $data['level'] : 1,
+            'is_advisory'   => $request->boolean('is_advisory'),
         ]);
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Área registrada correctamente.',
-            'type' => 'success',
-            'area' => $area,
+            'status'    => true,
+            'msg'       => 'Área registrada correctamente.',
+            'type'      => 'success',
+            'area'      => $area,
         ]);
     }
 
-    public function detail(Request $request): JsonResponse
-    {
+    public function detail(Request $request): JsonResponse {
         if (! $request->ajax() && ! $request->wantsJson()) {
-            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'Intente de nuevo', 
+                'type'      => 'warning'
+            ]);
         }
 
         $area = Area::query()->with(['parent:id,name', 'head:id,nombres'])->find((int) $request->input('id'));
 
         if (! $area) {
-            return response()->json(['status' => false, 'msg' => 'El área solicitada no existe.', 'type' => 'warning'], 404);
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'El área solicitada no existe.', 
+                'type'      => 'warning'
+            ], 404);
         }
 
         return response()->json([
-            'status' => true,
-            'area' => $area,
+            'status'    => true,
+            'area'      => $area,
         ]);
     }
 
-    public function store(AreaValidate $request): JsonResponse
-    {
+    public function store(AreaValidate $request): JsonResponse {
         $area = Area::query()->find((int) $request->input('id'));
 
         if (! $area) {
@@ -145,27 +148,30 @@ class AreaController extends Controller
         $data = $request->validated();
 
         $area->update([
-            'code' => mb_strtoupper(trim((string) $data['code'])),
-            'name' => trim((string) $data['name']),
-            'type' => (string) $data['type'],
-            'parent_id' => ! empty($data['parent_id']) ? (int) $data['parent_id'] : null,
-            'head_user_id' => ! empty($data['head_user_id']) ? (int) $data['head_user_id'] : null,
-            'level' => ! empty($data['level']) ? (int) $data['level'] : 1,
-            'is_advisory' => $request->boolean('is_advisory'),
+            'code'          => mb_strtoupper(trim((string) $data['code'])),
+            'name'          => trim((string) $data['name']),
+            'type'          => (string) $data['type'],
+            'parent_id'     => ! empty($data['parent_id']) ? (int) $data['parent_id'] : null,
+            'head_user_id'  => ! empty($data['head_user_id']) ? (int) $data['head_user_id'] : null,
+            'level'         => ! empty($data['level']) ? (int) $data['level'] : 1,
+            'is_advisory'   => $request->boolean('is_advisory'),
         ]);
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Área actualizada correctamente.',
-            'type' => 'success',
-            'area' => $area,
+            'status'    => true,
+            'msg'       => 'Área actualizada correctamente.',
+            'type'      => 'success',
+            'area'      => $area,
         ]);
     }
 
-    public function delete(Request $request): JsonResponse
-    {
+    public function delete(Request $request): JsonResponse {
         if (! $request->ajax() && ! $request->wantsJson()) {
-            return response()->json(['status' => false, 'msg' => 'Intente de nuevo', 'type' => 'warning']);
+            return response()->json([
+                'status'    => false, 
+                'msg'       => 'Intente de nuevo', 
+                'type'      => 'warning'
+            ]);
         }
 
         $area = Area::query()->find((int) $request->input('id'));
@@ -176,37 +182,36 @@ class AreaController extends Controller
 
         if ($area->children()->exists()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No se puede eliminar el área porque tiene áreas o unidades dependientes asociadas.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No se puede eliminar el área porque tiene áreas o unidades dependientes asociadas.',
+                'type'      => 'warning',
             ], 422);
         }
 
         if ($area->employeeDetails()->exists()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No se puede eliminar el área porque tiene usuarios asignados en su organigrama.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No se puede eliminar el área porque tiene usuarios asignados en su organigrama.',
+                'type'      => 'warning',
             ], 422);
         }
 
         $area->delete();
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Área eliminada correctamente.',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Área eliminada correctamente.',
+            'type'      => 'success',
         ]);
     }
 
-    private function areaTypes(): array
-    {
+    private function areaTypes(): array {
         return [
-            'direccion_general' => 'Dirección General',
-            'area' => 'Área',
-            'unidad' => 'Unidad',
-            'programa_academico' => 'Programa Académico',
-            'organo_consultivo' => 'Órgano Consultivo / Asesor',
+            'direccion_general'     => 'Dirección General',
+            'area'                  => 'Área',
+            'unidad'                => 'Unidad',
+            'programa_academico'    => 'Programa Académico',
+            'organo_consultivo'     => 'Órgano Consultivo / Asesor',
         ];
     }
 }

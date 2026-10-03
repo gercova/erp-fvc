@@ -21,6 +21,7 @@ class AgreementCodeService
         return DB::transaction(function () use ($year, $prefix) {
             $lastCode = Agreement::withTrashed()
                 ->where('code', 'LIKE', "{$prefix}%")
+                ->whereRaw("code REGEXP '^{$prefix}[0-9]+$'")
                 ->lockForUpdate()
                 ->orderByRaw('LENGTH(code) DESC, code DESC')
                 ->value('code');
@@ -45,6 +46,7 @@ class AgreementCodeService
         return DB::transaction(function () use ($year, $prefix) {
             $lastCode = TechnologicalService::withTrashed()
                 ->where('code', 'LIKE', "{$prefix}%")
+                ->whereRaw("code REGEXP '^{$prefix}[0-9]+$'")
                 ->lockForUpdate()
                 ->orderByRaw('LENGTH(code) DESC, code DESC')
                 ->value('code');
@@ -69,6 +71,7 @@ class AgreementCodeService
         return DB::transaction(function () use ($year, $prefix) {
             $lastCode = ServiceEngagement::withTrashed()
                 ->where('code', 'LIKE', "{$prefix}%")
+                ->whereRaw("code REGEXP '^{$prefix}[0-9]+$'")
                 ->lockForUpdate()
                 ->orderByRaw('LENGTH(code) DESC, code DESC')
                 ->value('code');
