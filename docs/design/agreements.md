@@ -1,36 +1,40 @@
 # DISEÑO DE ARQUITECTURA: MÓDULO DE CONVENIOS Y SERVICIOS TECNOLÓGICOS (ERP-FVC)
-**Documento Técnico de Diseño de Arquitectura (Block C0)**  
-**Versión:** 1.0  
-**Fecha:** Octubre 2026  
-**Sistema:** ERP-FVC (Enterprise Multi-Módulo)  
+
+**Documento Técnico de Diseño de Arquitectura (Block C0)**
+**Versión:** 1.0
+**Fecha:** Octubre 2026
+**Sistema:** ERP-FVC (Enterprise Multi-Módulo)
 **Marco Metodológico:** *Requisitos y Casos de Uso $\rightarrow$ Modelo de Datos & DDL $\rightarrow$ Máquinas de Estado $\rightarrow$ Integración de Ingresos Track B & Anti-Duplicidad $\rightarrow$ Reglas de Negocio & Alertas $\rightarrow$ Decisiones Abiertas & Escalabilidad*
 
 ---
 
 ## 1. INTRODUCCIÓN Y CONTEXTO DEL SISTEMA
 
-El **Instituto de Educación Superior Tecnológico Público "Fe y Alegría / Valle Grande / Tocache" (IESTP FVC)** gestiona alianzas estratégicas interinstitucionales con entidades públicas (Ministerios, Gobiernos Regionales, Municipalidades), organizaciones de la sociedad civil (ONGs, Cooperativas agrarias) y empresas del sector privado. Asimismo, brinda **servicios tecnológicos especializados** (análisis de suelos, catación y control de calidad de cacao/café, cursos de extensión, consultoría agronómica, mecanización y uso de talleres/laboratorios).
+El **Instituto de Educación Superior Tecnológico Público "Francisco Vigo Caballero" (IESTP FVC)** gestiona alianzas estratégicas interinstitucionales con entidades públicas (Ministerios, Gobiernos Regionales, Municipalidades), organizaciones de la sociedad civil (ONGs, Cooperativas agrarias) y empresas del sector privado. Asimismo, brinda **servicios tecnológicos especializados** (análisis de suelos, catación y control de calidad de cacao/café, cursos de extensión, consultoría agronómica, mecanización y uso de talleres/laboratorios).
 
 ### 1.1 Objetivo del Módulo
+
 El objetivo del **Módulo de Convenios y Servicios Tecnológicos** es centralizar, gobernar y auditar el ciclo de vida completo de:
+
 1. **Convenios Marco y Específicos:** Desde la formulación, dictamen y firma digital, hasta el seguimiento de compromisos mutuos, cronogramas de desembolso, adendas modificatorias y liquidación final.
 2. **Servicios Tecnológicos:** Prestación de servicios del catálogo institucional a terceros, ya sea bajo el paraguas de un convenio vigente (con cargo a sus fondos o contrapartidas) o como contratos y órdenes de servicio independientes a clientes externos.
 3. **Control Operativo de Ejecución:** Seguimiento estricto de sesiones técnicas, listas de asistencia de participantes y aprobación formal de entregables.
 4. **Integración con el Motor Contable y Comercial (Track B):** Facturación electrónica automatizada por hitos/cuotas mediante `billings` y `sale_notes`, imputando ingresos al centro de costo (`productive_activities`) correspondiente sin duplicar transacciones.
 
 ### 1.2 Componentes Reutilizados del Ecosistema ERP-FVC
+
 El diseño se apoya e integra de forma nativa con los subsistemas existentes:
 
-| Subsistema Reutilizado | Modelo / Componente Core | Rol en el Módulo de Convenios |
-| :--- | :--- | :--- |
-| **Contrapartes Comerciales** | `App\Models\Client` (`clients`) | Registro formal de la contraparte institucional o cliente del servicio (RUC, Razón Social, DNI, dirección, contacto). |
-| **Catálogo de Servicios** | `App\Models\Product` (`products`) | Productos con atributo `opcion = 2` (`isService() = true`), afectación IGV, código SUNAT y precio de lista. |
-| **Facturación y Comprobantes** | `App\Models\Billing`, `App\Models\SaleNote` | Emisión de Facturas, Boletas SUNAT UBL 2.1 y Notas de Venta internas por cuotas de convenio o liquidaciones de servicio. |
-| **Centros de Costo (APE)** | `App\Models\ProductiveActivity` | Vinculación del convenio o servicio a la actividad productiva/área generadora de ingresos (ej. Laboratorio, Granja, Cacao). |
-| **Gobernanza y Aprobaciones** | `App\Services\DocumentApprovalService` | Flujo de firmas jerárquicas digitales (solicitante, asesoría/coordinación, administración, dirección general) para convenios y adendas. |
-| **Estructura Orgánica** | `App\Models\Area`, `App\Models\User` | Asignación de unidades ejecutoras, coordinadores de convenio, instructores técnicos y responsables de verificación. |
-| **Motor Contable (Track B)** | `App\Services\AccountingService`, `JournalEntry` | Devengo y cobro automático en cuentas del PCGE (Cuentas 1212/1219 contra 7032/7041 y 40111) con imputación a `cost_center_id`. |
-| **Notificaciones del Sistema** | `Illuminate\Notifications\DatabaseNotification` | Alertas preventivas y de vencimiento (30, 15 y 7 días) distribuidas a bandejas de usuario y barra de notificaciones del ERP. |
+| Subsistema Reutilizado                | Modelo / Componente Core                             | Rol en el Módulo de Convenios                                                                                                               |
+| :------------------------------------ | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Contrapartes Comerciales**    | `App\Models\Client` (`clients`)                  | Registro formal de la contraparte institucional o cliente del servicio (RUC, Razón Social, DNI, dirección, contacto).                      |
+| **Catálogo de Servicios**      | `App\Models\Product` (`products`)                | Productos con atributo`opcion = 2` (`isService() = true`), afectación IGV, código SUNAT y precio de lista.                             |
+| **Facturación y Comprobantes** | `App\Models\Billing`, `App\Models\SaleNote`      | Emisión de Facturas, Boletas SUNAT UBL 2.1 y Notas de Venta internas por cuotas de convenio o liquidaciones de servicio.                    |
+| **Centros de Costo (APE)**      | `App\Models\ProductiveActivity`                    | Vinculación del convenio o servicio a la actividad productiva/área generadora de ingresos (ej. Laboratorio, Granja, Cacao).                |
+| **Gobernanza y Aprobaciones**   | `App\Services\DocumentApprovalService`             | Flujo de firmas jerárquicas digitales (solicitante, asesoría/coordinación, administración, dirección general) para convenios y adendas. |
+| **Estructura Orgánica**        | `App\Models\Area`, `App\Models\User`             | Asignación de unidades ejecutoras, coordinadores de convenio, instructores técnicos y responsables de verificación.                       |
+| **Motor Contable (Track B)**    | `App\Services\AccountingService`, `JournalEntry` | Devengo y cobro automático en cuentas del PCGE (Cuentas 1212/1219 contra 7032/7041 y 40111) con imputación a`cost_center_id`.            |
+| **Notificaciones del Sistema**  | `Illuminate\Notifications\DatabaseNotification`    | Alertas preventivas y de vencimiento (30, 15 y 7 días) distribuidas a bandejas de usuario y barra de notificaciones del ERP.                |
 
 ---
 
@@ -79,6 +83,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
 ```
 
 #### UC-01: Formulación y Registro de Convenio
+
 - **Actor Principal:** Coordinador de Convenio / Jefe de Área Académica o de Producción.
 - **Precondiciones:** La contraparte debe estar registrada en `clients`. Si es un convenio específico derivado, el convenio marco debe estar en estado `ACTIVE`.
 - **Flujo Principal:**
@@ -90,6 +95,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
   6. Guarda en estado `DRAFT` o envía inmediatamente a revisión (`IN_APPROVAL`).
 
 #### UC-02: Aprobación Jerárquica del Convenio (`DocumentApprovalService`)
+
 - **Actores:** Coordinador Solicitante $\rightarrow$ Jefe de Área / Asesoría $\rightarrow$ Jefatura de Administración $\rightarrow$ Dirección General.
 - **Precondiciones:** Convenio en estado `DRAFT` con todos los campos obligatorios completos.
 - **Flujo Principal:**
@@ -102,6 +108,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
      - Se dispara una notificación a la Contraparte, Administración y Contabilidad.
 
 #### UC-03: Emisión y Registro de Adendas
+
 - **Actor Principal:** Coordinador de Convenio / Administrador.
 - **Precondiciones:** Convenio en estado `ACTIVE` o `EXPIRING_SOON`.
 - **Flujo Principal:**
@@ -116,6 +123,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
      - Si el convenio estaba en `EXPIRING_SOON` y la nueva fecha supera los 30 días, retorna a `ACTIVE`.
 
 #### UC-04: Seguimiento de Obligaciones Bilaterales
+
 - **Actor Principal:** Coordinador de Convenio / Supervisor Institucional.
 - **Precondiciones:** Convenio en estado `ACTIVE`.
 - **Flujo Principal:**
@@ -125,6 +133,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
   4. Si la fecha límite se supera sin cumplimiento, el sistema marca automáticamente la obligación como `OVERDUE`.
 
 #### UC-05: Facturación de Cuotas del Cronograma
+
 - **Actor Principal:** Tesorero / Cajero / Facturador.
 - **Precondiciones:** Cuota en estado `SCHEDULED` o `OVERDUE`, con `billing_id = NULL` y `sale_note_id = NULL`.
 - **Flujo Principal:**
@@ -138,6 +147,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
      - El motor contable (Track B) genera el asiento contable por partida doble reconociendo la cuenta por cobrar y el ingreso devengado con su centro de costo.
 
 #### UC-06: Prestación de Servicios Tecnológicos (Dentro y Fuera de Convenio)
+
 - **Actor Principal:** Jefe de Laboratorio / Responsable Técnico.
 - **Precondiciones:** Servicio activo en `technological_services` vinculado a un `product_id` (`opcion = 2`).
 - **Flujo Principal:**
@@ -147,6 +157,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
   4. El estado pasa a `IN_PROGRESS`.
 
 #### UC-07: Control de Sesiones y Asistencia
+
 - **Actor Principal:** Instructor Técnico / Docente Capacitador.
 - **Precondiciones:** Servicio de modalidad presencial/híbrida en ejecución.
 - **Flujo Principal:**
@@ -155,6 +166,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
   3. Se registran notas de campo y observaciones pedagógicas o técnicas.
 
 #### UC-08: Gestión de Entregables y Conformidad
+
 - **Actor Principal:** Responsable Técnico / Cliente.
 - **Precondiciones:** Servicio u obligación que requiere entregable (`requires_deliverable = true`).
 - **Flujo Principal:**
@@ -163,6 +175,7 @@ El diseño se apoya e integra de forma nativa con los subsistemas existentes:
   3. Si cumple los estándares, emite la conformidad (`APPROVED`). Si presenta observaciones, se rechaza (`REJECTED`) con motivo para subsanación.
 
 #### UC-09: Cierre, Liquidación y Finiquito
+
 - **Actor Principal:** Coordinador de Convenio / Administrador.
 - **Precondiciones:** Convenio en estado `EXPIRED` o con todas sus actividades ejecutadas.
 - **Flujo Principal:**
@@ -210,6 +223,7 @@ A continuación se detalla la arquitectura de persistencia relacional compuesta 
 ---
 
 ### 3.1 Tabla: `agreements` (Convenios Marco y Específicos)
+
 Almacena la cabecera de los convenios suscritos por la institución.
 
 ```sql
@@ -273,6 +287,7 @@ CREATE TABLE `agreements` (
 ---
 
 ### 3.2 Tabla: `agreement_addenda` (Adendas Modificatorias de Convenio)
+
 Registra las ampliaciones de plazo, modificaciones presupuestales o cambios de alcance, garantizando auditoría histórica.
 
 ```sql
@@ -314,6 +329,7 @@ CREATE TABLE `agreement_addenda` (
 ---
 
 ### 3.3 Tabla: `agreement_obligations` (Obligaciones y Compromisos Bilaterales)
+
 Monitorea las cláusulas operativas comprometidas por cada parte.
 
 ```sql
@@ -346,6 +362,7 @@ CREATE TABLE `agreement_obligations` (
 ---
 
 ### 3.4 Tabla: `agreement_installments` (Cronograma de Cuotas y Facturación)
+
 Controla los hitos de desembolso y facturación del convenio. **Soporta la regla de oro anti-duplicidad** enlazando directamente al comprobante emitido (`billing_id` o `sale_note_id`).
 
 ```sql
@@ -384,6 +401,7 @@ CREATE TABLE `agreement_installments` (
 ---
 
 ### 3.5 Tabla: `agreement_documents` (Repositorio de Documentos Digitales)
+
 Repositorio documental auditable asociado a cada convenio.
 
 ```sql
@@ -420,6 +438,7 @@ CREATE TABLE `agreement_documents` (
 ---
 
 ### 3.6 Tabla: `technological_services` (Catálogo de Servicios Tecnológicos)
+
 Tipifica los servicios técnicos que el IESTP FVC ofrece al mercado y a los convenios, enlazado directamente a la tabla `products` de inventarios.
 
 ```sql
@@ -463,6 +482,7 @@ CREATE TABLE `technological_services` (
 ---
 
 ### 3.7 Tabla: `service_engagements` (Contrataciones / Órdenes de Servicio)
+
 Instancia la prestación de un servicio tecnológico, ya sea **bajo el marco de un convenio** o de **forma independiente**.
 
 ```sql
@@ -513,6 +533,7 @@ CREATE TABLE `service_engagements` (
 ---
 
 ### 3.8 Tabla: `service_sessions` (Sesiones de Capacitación / Asistencia)
+
 Registra las jornadas o fechas de dictado de cursos o talleres.
 
 ```sql
@@ -544,6 +565,7 @@ CREATE TABLE `service_sessions` (
 ---
 
 ### 3.9 Tabla: `service_attendees` (Participantes y Asistencia Técnica)
+
 Padrón de beneficiarios o alumnos participantes por sesión.
 
 ```sql
@@ -576,6 +598,7 @@ CREATE TABLE `service_attendees` (
 ---
 
 ### 3.10 Tabla: `service_deliverables` (Entregables e Informes de Conformidad)
+
 Control de productos tangibles exigibles por cada orden de servicio.
 
 ```sql
@@ -629,16 +652,17 @@ stateDiagram-v2
 ```
 
 #### Matriz de Transiciones de Convenios:
-| Estado Inicial | Evento / Disparador | Estado Final | Condiciones de Guarda (Guards) | Efectos Colaterales (Side Effects) |
-| :--- | :--- | :--- | :--- | :--- |
-| `DRAFT` | `submit_approval` | `IN_APPROVAL` | Campos obligatorios completos; cliente con RUC válido; fechas coherentes (`start_date < end_date`). | Genera cadena en `DocumentApprovalService`; notifica a primera jefatura. |
-| `IN_APPROVAL` | `reject_approval` | `DRAFT` | Alguna autoridad observa el expediente. | Notifica al coordinador con motivo de rechazo; desbloquea edición. |
-| `IN_APPROVAL` | `sign_final_approval` | `ACTIVE` | Firma digital de la Dirección General completada. | Emite token criptográfico; notifica a Administración y Contraparte; activa cronograma. |
-| `ACTIVE` | `cron_check_expiration` | `EXPIRING_SOON` | `CURRENT_DATE >= (end_date - 30 days)`. | Dispara alerta preventiva a 30 días a los responsables. |
-| `EXPIRING_SOON`| `approve_addendum` | `ACTIVE` | Adenda aprobada extiende `end_date > CURRENT_DATE + 30 days`. | Recalcula vigencia; notifica prórroga acordada. |
-| `EXPIRING_SOON` / `ACTIVE` | `cron_check_expired` | `EXPIRED` | `CURRENT_DATE > end_date`. | Bloquea nuevas órdenes de servicio; alerta a Dirección y Contabilidad. |
-| `EXPIRED` | `execute_settlement` | `SETTLED` | 100% de cuotas facturadas y pagadas; 100% de obligaciones institucionales cumplidas. | Genera Acta de Finiquito; archiva expediente con estatus cerrado. |
-| `ACTIVE` / `EXPIRING_SOON` / `EXPIRED` | `terminate_agreement` | `TERMINATED` | Resolución Directoral formal de rescisión adjunta. | Cancela cuotas no facturadas; cancela servicios en borrador; marca obligaciones no cumplidas. |
+
+| Estado Inicial                               | Evento / Disparador       | Estado Final      | Condiciones de Guarda (Guards)                                                                         | Efectos Colaterales (Side Effects)                                                            |
+| :------------------------------------------- | :------------------------ | :---------------- | :----------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| `DRAFT`                                    | `submit_approval`       | `IN_APPROVAL`   | Campos obligatorios completos; cliente con RUC válido; fechas coherentes (`start_date < end_date`). | Genera cadena en`DocumentApprovalService`; notifica a primera jefatura.                     |
+| `IN_APPROVAL`                              | `reject_approval`       | `DRAFT`         | Alguna autoridad observa el expediente.                                                                | Notifica al coordinador con motivo de rechazo; desbloquea edición.                           |
+| `IN_APPROVAL`                              | `sign_final_approval`   | `ACTIVE`        | Firma digital de la Dirección General completada.                                                     | Emite token criptográfico; notifica a Administración y Contraparte; activa cronograma.      |
+| `ACTIVE`                                   | `cron_check_expiration` | `EXPIRING_SOON` | `CURRENT_DATE >= (end_date - 30 days)`.                                                              | Dispara alerta preventiva a 30 días a los responsables.                                      |
+| `EXPIRING_SOON`                            | `approve_addendum`      | `ACTIVE`        | Adenda aprobada extiende`end_date > CURRENT_DATE + 30 days`.                                         | Recalcula vigencia; notifica prórroga acordada.                                              |
+| `EXPIRING_SOON` / `ACTIVE`               | `cron_check_expired`    | `EXPIRED`       | `CURRENT_DATE > end_date`.                                                                           | Bloquea nuevas órdenes de servicio; alerta a Dirección y Contabilidad.                      |
+| `EXPIRED`                                  | `execute_settlement`    | `SETTLED`       | 100% de cuotas facturadas y pagadas; 100% de obligaciones institucionales cumplidas.                   | Genera Acta de Finiquito; archiva expediente con estatus cerrado.                             |
+| `ACTIVE` / `EXPIRING_SOON` / `EXPIRED` | `terminate_agreement`   | `TERMINATED`    | Resolución Directoral formal de rescisión adjunta.                                                   | Cancela cuotas no facturadas; cancela servicios en borrador; marca obligaciones no cumplidas. |
 
 ---
 
@@ -656,11 +680,12 @@ stateDiagram-v2
 ```
 
 #### Matriz de Transiciones de Obligaciones:
-| Estado Inicial | Evento / Disparador | Estado Final | Condiciones de Guarda | Efectos Colaterales |
-| :--- | :--- | :--- | :--- | :--- |
-| `PENDING` | `start_obligation` | `IN_PROGRESS` | Convenio en estado `ACTIVE`. | Permite asociar entregables e informes parciales. |
-| `PENDING` / `IN_PROGRESS` | `cron_check_overdue` | `OVERDUE` | `CURRENT_DATE > due_date` y `status != COMPLETED`. | Alerta roja en dashboard de convenios; notificación al coordinador. |
-| `IN_PROGRESS` / `OVERDUE` | `verify_completion` | `COMPLETED` | Evidencia adjunta; aprobación por usuario supervisor. | Registra `completed_at` y `verified_by_user_id`; recalcula % de avance del convenio. |
+
+| Estado Inicial                | Evento / Disparador    | Estado Final    | Condiciones de Guarda                                  | Efectos Colaterales                                                                     |
+| :---------------------------- | :--------------------- | :-------------- | :----------------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| `PENDING`                   | `start_obligation`   | `IN_PROGRESS` | Convenio en estado`ACTIVE`.                          | Permite asociar entregables e informes parciales.                                       |
+| `PENDING` / `IN_PROGRESS` | `cron_check_overdue` | `OVERDUE`     | `CURRENT_DATE > due_date` y `status != COMPLETED`. | Alerta roja en dashboard de convenios; notificación al coordinador.                    |
+| `IN_PROGRESS` / `OVERDUE` | `verify_completion`  | `COMPLETED`   | Evidencia adjunta; aprobación por usuario supervisor. | Registra`completed_at` y `verified_by_user_id`; recalcula % de avance del convenio. |
 
 ---
 
@@ -714,23 +739,27 @@ La integración contable de los ingresos por convenios y servicios tecnológicos
 
 ### 5.2 Dinámica de Cuentas Contables (PCGE 2019)
 
-| Operación | Cuenta Débito (Debe) | Cuenta Crédito (Haber) | Glosa y Atributos Obligatorios |
-| :--- | :--- | :--- | :--- |
-| **Facturación de Cuota de Convenio (Gravada con IGV)** | **1212** Facturas por cobrar comerciales (Tercero: RUC Contraparte) | **40111** IGV Cuenta Propia (18%)<br>**7032** Prestación de servicios agrícolas / tecnológicos | `cost_center_id` = Actividad Productiva (`productive_activity_id`). `document_reference` = `F001-000123`. |
-| **Facturación de Cuota de Convenio (Exonerada / Inafecta)** | **1212** Facturas por cobrar comerciales (Tercero: RUC Contraparte) | **7041** Prestación de servicios educativos y de extensión técnica | Sin IGV. `cost_center_id` = Centro de Costo del convenio. |
-| **Emisión de Nota de Venta Interna por Cuota** | **1219** Otras cuentas por cobrar comerciales (Nota de Venta) | **7041** Servicios tecnológicos de extensión | Venta institucional interna con `cost_center_id`. |
-| **Cobranza Bancaria de Cuota de Convenio** | **10411** Banco de la Nación (Cta. Recaudadora RDR) | **1212** / **1219** Cuentas por cobrar comerciales | Cancelación total o parcial del derecho exigible. |
-| **Orden de Servicio Tecnológico Directo** | **1212** Facturas por cobrar | **7032** Servicios tecnológicos de laboratorio / campo | Imputa directamente a la actividad del laboratorio. |
+| Operación                                                         | Cuenta Débito (Debe)                                                     | Cuenta Crédito (Haber)                                                                                   | Glosa y Atributos Obligatorios                                                                                    |
+| :----------------------------------------------------------------- | :------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **Facturación de Cuota de Convenio (Gravada con IGV)**      | **1212** Facturas por cobrar comerciales (Tercero: RUC Contraparte) | **40111** IGV Cuenta Propia (18%)**7032** Prestación de servicios agrícolas / tecnológicos | `cost_center_id` = Actividad Productiva (`productive_activity_id`). `document_reference` = `F001-000123`. |
+| **Facturación de Cuota de Convenio (Exonerada / Inafecta)** | **1212** Facturas por cobrar comerciales (Tercero: RUC Contraparte) | **7041** Prestación de servicios educativos y de extensión técnica                               | Sin IGV.`cost_center_id` = Centro de Costo del convenio.                                                        |
+| **Emisión de Nota de Venta Interna por Cuota**              | **1219** Otras cuentas por cobrar comerciales (Nota de Venta)       | **7041** Servicios tecnológicos de extensión                                                      | Venta institucional interna con`cost_center_id`.                                                                |
+| **Cobranza Bancaria de Cuota de Convenio**                   | **10411** Banco de la Nación (Cta. Recaudadora RDR)                | **1212** / **1219** Cuentas por cobrar comerciales                                            | Cancelación total o parcial del derecho exigible.                                                                |
+| **Orden de Servicio Tecnológico Directo**                   | **1212** Facturas por cobrar                                        | **7032** Servicios tecnológicos de laboratorio / campo                                             | Imputa directamente a la actividad del laboratorio.                                                               |
 
 ---
 
 ### 5.3 Regla de Oro Anti-Duplicidad de Ingresos
 
 #### El Problema
+
 En el ERP-FVC, las actividades productivas cuentan con el módulo `activity_transactions`. Si un usuario registra una cobranza de convenio como una venta comercial (`billings`) y simultáneamente otro usuario ingresa manualmente un movimiento en `activity_transactions` por el mismo dinero, **el ingreso institucional y el saldo bancario se contabilizarían dos veces**.
 
 #### La Regla de Integración Única
-$$\text{Regla:} \quad \text{El único generador del asiento de ingreso es el comprobante core } (\text{Billing} \lor \text{SaleNote}).$$
+
+$$
+\text{Regla:} \quad \text{El único generador del asiento de ingreso es el comprobante core } (\text{Billing} \lor \text{SaleNote}).
+$$
 
 ```
                        [Evento: Cobranza o Facturación de Cuota]
@@ -754,6 +783,7 @@ $$\text{Regla:} \quad \text{El único generador del asiento de ingreso es el com
 ```
 
 #### Garantías Técnicas de Anti-Duplicidad:
+
 1. **Constraint de Aplicación:** En el controlador y servicio de facturación, la verificación inicial es:
    ```php
    if ($installment->billing_id !== null || $installment->sale_note_id !== null) {
@@ -761,7 +791,10 @@ $$\text{Regla:} \quad \text{El único generador del asiento de ingreso es el com
    }
    ```
 2. **Idempotency Key en Motor Contable:**
-   $$\text{idempotency\_key} = \text{MD5}('installment\_' + \text{installment.id} + '\_billing\_' + \text{billing.id})$$
+   $$
+   \text{idempotency\_key} = \text{MD5}('installment\_' + \text{installment.id} + '\_billing\_' + \text{billing.id})
+   $$
+
    Garantiza que llamadas duplicadas o reintentos de red no generen un segundo `journal_entry`.
 3. **No-Duplicidad con `ActivityTransaction`:** La cuota facturada actualiza directamente el estado del cronograma. Si se requiere reflejar la estadística en el dashboard del APE, el sistema consulta los asientos contables vinculados por `cost_center_id`, **sin reinyectar registros en `activity_transactions`**.
 
@@ -774,14 +807,20 @@ $$\text{Regla:} \quad \text{El único generador del asiento de ingreso es el com
 - **BR-01 (Bloqueo de Facturación Duplicada):** Una cuota de convenio (`agreement_installments`) sólo puede tener un comprobante fiscal asociado (`billing_id` o `sale_note_id`). Queda prohibida la re-emisión salvo anulación previa del comprobante original mediante Nota de Crédito.
 - **BR-02 (Recálculo Dinámico de Vigencia por Adendas):**
   - Al aprobarse una adenda de tipo `TIME_EXTENSION` o `MIXED`:
-    $$\text{agreement.end\_date} = \text{new\_end\_date de la última adenda aprobada}$$
+    $$
+    \text{agreement.end\_date} = \text{new\_end\_date de la última adenda aprobada}
+    $$
   - El campo `original_end_date` permanece estrictamente inmutable como testimonio del acuerdo original.
 - **BR-03 (Recálculo Presupuestal por Adendas):**
   - Al aprobarse una adenda de tipo `AMOUNT_MODIFICATION` o `MIXED`:
-    $$\text{agreement.total\_amount} = \text{previous\_total\_amount} + \text{amount\_delta}$$
+    $$
+    \text{agreement.total\_amount} = \text{previous\_total\_amount} + \text{amount\_delta}
+    $$
   - Se exige el reajuste del cronograma de cuotas (`agreement_installments`) para reflejar la diferencia financiera positiva o negativa.
 - **BR-04 (Límite Presupuestal en Servicios bajo Convenio):** La suma total de órdenes de servicio tecnológico (`service_engagements`) vinculadas a un convenio específico no puede exceder el `total_amount` vigente del convenio:
-  $$\sum \text{service\_engagements.total\_amount} \le \text{agreements.total\_amount}$$
+  $$
+  \sum \text{service\_engagements.total\_amount} \le \text{agreements.total\_amount}
+  $$
 - **BR-05 (Requisitos Previos de Liquidación / Finiquito `SETTLED`):**
   Para que un convenio pueda pasar a estado `SETTLED`, el sistema valida automáticamente:
   1. $100\%$ de cuotas facturadas (`status = PAID` o anuladas formalmente).
@@ -795,23 +834,24 @@ $$\text{Regla:} \quad \text{El único generador del asiento de ingreso es el com
 
 El sistema programa un comando de consola diario (`agreements:check-alerts`) que evalúa vencimientos y despacha notificaciones automáticas (`DatabaseNotification` y correo institucional):
 
-| Entidad Evaluada | Ventana de Alerta | Severidad | Destinatarios Notificados | Acción Requerida / Impacto |
-| :--- | :--- | :--- | :--- | :--- |
-| **Convenio (`agreements`)** | **30 días** antes de `end_date` | `INFO` (Azul) | Coordinador del Convenio, Jefe de Área | Iniciar trámites de adenda de prórroga o preparar plan de cierre. |
-| **Convenio (`agreements`)** | **15 días** antes de `end_date` | `WARNING` (Amarillo) | Coordinador, Jefe de Área, Administración | Si no hay adenda en trámite, transiciona a `EXPIRING_SOON`. |
-| **Convenio (`agreements`)** | **7 días** antes de `end_date` | `DANGER` (Rojo) | Coordinador, Administración, Dirección General | Notificación de urgencia máxima. Convocatoria a comisión de liquidación. |
-| **Convenio (`agreements`)** | **Día 0** (`CURRENT_DATE > end_date`) | `CRITICAL` (Negro) | Todas las jefaturas | Transiciona automáticamente a `EXPIRED`. Bloquea nuevas órdenes de servicio. |
-| **Cuota (`installments`)** | **15 días** antes de `due_date` | `INFO` | Tesorería, Facturador | Proyectar flujo de caja y preparar borrador de comprobante. |
-| **Cuota (`installments`)** | **7 días** antes de `due_date` | `WARNING` | Tesorería, Coordinador | Requerir formalmente a la contraparte el pago o trámite de giro. |
-| **Cuota (`installments`)** | **Día 0** vencido sin pago | `DANGER` | Tesorería, Administración | Cuota pasa a `OVERDUE`. Emisión de carta de requerimiento. |
-| **Obligación (`obligations`)** | **7 días** antes de `due_date` | `WARNING` | Responsable de la obligación | Alerta de vencimiento próximo de compromiso institucional o externo. |
-| **Obligación (`obligations`)** | **Día 0** vencida sin avance | `DANGER` | Coordinador del Convenio | Obligación pasa a `OVERDUE`. Afecta el semáforo del convenio. |
+| Entidad Evaluada                        | Ventana de Alerta                              | Severidad              | Destinatarios Notificados                        | Acción Requerida / Impacto                                                     |
+| :-------------------------------------- | :--------------------------------------------- | :--------------------- | :----------------------------------------------- | :------------------------------------------------------------------------------ |
+| **Convenio (`agreements`)**     | **30 días** antes de `end_date`       | `INFO` (Azul)        | Coordinador del Convenio, Jefe de Área          | Iniciar trámites de adenda de prórroga o preparar plan de cierre.             |
+| **Convenio (`agreements`)**     | **15 días** antes de `end_date`       | `WARNING` (Amarillo) | Coordinador, Jefe de Área, Administración      | Si no hay adenda en trámite, transiciona a`EXPIRING_SOON`.                   |
+| **Convenio (`agreements`)**     | **7 días** antes de `end_date`        | `DANGER` (Rojo)      | Coordinador, Administración, Dirección General | Notificación de urgencia máxima. Convocatoria a comisión de liquidación.    |
+| **Convenio (`agreements`)**     | **Día 0** (`CURRENT_DATE > end_date`) | `CRITICAL` (Negro)   | Todas las jefaturas                              | Transiciona automáticamente a`EXPIRED`. Bloquea nuevas órdenes de servicio. |
+| **Cuota (`installments`)**      | **15 días** antes de `due_date`       | `INFO`               | Tesorería, Facturador                           | Proyectar flujo de caja y preparar borrador de comprobante.                     |
+| **Cuota (`installments`)**      | **7 días** antes de `due_date`        | `WARNING`            | Tesorería, Coordinador                          | Requerir formalmente a la contraparte el pago o trámite de giro.               |
+| **Cuota (`installments`)**      | **Día 0** vencido sin pago              | `DANGER`             | Tesorería, Administración                      | Cuota pasa a`OVERDUE`. Emisión de carta de requerimiento.                    |
+| **Obligación (`obligations`)** | **7 días** antes de `due_date`        | `WARNING`            | Responsable de la obligación                    | Alerta de vencimiento próximo de compromiso institucional o externo.           |
+| **Obligación (`obligations`)** | **Día 0** vencida sin avance            | `DANGER`             | Coordinador del Convenio                         | Obligación pasa a`OVERDUE`. Afecta el semáforo del convenio.                |
 
 ---
 
 ## 7. DECISIONES DE ARQUITECTURA, RECOMENDACIONES Y ESCALABILIDAD
 
 ### 7.1 Decisión 1: Reconocimiento Contable de Convenios Multianuales e Ingresos Diferidos
+
 - **Contexto:** Muchos convenios específicos abarcan 2 a 3 ejercicios fiscales (ej. 2026 a 2028). La contraparte puede realizar transferencias dinerarias anticipadas al inicio del convenio.
 - **Opciones Consideradas:**
   - *Opción A (Reconocimiento en Caja Directa):* Reconocer el ingreso total en la cuenta 70 al recibir la transferencia.
@@ -828,6 +868,7 @@ El sistema programa un comando de consola diario (`agreements:check-alerts`) que
 ---
 
 ### 7.2 Decisión 2: Tarifario de Servicios Tecnológicos: Tarifa Estándar vs. Tarifa Subvencionada
+
 - **Contexto:** Ciertos convenios con asociaciones de pequeños productores de cacao de Tocache contemplan tarifas preferenciales o donaciones valorizadas de la institución, inferiores al precio de mercado para empresas mineras o agroindustriales.
 - **Opciones Consideradas:**
   - *Opción A:* Modificar directamente el campo `unit_price` en el catálogo general `products`.
@@ -835,12 +876,15 @@ El sistema programa un comando de consola diario (`agreements:check-alerts`) que
 - **Recomendación de Arquitectura:** **Opción B**.
   - El catálogo de servicios mantiene la tarifa oficial aprobada por Resolución Directoral.
   - En la orden de servicio (`service_engagements`), si está vinculada a un convenio con subsidio, se documenta la contrapartida valorizada institucional:
-    $$\text{Total Cobrado en Efectivo} + \text{Aporte Institucional Valorizado} = \text{Valor Real del Servicio}$$
+    $$
+    \text{Total Cobrado en Efectivo} + \text{Aporte Institucional Valorizado} = \text{Valor Real del Servicio}
+    $$
   - Permite reportar a la Contraloría y al MINEDU el monto total del subsidio social otorgado a la comunidad.
 
 ---
 
 ### 7.3 Decisión 3: Integración de Participantes de Cursos con Certificados Académicos
+
 - **Contexto:** Los servicios tecnológicos de tipo `TRAINING_COURSE` (cursos de extensión técnica) emiten certificados a los participantes registrados en `service_attendees`.
 - **Recomendación de Arquitectura:**
   - Incorporar en `service_attendees` un campo `certificate_code` con algoritmo hash único verificable mediante código QR público (`/verificar-certificado/{code}`).
@@ -849,6 +893,7 @@ El sistema programa un comando de consola diario (`agreements:check-alerts`) que
 ---
 
 ### 7.4 Decisión 4: Protocolo de Escalamiento ante Incumplimiento de la Contraparte
+
 - **Contexto:** Cuando la contraparte no transfiere las cuotas pactadas o incumple sus obligaciones en el plazo fijado.
 - **Recomendación de Arquitectura:**
   - Automatizar el estado `OVERDUE` en cuotas y obligaciones.
@@ -876,6 +921,7 @@ El sistema programa un comando de consola diario (`agreements:check-alerts`) que
 ## 8. CONCLUSIÓN Y HOJA DE RUTA DE IMPLEMENTACIÓN
 
 El presente diseño técnico para el **Módulo de Convenios y Servicios Tecnológicos (BLOCK C0)**:
+
 1. **Unifica y formaliza** las alianzas estratégicas institucionales y la prestación de servicios a terceros en una única plataforma auditable.
 2. **Garantiza la consistencia financiera** integrando cada cuota e hito de pago con el motor contable Track B y el subsistema de comprobantes electrónicos, eliminando cualquier posibilidad de doble contabilización.
 3. **Establece un marco robusto de control** con máquinas de estado rigurosas, trazabilidad de adendas, seguimiento de obligaciones bilaterales y alertas preventivas multinivel.

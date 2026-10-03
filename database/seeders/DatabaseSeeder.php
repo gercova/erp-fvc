@@ -45,5 +45,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CashFlowMappingSeeder::class);
         $this->call(FinancialStatementTemplateSeeder::class);
         $this->call(AccountingSecurityRoleSeeder::class);
+        $this->call(AgreementRoleAndPermissionSeeder::class);
+        $this->call(TechnologicalServiceCatalogSeeder::class);
     }
 }

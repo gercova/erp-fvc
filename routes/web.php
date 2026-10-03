@@ -70,6 +70,7 @@ use App\Http\Controllers\Treasury\InternalTransferController;
 use App\Http\Controllers\Accounting\FinancialStatementController;
 use App\Http\Controllers\Accounting\PeriodClosingController;
 use App\Http\Controllers\Accounting\BudgetController;
+use App\Http\Controllers\AgreementDocumentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -879,4 +880,11 @@ Route::prefix('accounting')->middleware(['auth'])->group(function() {
         Route::get('/{id}/excel',                'exportExcel')->name('accounting.budgets.export_excel')->middleware('can:accounting.export');
         Route::get('/{id}/pdf',                  'exportPdf')->name('accounting.budgets.export_pdf')->middleware('can:accounting.export');
     });
+});
+
+// AGREEMENTS & SERVICES - FILE STORAGE & DOWNLOAD (BLOCK C1)
+Route::middleware(['auth'])->prefix('agreements')->controller(AgreementDocumentController::class)->group(function () {
+    Route::get('/documents/{document}/download',        'download')->name('agreements.documents.download');
+    Route::get('/deliverables/{deliverable}/download',  'downloadDeliverable')->name('agreements.deliverables.download');
+    Route::post('/{agreement}/documents/upload',        'upload')->name('agreements.documents.upload');
 });
