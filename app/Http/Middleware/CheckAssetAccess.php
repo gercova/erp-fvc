@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Area;
 use App\Models\Asset;
 use App\Models\AssetInventory;
+use App\Models\AssetLoan;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -51,7 +52,7 @@ class CheckAssetAccess
         if ($request->is('asset-loans*')) {
             $loanId = $request->route('id') ?? $request->route('loan');
             if ($loanId) {
-                $loan = \App\Models\AssetLoan::find($loanId);
+                $loan = AssetLoan::find($loanId);
                 if ($loan && !in_array((int)$loan->area_id, $allowedAreaIds)) {
                     abort(403, 'No tiene autorización para gestionar este préstamo de activo.');
                 }
@@ -82,22 +83,19 @@ class CheckAssetAccess
     /**
      * Obtener los IDs de áreas a las que tiene acceso un usuario no administrador.
      */
-    protected function getAllowedAreaIds($user): array
-    {
-        $ids = [];
-
+    protected function getAllowedAreaIds($user): array {
+        $ids            = [];
         // Áreas donde el usuario es el jefe (head_user_id)
-        $headedAreas = Area::where('head_user_id', $user->id)->pluck('id')->toArray();
-        $ids = array_merge($ids, $headedAreas);
-
+        $headedAreas    = Area::where('head_user_id', $user->id)->pluck('id')->toArray();
+        $ids            = array_merge($ids, $headedAreas);
         // Área primaria del usuario
         if ($user->primaryArea) {
-            $ids[] = $user->primaryArea->id;
+            $ids[]      = $user->primaryArea->id;
         }
 
         // Áreas asignadas en employeeAreaDetails
-        $assignedAreas = $user->employeeAreaDetails()->pluck('area_id')->toArray();
-        $ids = array_merge($ids, $assignedAreas);
+        $assignedAreas  = $user->employeeAreaDetails()->pluck('area_id')->toArray();
+        $ids            = array_merge($ids, $assignedAreas);
 
         return array_unique($ids);
     }

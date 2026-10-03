@@ -16,6 +16,8 @@ use App\Models\TypeDocument;
 use App\Models\Warehouse;
 use App\Services\StockService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -25,13 +27,11 @@ use Luecano\NumeroALetras\NumeroALetras;
 
 class BuyController extends Controller
 {
-    public function index()
-    {
+    public function index(): View {
         return view('admin.buys.list');
     }
 
-    public function get(Request $request)
-    {
+    public function get(Request $request): JsonResponse {
         $buys = Buy::query()
             ->select(
                 'buys.*',
@@ -124,41 +124,41 @@ class BuyController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'idtipo_comprobante' => 'required|integer|exists:type_documents,id',
-            'serie' => 'required|string|max:10',
-            'correlativo' => 'required|string|max:20',
-            'fecha_emision' => 'required|date',
-            'fecha_vencimiento' => 'required|date|after_or_equal:fecha_emision',
-            'dni_ruc' => 'required|integer|exists:providers,id',
-            'idalmacen' => 'required|integer|exists:warehouses,id',
-            'modo_pago' => 'required|integer|exists:pay_modes,id',
-            'condicion_pago' => 'nullable|string|in:Contado,Credito',
-            'monto_credito' => 'nullable|numeric|min:0',
-            'cuotas' => 'nullable|array',
+            'idtipo_comprobante'    => 'required|integer|exists:type_documents,id',
+            'serie'                 => 'required|string|max:10',
+            'correlativo'           => 'required|string|max:20',
+            'fecha_emision'         => 'required|date',
+            'fecha_vencimiento'     => 'required|date|after_or_equal:fecha_emision',
+            'dni_ruc'               => 'required|integer|exists:providers,id',
+            'idalmacen'             => 'required|integer|exists:warehouses,id',
+            'modo_pago'             => 'required|integer|exists:pay_modes,id',
+            'condicion_pago'        => 'nullable|string|in:Contado,Credito',
+            'monto_credito'         => 'nullable|numeric|min:0',
+            'cuotas'                => 'nullable|array',
         ], [
-            'idtipo_comprobante.required' => 'Debe seleccionar el tipo de comprobante.',
-            'serie.required' => 'Debe ingresar la serie.',
-            'correlativo.required' => 'Debe ingresar el número.',
-            'fecha_emision.required' => 'Debe ingresar la fecha de emisión.',
-            'fecha_vencimiento.required' => 'Debe ingresar la fecha de vencimiento.',
+            'idtipo_comprobante.required'   => 'Debe seleccionar el tipo de comprobante.',
+            'serie.required'                => 'Debe ingresar la serie.',
+            'correlativo.required'          => 'Debe ingresar el número.',
+            'fecha_emision.required'        => 'Debe ingresar la fecha de emisión.',
+            'fecha_vencimiento.required'    => 'Debe ingresar la fecha de vencimiento.',
             'fecha_vencimiento.after_or_equal' => 'La fecha de vencimiento no puede ser menor a la fecha de emisión.',
-            'dni_ruc.required' => 'Debe seleccionar el proveedor.',
-            'dni_ruc.exists' => 'El proveedor seleccionado no existe.',
-            'idalmacen.required' => 'Debe seleccionar el almacén de destino.',
-            'idalmacen.exists' => 'El almacén de destino seleccionado no existe.',
-            'modo_pago.required' => 'Debe seleccionar el modo de pago.',
+            'dni_ruc.required'              => 'Debe seleccionar el proveedor.',
+            'dni_ruc.exists'                => 'El proveedor seleccionado no existe.',
+            'idalmacen.required'            => 'Debe seleccionar el almacén de destino.',
+            'idalmacen.exists'              => 'El almacén de destino seleccionado no existe.',
+            'modo_pago.required'            => 'Debe seleccionar el modo de pago.',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $validator->errors()->first(),
+                'errors'    => $validator->errors(),
+                'type'      => 'warning',
             ], 422);
         }
 
-        $data = $validator->validated();
+        $data                   = $validator->validated();
         $destinationWarehouseId = (int) $data['idalmacen'];
 
         $user = Auth::user();
@@ -166,22 +166,22 @@ class BuyController extends Controller
             $hasAccess = $user->warehouses()->where('warehouses.id', $destinationWarehouseId)->exists();
             if (! $hasAccess) {
                 return response()->json([
-                    'status' => false,
-                    'msg' => 'No tiene autorización para registrar compras en el almacén seleccionado.',
-                    'type' => 'warning',
+                    'status'    => false,
+                    'msg'       => 'No tiene autorización para registrar compras en el almacén seleccionado.',
+                    'type'      => 'warning',
                 ], 422);
             }
         }
 
-        $serie = mb_strtoupper(trim((string) $data['serie']));
-        $correlativo = trim((string) $data['correlativo']);
-        $cart = $this->create_cart();
+        $serie          = mb_strtoupper(trim((string) $data['serie']));
+        $correlativo    = trim((string) $data['correlativo']);
+        $cart           = $this->create_cart();
 
         if (empty($cart['products'])) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Ingrese al menos 1 producto o servicio',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Ingrese al menos 1 producto o servicio',
+                'type'      => 'warning',
             ], 422);
         }
 
@@ -193,60 +193,60 @@ class BuyController extends Controller
 
         if (! empty($validBuy)) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Ya existe un comprobante registrado con este proveedor, tipo, serie y número.',
-                'errors' => [
+                'status'    => false,
+                'msg'       => 'Ya existe un comprobante registrado con este proveedor, tipo, serie y número.',
+                'errors'    => [
                     'correlativo' => ['Ya existe un comprobante registrado con este proveedor, tipo, serie y número.'],
                 ],
-                'type' => 'warning',
+                'type'      => 'warning',
             ], 422);
         }
 
         try {
             $buy = DB::transaction(function () use ($data, $serie, $correlativo, $cart, $destinationWarehouseId, $request) {
-                $condicionPago = $request->input('condicion_pago') === 'Credito' ? 'Credito' : 'Contado';
-                $total = (float) $cart['total'];
-                $montoCredito = $condicionPago === 'Credito' ? ((float) $request->input('monto_credito') ?: $total) : 0.00;
-                $cuotas = $condicionPago === 'Credito' ? $request->input('cuotas') : null;
+                $condicionPago   = $request->input('condicion_pago') === 'Credito' ? 'Credito' : 'Contado';
+                $total           = (float) $cart['total'];
+                $montoCredito    = $condicionPago === 'Credito' ? ((float) $request->input('monto_credito') ?: $total) : 0.00;
+                $cuotas          = $condicionPago === 'Credito' ? $request->input('cuotas') : null;
 
                 $buy = Buy::create([
-                    'idtipo_comprobante' => $data['idtipo_comprobante'],
-                    'serie' => $serie,
-                    'correlativo' => $correlativo,
-                    'fecha_emision' => $data['fecha_emision'],
-                    'fecha_vencimiento' => $data['fecha_vencimiento'],
-                    'hora' => date('H:i:s'),
-                    'idproveedor' => $data['dni_ruc'],
-                    'idalmacen' => $destinationWarehouseId,
-                    'idmoneda' => 1,
-                    'idpago' => 1,
-                    'modo_pago' => $data['modo_pago'],
-                    'condicion_pago' => $condicionPago,
-                    'monto_credito' => $montoCredito,
-                    'cuotas' => $cuotas,
-                    'anticipo' => '0.00',
-                    'igv' => $cart['igv'],
-                    'gratuita' => '0.00',
-                    'otros_cargos' => '0.00',
-                    'total' => $total,
-                    'observaciones' => $request->input('observaciones', ''),
-                    'estado' => 1,
-                    'idusuario' => Auth::id() ?? 1,
+                    'idtipo_comprobante'    => $data['idtipo_comprobante'],
+                    'serie'                 => $serie,
+                    'correlativo'           => $correlativo,
+                    'fecha_emision'         => $data['fecha_emision'],
+                    'fecha_vencimiento'     => $data['fecha_vencimiento'],
+                    'hora'                  => date('H:i:s'),
+                    'idproveedor'           => $data['dni_ruc'],
+                    'idalmacen'             => $destinationWarehouseId,
+                    'idmoneda'              => 1,
+                    'idpago'                => 1,
+                    'modo_pago'             => $data['modo_pago'],
+                    'condicion_pago'        => $condicionPago,
+                    'monto_credito'         => $montoCredito,
+                    'cuotas'                => $cuotas,
+                    'anticipo'              => '0.00',
+                    'igv'                   => $cart['igv'],
+                    'gratuita'              => '0.00',
+                    'otros_cargos'          => '0.00',
+                    'total'                 => $total,
+                    'observaciones'         => $request->input('observaciones', ''),
+                    'estado'                => 1,
+                    'idusuario'             => Auth::id() ?? 1,
                 ]);
 
                 foreach ($cart['products'] as $product) {
                     $itemWarehouseId = ! empty($product['idalmacen']) ? (int) $product['idalmacen'] : $destinationWarehouseId;
 
                     DetailBuy::create([
-                        'idcompra' => $buy->id,
-                        'idproducto' => $product['id'],
-                        'cantidad' => $product['cantidad'],
-                        'descuento' => 0,
-                        'igv' => ((float) $product['precio_compra'] * (float) ($product['igv'] ?? 0.18)),
+                        'idcompra'          => $buy->id,
+                        'idproducto'        => $product['id'],
+                        'cantidad'          => $product['cantidad'],
+                        'descuento'         => 0,
+                        'igv'               => ((float) $product['precio_compra'] * (float) ($product['igv'] ?? 0.18)),
                         'id_afectacion_igv' => 1,
-                        'precio_unitario' => $product['precio_compra'],
-                        'precio_total' => ((float) $product['precio_compra'] * (float) $product['cantidad']),
-                        'idalmacen' => $itemWarehouseId,
+                        'precio_unitario'   => $product['precio_compra'],
+                        'precio_total'      => ((float) $product['precio_compra'] * (float) $product['cantidad']),
+                        'idalmacen'         => $itemWarehouseId,
                     ]);
 
                     app(StockService::class)->increase(
@@ -259,44 +259,44 @@ class BuyController extends Controller
 
                 if ($condicionPago === 'Credito') {
                     AccountPayable::create([
-                        'idcompra' => $buy->id,
-                        'idproveedor' => $buy->idproveedor,
-                        'idalmacen' => $destinationWarehouseId,
-                        'monto_total' => $total,
-                        'monto_pagado' => 0.00,
-                        'saldo' => $total,
-                        'fecha_emision' => $buy->fecha_emision,
+                        'idcompra'          => $buy->id,
+                        'idproveedor'       => $buy->idproveedor,
+                        'idalmacen'         => $destinationWarehouseId,
+                        'monto_total'       => $total,
+                        'monto_pagado'      => 0.00,
+                        'saldo'             => $total,
+                        'fecha_emision'     => $buy->fecha_emision,
                         'fecha_vencimiento' => $buy->fecha_vencimiento,
-                        'estado' => 'PENDIENTE',
-                        'cuotas' => $cuotas,
-                        'observaciones' => $buy->observaciones,
-                        'idusuario' => Auth::id() ?? 1,
+                        'estado'            => 'PENDIENTE',
+                        'cuotas'            => $cuotas,
+                        'observaciones'     => $buy->observaciones,
+                        'idusuario'         => Auth::id() ?? 1,
                     ]);
                 }
 
                 Session::flash('exito', [
-                    'msg' => 'Datos guardados correctamente',
-                    'id' => $buy->id,
+                    'msg'   => 'Datos guardados correctamente',
+                    'id'    => $buy->id,
                 ]);
 
                 return $buy;
             });
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Ya existe un comprobante registrado con este proveedor, tipo, serie y número.',
-                'errors' => [
+                'status'    => false,
+                'msg'       => 'Ya existe un comprobante registrado con este proveedor, tipo, serie y número.',
+                'errors'    => [
                     'correlativo' => ['Ya existe un comprobante registrado con este proveedor, tipo, serie y número.'],
                 ],
-                'type' => 'warning',
+                'type'      => 'warning',
             ], 422);
         }
 
         $this->destroy_cart();
 
         return response()->json([
-            'status' => true,
-            'id' => $buy->id,
+            'status'    => true,
+            'id'        => $buy->id,
         ]);
     }
 
@@ -313,13 +313,13 @@ class BuyController extends Controller
             ->get(['id', 'codigo', 'descripcion']);
         $data['modo_pagos'] = PayMode::orderBy('descripcion')->get();
 
-        $user = Auth::user();
+        $user               = Auth::user();
         $assignedWarehouses = $user ? $user->warehouses()->orderBy('descripcion')->get() : collect();
         $data['warehouses'] = $assignedWarehouses->isNotEmpty() ? $assignedWarehouses : Warehouse::orderBy('descripcion')->get();
         $data['default_warehouse_id'] = (int) (session('selected_warehouse_id') ?: ($user?->idalmacen ?: ($data['warehouses']->first()?->id ?? 0)));
 
-        $data['providers'] = Provider::with('tipoDocumento')->orderBy('nombres')->get();
-        $data['products'] = Product::orderBy('descripcion')->get();
+        $data['providers']  = Provider::with('tipoDocumento')->orderBy('nombres')->get();
+        $data['products']   = Product::orderBy('descripcion')->get();
 
         return view('admin.buys.create', $data);
     }
@@ -328,22 +328,21 @@ class BuyController extends Controller
     {
         if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
-        $id = (int) $request->input('id');
-        $idalmacen = (int) $request->input('idalmacen');
-
-        $product = Product::with(['category', 'unit'])->find($id);
+        $id         = (int) $request->input('id');
+        $idalmacen  = (int) $request->input('idalmacen');
+        $product    = Product::with(['category', 'unit'])->find($id);
 
         if (! $product) {
             return response()->json([
-                'status' => false,
-                'msg' => 'El producto no fue encontrado.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'El producto no fue encontrado.',
+                'type'      => 'warning',
             ], 404);
         }
 
@@ -352,32 +351,31 @@ class BuyController extends Controller
             ->first();
 
         $productData = (object) [
-            'id' => $product->id,
-            'idproducto' => $product->id,
-            'idalmacen' => $idalmacen,
-            'codigo_barras' => $product->codigo_barras,
-            'codigo_interno' => $product->codigo_interno,
-            'producto' => $product->descripcion,
-            'categoria' => $product->category?->descripcion ?? '-',
-            'stock_minimo' => $stockProduct?->stock_minimo ?? 5,
-            'stock_actual' => $stockProduct?->stock_actual ?? 0,
-            'precio_compra' => $stockProduct ? $stockProduct->precio_compra : ($product->precio_compra ?? 0.00),
-            'is_service' => $product->isService(),
+            'id'                => $product->id,
+            'idproducto'        => $product->id,
+            'idalmacen'         => $idalmacen,
+            'codigo_barras'     => $product->codigo_barras,
+            'codigo_interno'    => $product->codigo_interno,
+            'producto'          => $product->descripcion,
+            'categoria'         => $product->category?->descripcion ?? '-',
+            'stock_minimo'      => $stockProduct?->stock_minimo ?? 5,
+            'stock_actual'      => $stockProduct?->stock_actual ?? 0,
+            'precio_compra'     => $stockProduct ? $stockProduct->precio_compra : ($product->precio_compra ?? 0.00),
+            'is_service'        => $product->isService(),
         ];
 
         return response()->json([
-            'status' => true,
-            'product' => $productData,
+            'status'    => true,
+            'product'   => $productData,
         ]);
     }
 
-    public function get_product_idwarehouse(Request $request)
-    {
+    public function get_product_idwarehouse(Request $request): JsonResponse {
         if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
@@ -396,22 +394,22 @@ class BuyController extends Controller
             $stock = $stockMap->get($product->id);
 
             return [
-                'opcion' => $product->opcion,
-                'codigo_barras' => $product->codigo_barras,
-                'codigo_interno' => $product->codigo_interno,
-                'producto' => $product->descripcion . ($product->isService() ? ' (SERVICIO)' : ''),
-                'categoria' => $product->category?->descripcion ?? '-',
-                'stock_minimo' => $stock?->stock_minimo ?? 5,
-                'stock_actual' => $stock?->stock_actual ?? 0,
-                'idproducto' => $product->id,
-                'idalmacen' => $idalmacen,
-                'precio_compra' => $stock ? $stock->precio_compra : ($product->precio_compra ?? 0.00),
-                'is_service' => $product->isService(),
+                'opcion'            => $product->opcion,
+                'codigo_barras'     => $product->codigo_barras,
+                'codigo_interno'    => $product->codigo_interno,
+                'producto'          => $product->descripcion . ($product->isService() ? ' (SERVICIO)' : ''),
+                'categoria'         => $product->category?->descripcion ?? '-',
+                'stock_minimo'      => $stock?->stock_minimo ?? 5,
+                'stock_actual'      => $stock?->stock_actual ?? 0,
+                'idproducto'        => $product->id,
+                'idalmacen'         => $idalmacen,
+                'precio_compra'     => $stock ? $stock->precio_compra : ($product->precio_compra ?? 0.00),
+                'is_service'        => $product->isService(),
             ];
         });
 
         return response()->json([
-            'status' => true,
+            'status'    => true,
             'productos' => $productos,
         ]);
     }
@@ -537,41 +535,40 @@ class BuyController extends Controller
         $cartKey = trim((string) $request->input('cart_key'));
         if ($cartKey === '' || ! $this->delete_product_cart($cartKey)) {
             return response()->json([
-                'status' => false,
-                'msg' => 'No se pudo eliminar el registro',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'No se pudo eliminar el registro',
+                'type'      => 'warning',
             ]);
         }
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Registro eliminado correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Registro eliminado correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function store_product(Request $request)
-    {
+    public function store_product(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         $validator = Validator::make($request->all(), [
-            'cart_key' => 'required|string',
-            'cantidad' => 'required|numeric|min:1',
+            'cart_key'      => 'required|string',
+            'cantidad'      => 'required|numeric|min:1',
             'precio_compra' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'status' => false,
-                'msg' => $validator->errors()->first(),
-                'errors' => $validator->errors(),
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => $validator->errors()->first(),
+                'errors'    => $validator->errors(),
+                'type'      => 'warning',
             ], 422);
         }
 
@@ -579,43 +576,42 @@ class BuyController extends Controller
 
         if (! $this->update_quantity((string) $data['cart_key'], (int) $data['cantidad'], number_format((float) $data['precio_compra'], 2, '.', ''))) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Algo pasó, intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Algo pasó, intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Datos actualizados correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Datos actualizados correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function print(Request $request)
-    {
+    public function print(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         $id = (int) $request->input('id');
-        $data['buy'] = Buy::select('buys.*')
+        $data['buy']        = Buy::select('buys.*')
             ->where('buys.id', $id)
             ->first();
-        $data['moneda'] = $this->moneda_pais();
-        $data['signo'] = $this->signo_pais();
-        $data['business'] = Business::where('id', 1)->first();
-        $data['provider'] = Provider::where('id', $data['buy']['idproveedor'])->first()
+        $data['moneda']     = $this->moneda_pais();
+        $data['signo']      = $this->signo_pais();
+        $data['business']   = Business::where('id', 1)->first();
+        $data['provider']   = Provider::where('id', $data['buy']['idproveedor'])->first()
             ?? Client::where('id', $data['buy']['idproveedor'])->first();
-        $data['name_buy'] = mb_strtoupper($data['provider']->nro_documento . '-' . $data['buy']['serie']) . '-' . $data['buy']['correlativo'];
-        $data['type_document'] = TypeDocument::where('id', $data['buy']['idtipo_comprobante'])->first();
-        $formatter = new NumeroALetras();
-        $data['numero_letras'] = $formatter->toWords($data['buy']->total, 2);
-        $data['detail'] = DetailBuy::select(
+        $data['name_buy']       = mb_strtoupper($data['provider']->nro_documento . '-' . $data['buy']['serie']) . '-' . $data['buy']['correlativo'];
+        $data['type_document']  = TypeDocument::where('id', $data['buy']['idtipo_comprobante'])->first();
+        $formatter              = new NumeroALetras();
+        $data['numero_letras']  = $formatter->toWords($data['buy']->total, 2);
+        $data['detail']         = DetailBuy::select(
             'detail_buys.*',
             'products.descripcion as producto',
             'products.codigo_interno as codigo_interno',
@@ -631,30 +627,27 @@ class BuyController extends Controller
         $this->gen_pdf($data, $data['name_buy']);
 
         return response()->json([
-            'status' => true,
-            'pdf' => $data['name_buy'] . '.pdf',
+            'status'    => true,
+            'pdf'       => $data['name_buy'] . '.pdf',
         ]);
     }
 
-    public function test_pdf()
-    {
+    public function test_pdf() {
         $pdf = PDF::loadView('admin.buys.test_pdf')->setPaper('A4', 'portrait');
         return $pdf->stream();
     }
 
-    public function gen_pdf($data, $name)
-    {
+    public function gen_pdf($data, $name): void {
         $pdf = PDF::loadView('admin.buys.pdf', $data)->setPaper('A4', 'portrait');
-        return $pdf->save(public_path('files/buys/' . $name . '.pdf'));
+        $pdf->save(public_path('files/buys/' . $name . '.pdf'));
     }
 
-    public function delete(Request $request)
-    {
+    public function delete(Request $request): JsonResponse {
         if (! $request->ajax()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
@@ -663,9 +656,9 @@ class BuyController extends Controller
 
         if (! $buy) {
             return response()->json([
-                'status' => false,
-                'msg' => 'La compra no existe.',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'La compra no existe.',
+                'type'      => 'warning',
             ], 404);
         }
 
@@ -691,24 +684,23 @@ class BuyController extends Controller
         });
 
         return response()->json([
-            'status' => true,
-            'msg' => 'Registro eliminado correctamente',
-            'type' => 'success',
+            'status'    => true,
+            'msg'       => 'Registro eliminado correctamente',
+            'type'      => 'success',
         ]);
     }
 
-    public function create_cart()
-    {
+    public function create_cart() {
         if (! session()->get('buy') || empty(session()->get('buy')['products'])) {
             $buy = [
                 'buy' => [
-                    'products' => [],
-                    'igv' => 0,
-                    'exonerada' => 0,
-                    'gravada' => 0,
-                    'inafecta' => 0,
-                    'subtotal' => 0,
-                    'total' => 0,
+                    'products'      => [],
+                    'igv'           => 0,
+                    'exonerada'     => 0,
+                    'gravada'       => 0,
+                    'inafecta'      => 0,
+                    'subtotal'      => 0,
+                    'total'         => 0,
                 ],
             ];
 
@@ -727,10 +719,10 @@ class BuyController extends Controller
                 default => 1,
             };
 
-            $precioBase = (float) $product['precio_compra'] / $igvFactor;
-            $igvProducto = ((float) $product['precio_compra'] - $precioBase) * (float) $product['cantidad'];
-            $igv += $this->redondeado($igvProducto);
-            $subtotal += $precioBase * (float) $product['cantidad'];
+            $precioBase     = (float) $product['precio_compra'] / $igvFactor;
+            $igvProducto    = ((float) $product['precio_compra'] - $precioBase) * (float) $product['cantidad'];
+            $igv            += $this->redondeado($igvProducto);
+            $subtotal       += $precioBase * (float) $product['cantidad'];
             session()->put('buy.products.' . $index, $product);
         }
 
@@ -738,10 +730,10 @@ class BuyController extends Controller
 
         $buy = [
             'buy' => [
-                'products' => session('buy')['products'],
-                'igv' => $igv,
-                'subtotal' => $subtotal,
-                'total' => $total,
+                'products'  => session('buy')['products'],
+                'igv'       => $igv,
+                'subtotal'  => $subtotal,
+                'total'     => $total,
             ],
         ];
 
@@ -749,8 +741,7 @@ class BuyController extends Controller
         return session()->get('buy');
     }
 
-    public function add_product_cart($id, $idalmacen, $cantidad, $precio_compra)
-    {
+    public function add_product_cart($id, $idalmacen, $cantidad, $precio_compra) {
         $product = Product::with(['category', 'unit'])->find($id);
 
         if (! $product) {
@@ -758,20 +749,20 @@ class BuyController extends Controller
         }
 
         $newProduct = [
-            'id' => $product->id,
-            'cart_key' => $id . '-' . $idalmacen,
-            'codigo_sunat' => $product->codigo_sunat,
-            'descripcion' => $product->descripcion,
-            'idunidad' => $product->idunidad,
-            'unidad' => $product->unit?->codigo ?? 'NIU',
-            'idcodigo_igv' => $product->idcodigo_igv,
-            'codigo_igv' => $product->codigo_igv,
-            'igv' => $product->igv,
+            'id'            => $product->id,
+            'cart_key'      => $id . '-' . $idalmacen,
+            'codigo_sunat'  => $product->codigo_sunat,
+            'descripcion'   => $product->descripcion,
+            'idunidad'      => $product->idunidad,
+            'unidad'        => $product->unit?->codigo ?? 'NIU',
+            'idcodigo_igv'  => $product->idcodigo_igv,
+            'codigo_igv'    => $product->codigo_igv,
+            'igv'           => $product->igv,
             'precio_compra' => $precio_compra,
-            'impuesto' => $product->impuesto,
-            'idalmacen' => $idalmacen,
-            'cantidad' => $cantidad,
-            'is_service' => $product->isService(),
+            'impuesto'      => $product->impuesto,
+            'idalmacen'     => $idalmacen,
+            'cantidad'      => $cantidad,
+            'is_service'    => $product->isService(),
         ];
 
         if (empty(session()->get('buy')['products'])) {
@@ -792,8 +783,7 @@ class BuyController extends Controller
         return true;
     }
 
-    public function delete_product_cart($cartKey)
-    {
+    public function delete_product_cart($cartKey) {
         if (! session()->get('buy') || empty(session()->get('buy')['products'])) {
             return false;
         }
@@ -808,8 +798,7 @@ class BuyController extends Controller
         return false;
     }
 
-    public function update_quantity($cartKey, $cantidad, $precio_compra)
-    {
+    public function update_quantity($cartKey, $cantidad, $precio_compra) {
         if (empty(session()->get('buy')['products'])) {
             return false;
         }
@@ -826,8 +815,7 @@ class BuyController extends Controller
         return false;
     }
 
-    public function destroy_cart()
-    {
+    public function destroy_cart() {
         if (! session()->get('buy') || empty(session()->get('buy')['products'])) {
             return false;
         }
@@ -836,20 +824,19 @@ class BuyController extends Controller
         return true;
     }
 
-    public function load_providers(Request $request)
-    {
+    public function load_providers(Request $request): JsonResponse {
         if (! $request->ajax() && ! $request->wantsJson()) {
             return response()->json([
-                'status' => false,
-                'msg' => 'Intente de nuevo',
-                'type' => 'warning',
+                'status'    => false,
+                'msg'       => 'Intente de nuevo',
+                'type'      => 'warning',
             ]);
         }
 
         $providers = Provider::with('tipoDocumento:id,codigo,descripcion')->orderBy('nombres')->get();
 
         return response()->json([
-            'status' => true,
+            'status'    => true,
             'providers' => $providers,
         ]);
     }
