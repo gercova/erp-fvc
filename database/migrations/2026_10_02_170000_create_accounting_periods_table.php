@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamp('reopened_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
-
+            $table->softDeletes();
             $table->index(['fiscal_year', 'month', 'status']);
         });
     }

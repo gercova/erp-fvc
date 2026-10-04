@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('telefono')->nullable();
             $table->string('email')->nullable();
             $table->timestamps();
+            $table->unique(['iddoc', 'nro_documento'], 'providers_iddoc_nro_documento_unique');
         });
     }
 

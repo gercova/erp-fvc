@@ -37,18 +37,19 @@ return new class extends Migration
             $table->integer('cdr')->nullable();
             $table->boolean('anulado')->default(false);
             $table->foreignId('id_tipo_nota_credito')->nullable()->constrained('credit_note_types');
+            $table->foreignId('id_tipo_nota_debito')->nullable()->constrained('debit_note_types');
             $table->foreignId('idfactura_anular')->nullable()->constrained('billings');
             $table->string('motivo')->nullable();
             $table->integer('estado_cpe')->nullable();
             $table->longText('errores')->nullable();
             $table->string('nticket')->nullable();
+            $table->foreignId('sale_note_id')->nullable()->constrained('sale_notes')->nullOnDelete();
             $table->foreignId('idusuario')->constrained('users');
             $table->foreignId('idarqueocaja')->nullable()->constrained('arching_cashes');
             $table->decimal('vuelto', 18, 2)->nullable();
             $table->string('qr')->nullable();
             $table->foreignId('idalmacen')->nullable()->constrained('warehouses');
             $table->timestamps();
-
             $table->unique(['idtipo_comprobante', 'serie', 'correlativo'], 'billings_document_unique');
         });
     }

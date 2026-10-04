@@ -17,16 +17,16 @@ return new class extends Migration
 
             if (! $clientId) {
                 $clientId = DB::table('clients')->insertGetId([
-                    'iddoc' => $provider->iddoc,
+                    'iddoc'         => $provider->iddoc,
                     'nro_documento' => $provider->nro_documento,
-                    'nombres' => $provider->nombres,
-                    'direccion' => $provider->direccion,
-                    'codigo_pais' => $provider->codigo_pais,
-                    'ubigeo' => $provider->ubigeo,
-                    'telefono' => $provider->telefono,
-                    'email' => $provider->email,
-                    'created_at' => $provider->created_at ?? now(),
-                    'updated_at' => $provider->updated_at ?? now(),
+                    'nombres'       => $provider->nombres,
+                    'direccion'     => $provider->direccion,
+                    'codigo_pais'   => $provider->codigo_pais,
+                    'ubigeo'        => $provider->ubigeo,
+                    'telefono'      => $provider->telefono,
+                    'email'         => $provider->email,
+                    'created_at'    => $provider->created_at ?? now(),
+                    'updated_at'    => $provider->updated_at ?? now(),
                 ]);
             }
 
