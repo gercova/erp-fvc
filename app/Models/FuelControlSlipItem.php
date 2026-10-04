@@ -17,13 +17,12 @@ class FuelControlSlipItem extends Model
     ];
 
     protected $casts = [
-        'cantidad' => 'decimal:2',
-        'precio_unitario' => 'decimal:2',
-        'total' => 'decimal:2',
+        'cantidad'          => 'decimal:2',
+        'precio_unitario'   => 'decimal:2',
+        'total'             => 'decimal:2',
     ];
 
-    public function fuelControlSlip(): BelongsTo
-    {
+    public function fuelControlSlip(): BelongsTo {
         return $this->belongsTo(FuelControlSlip::class);
     }
 }

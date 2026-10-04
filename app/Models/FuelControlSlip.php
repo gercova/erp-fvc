@@ -33,12 +33,11 @@ class FuelControlSlip extends Model
     ];
 
     protected $casts = [
-        'fecha' => 'date',
+        'fecha'         => 'date',
         'total_general' => 'decimal:2',
     ];
 
-    public function items(): HasMany
-    {
+    public function items(): HasMany {
         return $this->hasMany(FuelControlSlipItem::class);
     }
 }

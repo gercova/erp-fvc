@@ -34,7 +34,7 @@ class InternalTransfer extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'        => 'decimal:2',
         'transfer_date' => 'date',
     ];
 
@@ -50,33 +50,27 @@ class InternalTransfer extends Model
         });
     }
 
-    public function sourceBankAccount(): BelongsTo
-    {
+    public function sourceBankAccount(): BelongsTo {
         return $this->belongsTo(BankAccount::class, 'source_bank_account_id');
     }
 
-    public function sourceArchingCash(): BelongsTo
-    {
+    public function sourceArchingCash(): BelongsTo {
         return $this->belongsTo(ArchingCash::class, 'source_arching_cash_id');
     }
 
-    public function destinationBankAccount(): BelongsTo
-    {
+    public function destinationBankAccount(): BelongsTo {
         return $this->belongsTo(BankAccount::class, 'destination_bank_account_id');
     }
 
-    public function destinationFundSource(): BelongsTo
-    {
+    public function destinationFundSource(): BelongsTo {
         return $this->belongsTo(FundSource::class, 'destination_fund_source_id');
     }
 
-    public function journalEntry(): BelongsTo
-    {
+    public function journalEntry(): BelongsTo {
         return $this->belongsTo(JournalEntry::class, 'journal_entry_id');
     }
 
-    public function createdByUser(): BelongsTo
-    {
+    public function createdByUser(): BelongsTo {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 }
