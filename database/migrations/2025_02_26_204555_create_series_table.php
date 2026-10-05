@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('idtipo_documento');
             $table->integer('idtipo_documento_relacionado')->nullable();
             $table->integer('idcaja');
-            $table->unsignedBigInteger('idalmacen')->nullable()->after('idcaja');
+            $table->unsignedBigInteger('idalmacen')->nullable();
             $table->foreign('idalmacen')->references('id')->on('warehouses')->nullOnDelete();
             $table->string('direccion')->nullable();
             $table->boolean('estado')->default(true);
