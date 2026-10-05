@@ -73,6 +73,7 @@ use App\Http\Controllers\Accounting\BudgetController;
 use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AgreementDocumentController;
 use App\Http\Controllers\ServiceEngagementController;
+use App\Http\Controllers\UserManualController;
 
 /*
 |--------------------------------------------------------------------------
@@ -962,4 +963,10 @@ Route::prefix('services')->middleware(['auth'])->controller(ServiceEngagementCon
     // Closure & Final Technical Report
     Route::post('/engagements/{id}/close',                                  'closeEngagement')->name('services.engagements.close')->middleware('can:services.manage');
     Route::get('/engagements/{id}/final-report/pdf',                        'downloadFinalReport')->name('services.engagements.final_report')->middleware('can:services.view');
+});
+
+# Manuales de Usuario del Sistema
+Route::prefix('manuals')->middleware(['auth'])->group(function() {
+    Route::get('/',                 [UserManualController::class, 'index'])->name('admin.manuals.index');
+    Route::get('/module/{module}',  [UserManualController::class, 'showModule'])->name('admin.manuals.module');
 });

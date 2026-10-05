@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html id="layout-content" lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -95,18 +96,21 @@
             </div>
         </form>
         @php
-            $authUser                   = Auth::user();
-            $currentWarehouse           = $authUser?->activeWarehouse;
-            $availableWarehousesCount   = $authUser ? $authUser->warehouses()->count() : 0;
-            $primaryRole                = optional($authUser?->roles?->first())->name ?: 'USUARIO';
-            $canDashboard               = $authUser?->can('admin.home');
-            $canArching                 = $authUser?->can('admin.arching_cashes');
-            $isBillingReportScreen      = request()->routeIs('report.billings.*');
-            $isCreditNoteListScreen     =
+            $authUser = Auth::user();
+            $currentWarehouse = $authUser?->activeWarehouse;
+            $availableWarehousesCount = $authUser ? $authUser->warehouses()->count() : 0;
+            $primaryRole = optional($authUser?->roles?->first())->name ?: 'USUARIO';
+            $canDashboard = $authUser?->can('admin.home');
+            $canArching = $authUser?->can('admin.arching_cashes');
+            $isBillingReportScreen = request()->routeIs('report.billings.*');
+            $isCreditNoteListScreen =
                 request()->routeIs('admin.billing_credit_notes') || request()->routeIs('billings.credit_notes.get');
-            $isDebitNoteListScreen      = request()->routeIs('admin.billing_debit_notes') || request()->routeIs('billings.debit_notes.get');
-            $isShipmentGuideScreen      = request()->is('shipment-guides') || request()->is('shipment-guides/*');
-            $isBillingScreen            = (request()->is('billings') || (request()->is('billings/*') &&
+            $isDebitNoteListScreen =
+                request()->routeIs('admin.billing_debit_notes') || request()->routeIs('billings.debit_notes.get');
+            $isShipmentGuideScreen = request()->is('shipment-guides') || request()->is('shipment-guides/*');
+            $isBillingScreen =
+                (request()->is('billings') ||
+                    (request()->is('billings/*') &&
                         !request()->is('billings/reports*') &&
                         !request()->is('billings/credit-notes*') &&
                         !request()->is('billings/debit-notes*'))) &&
@@ -120,8 +124,8 @@
                 'admin.billings',
                 'admin.shipment_guides',
             ]);
-            $canCompras     = $authUser?->canany(['admin.providers', 'admin.buys']);
-            $canInventario  = $authUser?->canany([
+            $canCompras = $authUser?->canany(['admin.providers', 'admin.buys']);
+            $canInventario = $authUser?->canany([
                 'admin.products',
                 'admin.categories',
                 'admin.warehouses',
@@ -160,48 +164,77 @@
                 'assets.qr',
                 'assets.approve',
             ]);
-            $canProduccion = $authUser?->canany([
-                'production.plans.index',
-                'production.raw_materials.index',
-                'production.input_movements.index',
-                'production.produced_items.index',
-                'production.harvests.index',
-                'production.profitability.index',
-                'commercialization.orders.index',
-                'productive_activities.index',
-                'productive_activities.cost_center.index',
-                'productive_activities.transactions.index',
-                'productive_activities.rdr.index',
-                'agrolivestock.plots.index',
-            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'JEFE_AREA', 'ADMINISTRACION', 'CONTABILIDAD', 'RESPONSABLE_ACTIVIDAD']);
-            $canContabilidad = $authUser?->canany([
-                'accounting.view',
-                'accounting.post',
-                'accounting.close',
-                'accounting.reopen',
-                'accounting.export',
-                'treasury.manage',
-                'treasury.reconcile',
-                'budget.manage',
-                'budget.approve',
-            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'CONTABILIDAD', 'ADMINISTRACION', 'DIRECTOR_GENERAL', 'TESORERO', 'TREASURER']);
-            $canAgreements = $authUser?->canany([
-                'agreements.view',
-                'agreements.create',
-                'agreements.edit',
-                'agreements.manage',
-                'agreements.approve',
-                'services.view',
-                'services.manage',
-            ]) || $authUser?->hasRole(['SUPERADMIN', 'ADMIN', 'DIRECTOR_GENERAL', 'ADMINISTRACION', 'CONTABILIDAD', 'COORDINADOR', 'JEFE_AREA']);
+            $canProduccion =
+                $authUser?->canany([
+                    'production.plans.index',
+                    'production.raw_materials.index',
+                    'production.input_movements.index',
+                    'production.produced_items.index',
+                    'production.harvests.index',
+                    'production.profitability.index',
+                    'commercialization.orders.index',
+                    'productive_activities.index',
+                    'productive_activities.cost_center.index',
+                    'productive_activities.transactions.index',
+                    'productive_activities.rdr.index',
+                    'agrolivestock.plots.index',
+                ]) ||
+                $authUser?->hasRole([
+                    'SUPERADMIN',
+                    'ADMIN',
+                    'DIRECTOR_GENERAL',
+                    'JEFE_AREA',
+                    'ADMINISTRACION',
+                    'CONTABILIDAD',
+                    'RESPONSABLE_ACTIVIDAD',
+                ]);
+            $canContabilidad =
+                $authUser?->canany([
+                    'accounting.view',
+                    'accounting.post',
+                    'accounting.close',
+                    'accounting.reopen',
+                    'accounting.export',
+                    'treasury.manage',
+                    'treasury.reconcile',
+                    'budget.manage',
+                    'budget.approve',
+                ]) ||
+                $authUser?->hasRole([
+                    'SUPERADMIN',
+                    'ADMIN',
+                    'CONTABILIDAD',
+                    'ADMINISTRACION',
+                    'DIRECTOR_GENERAL',
+                    'TESORERO',
+                    'TREASURER',
+                ]);
+            $canAgreements =
+                $authUser?->canany([
+                    'agreements.view',
+                    'agreements.create',
+                    'agreements.edit',
+                    'agreements.manage',
+                    'agreements.approve',
+                    'services.view',
+                    'services.manage',
+                ]) ||
+                $authUser?->hasRole([
+                    'SUPERADMIN',
+                    'ADMIN',
+                    'DIRECTOR_GENERAL',
+                    'ADMINISTRACION',
+                    'CONTABILIDAD',
+                    'COORDINADOR',
+                    'JEFE_AREA',
+                ]);
             $expiringAgreementsCount = Schema::hasTable('agreements')
                 ? \App\Models\Agreement::where(function ($q) {
-                    $q->where('status', \App\Enums\AgreementStatus::EXPIRING_SOON)
-                      ->orWhere(function ($sub) {
-                          $sub->where('status', \App\Enums\AgreementStatus::ACTIVE)
-                              ->whereNotNull('end_date')
-                              ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()]);
-                      });
+                    $q->where('status', \App\Enums\AgreementStatus::EXPIRING_SOON)->orWhere(function ($sub) {
+                        $sub->where('status', \App\Enums\AgreementStatus::ACTIVE)
+                            ->whereNotNull('end_date')
+                            ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()]);
+                    });
                 })->count()
                 : 0;
             $openPeriodsCount = Schema::hasTable('accounting_periods')
@@ -215,6 +248,14 @@
         @endphp
         <!-- Navbar Items-->
         <ul class="navbar-nav align-items-center ms-auto">
+            <!-- User Manual Direct Button -->
+            <li class="nav-item me-2 d-none d-sm-block">
+                <a class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 {{ request()->routeIs('admin.manuals.*') ? 'active' : '' }}" 
+                   href="{{ route('admin.manuals.index') }}" title="Manual de Usuario del Sistema">
+                    <i class="fas fa-book-reader"></i>
+                    <span class="d-none d-md-inline fw-semibold">Manual de Usuario</span>
+                </a>
+            </li>
             <!-- * * Note: * * Visible only below the lg breakpoint-->
             <li class="nav-item dropdown no-caret me-3 d-lg-none">
                 <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="searchDropdown" href="#"
@@ -256,7 +297,8 @@
                             </div>
                             <div class="dropdown-notifications-item-content">
                                 <div class="dropdown-notifications-item-content-details">Bandeja de Aprobaciones</div>
-                                <div class="dropdown-notifications-item-content-text">{{ $pendingApprovalsCount }} documento(s) pendiente(s) de tu firma</div>
+                                <div class="dropdown-notifications-item-content-text">{{ $pendingApprovalsCount }}
+                                    documento(s) pendiente(s) de tu firma</div>
                             </div>
                         </a>
                     @endif
@@ -343,7 +385,7 @@
                             <a class="nav-link {{ request()->is('clients*') || request()->is('providers*') ? 'active' : '' }}"
                                 href="{{ route('admin.clients') }}">
                                 <div class="nav-link-icon"><i data-feather="users"></i></div>
-                                Entidad
+                                Clientes
                             </a>
                         @endcan
 
@@ -438,7 +480,8 @@
 
                         @if ($canRequerimientos)
                             @php
-                                $isReqGroup = request()->is('requisitions*') ||
+                                $isReqGroup =
+                                    request()->is('requisitions*') ||
                                     request()->is('expense-declarations*') ||
                                     request()->is('exit-slips*') ||
                                     request()->is('vehicle-exit-slips*') ||
@@ -446,9 +489,10 @@
                                     request()->is('fuel-control-slips*') ||
                                     request()->is('approvals*');
                             @endphp
-                            <a class="nav-link {{ $isReqGroup ? '' : 'collapsed' }}"
-                                href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseRequerimientos"
-                                aria-expanded="{{ $isReqGroup ? 'true' : 'false' }}" aria-controls="collapseRequerimientos">
+                            <a class="nav-link {{ $isReqGroup ? '' : 'collapsed' }}" href="javascript:void(0);"
+                                data-bs-toggle="collapse" data-bs-target="#collapseRequerimientos"
+                                aria-expanded="{{ $isReqGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseRequerimientos">
                                 <div class="nav-link-icon"><i data-feather="file-text"></i></div>
                                 Requerimientos
                                 @if ($pendingApprovalsCount > 0)
@@ -511,11 +555,15 @@
 
                         @if ($canAssets)
                             @php
-                                $isAssetGroup = request()->is('inventory*') || request()->is('asset-inventories*') || request()->is('asset-loans*');
+                                $isAssetGroup =
+                                    request()->is('inventory*') ||
+                                    request()->is('asset-inventories*') ||
+                                    request()->is('asset-loans*');
                             @endphp
-                            <a class="nav-link {{ $isAssetGroup ? '' : 'collapsed' }}"
-                                href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseAssets"
-                                aria-expanded="{{ $isAssetGroup ? 'true' : 'false' }}" aria-controls="collapseAssets">
+                            <a class="nav-link {{ $isAssetGroup ? '' : 'collapsed' }}" href="javascript:void(0);"
+                                data-bs-toggle="collapse" data-bs-target="#collapseAssets"
+                                aria-expanded="{{ $isAssetGroup ? 'true' : 'false' }}"
+                                aria-controls="collapseAssets">
                                 <div class="nav-link-icon"><i data-feather="archive"></i></div>
                                 Bienes Patrimoniales
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
@@ -609,16 +657,15 @@
                             @php
                                 $isApeGroup = request()->is('productive-activities*');
                             @endphp
-                            <a class="nav-link {{ $isApeGroup ? '' : 'collapsed' }}"
-                                href="javascript:void(0);" data-bs-toggle="collapse"
-                                data-bs-target="#collapseApe" aria-expanded="{{ $isApeGroup ? 'true' : 'false' }}"
-                                aria-controls="collapseApe">
+                            <a class="nav-link {{ $isApeGroup ? '' : 'collapsed' }}" href="javascript:void(0);"
+                                data-bs-toggle="collapse" data-bs-target="#collapseApe"
+                                aria-expanded="{{ $isApeGroup ? 'true' : 'false' }}" aria-controls="collapseApe">
                                 <div class="nav-link-icon"><i data-feather="briefcase"></i></div>
                                 Actividades (APE)
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
-                            <div class="collapse {{ $isApeGroup ? 'show' : '' }}"
-                                id="collapseApe" data-bs-parent="#accordionSidenav">
+                            <div class="collapse {{ $isApeGroup ? 'show' : '' }}" id="collapseApe"
+                                data-bs-parent="#accordionSidenav">
                                 <nav class="sidenav-menu-nested nav">
                                     <a class="nav-link {{ request()->routeIs('productive_activities.index') || request()->routeIs('productive_activities.create') || request()->routeIs('productive_activities.show') ? 'active' : '' }}"
                                         href="{{ route('productive_activities.index') }}">
@@ -647,23 +694,27 @@
                             @endphp
                             <a class="nav-link {{ $isAgreementsGroup ? '' : 'collapsed' }}"
                                 href="javascript:void(0);" data-bs-toggle="collapse"
-                                data-bs-target="#collapseAgreements" aria-expanded="{{ $isAgreementsGroup ? 'true' : 'false' }}"
+                                data-bs-target="#collapseAgreements"
+                                aria-expanded="{{ $isAgreementsGroup ? 'true' : 'false' }}"
                                 aria-controls="collapseAgreements">
                                 <div class="nav-link-icon"><i data-feather="file-text"></i></div>
                                 Convenios y Servicios
                                 @if ($expiringAgreementsCount > 0)
-                                    <span class="badge bg-warning text-dark ms-auto me-2" title="{{ $expiringAgreementsCount }} convenios por vencer">{{ $expiringAgreementsCount }} por vencer</span>
+                                    <span class="badge bg-warning text-dark ms-auto me-2"
+                                        title="{{ $expiringAgreementsCount }} convenios por vencer">{{ $expiringAgreementsCount }}
+                                        por vencer</span>
                                 @endif
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
-                            <div class="collapse {{ $isAgreementsGroup ? 'show' : '' }}"
-                                id="collapseAgreements" data-bs-parent="#accordionSidenav">
+                            <div class="collapse {{ $isAgreementsGroup ? 'show' : '' }}" id="collapseAgreements"
+                                data-bs-parent="#accordionSidenav">
                                 <nav class="sidenav-menu-nested nav">
                                     <a class="nav-link {{ request()->routeIs('agreements.*') ? 'active' : '' }}"
                                         href="{{ route('agreements.index') }}">
                                         Catálogo de Convenios
                                         @if ($expiringAgreementsCount > 0)
-                                            <span class="badge bg-warning text-dark ms-auto">{{ $expiringAgreementsCount }}</span>
+                                            <span
+                                                class="badge bg-warning text-dark ms-auto">{{ $expiringAgreementsCount }}</span>
                                         @endif
                                     </a>
                                     <a class="nav-link {{ request()->routeIs('services.engagements.*') ? 'active' : '' }}"
@@ -677,18 +728,20 @@
                         <!-- Sidenav Accordion (Producción y Comercialización)-->
                         @if ($canProduccion)
                             @php
-                                $isProductionGroup = request()->is('production*') || request()->is('commercialization*');
+                                $isProductionGroup =
+                                    request()->is('production*') || request()->is('commercialization*');
                             @endphp
                             <a class="nav-link {{ $isProductionGroup ? '' : 'collapsed' }}"
                                 href="javascript:void(0);" data-bs-toggle="collapse"
-                                data-bs-target="#collapseProduction" aria-expanded="{{ $isProductionGroup ? 'true' : 'false' }}"
+                                data-bs-target="#collapseProduction"
+                                aria-expanded="{{ $isProductionGroup ? 'true' : 'false' }}"
                                 aria-controls="collapseProduction">
                                 <div class="nav-link-icon"><i data-feather="layers"></i></div>
                                 Producción
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
-                            <div class="collapse {{ $isProductionGroup ? 'show' : '' }}"
-                                id="collapseProduction" data-bs-parent="#accordionSidenav">
+                            <div class="collapse {{ $isProductionGroup ? 'show' : '' }}" id="collapseProduction"
+                                data-bs-parent="#accordionSidenav">
                                 <nav class="sidenav-menu-nested nav">
                                     <a class="nav-link {{ request()->is('production/plans*') ? 'active' : '' }}"
                                         href="{{ route('production.plans.index') }}">
@@ -727,16 +780,15 @@
                             @php
                                 $isAgroGroup = request()->is('agrolivestock*');
                             @endphp
-                            <a class="nav-link {{ $isAgroGroup ? '' : 'collapsed' }}"
-                                href="javascript:void(0);" data-bs-toggle="collapse"
-                                data-bs-target="#collapseAgro" aria-expanded="{{ $isAgroGroup ? 'true' : 'false' }}"
-                                aria-controls="collapseAgro">
+                            <a class="nav-link {{ $isAgroGroup ? '' : 'collapsed' }}" href="javascript:void(0);"
+                                data-bs-toggle="collapse" data-bs-target="#collapseAgro"
+                                aria-expanded="{{ $isAgroGroup ? 'true' : 'false' }}" aria-controls="collapseAgro">
                                 <div class="nav-link-icon"><i data-feather="sun"></i></div>
                                 Agro y Forestal
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
-                            <div class="collapse {{ $isAgroGroup ? 'show' : '' }}"
-                                id="collapseAgro" data-bs-parent="#accordionSidenav">
+                            <div class="collapse {{ $isAgroGroup ? 'show' : '' }}" id="collapseAgro"
+                                data-bs-parent="#accordionSidenav">
                                 <nav class="sidenav-menu-nested nav">
                                     <a class="nav-link {{ request()->is('agrolivestock/plots*') ? 'active' : '' }}"
                                         href="{{ route('agrolivestock.plots.index') }}">
@@ -830,17 +882,20 @@
                             @endphp
                             <a class="nav-link {{ $isAccountingGroup ? '' : 'collapsed' }}"
                                 href="javascript:void(0);" data-bs-toggle="collapse"
-                                data-bs-target="#collapseAccounting" aria-expanded="{{ $isAccountingGroup ? 'true' : 'false' }}"
+                                data-bs-target="#collapseAccounting"
+                                aria-expanded="{{ $isAccountingGroup ? 'true' : 'false' }}"
                                 aria-controls="collapseAccounting">
                                 <div class="nav-link-icon"><i data-feather="book-open"></i></div>
                                 Contabilidad
                                 @if ($openPeriodsCount > 0)
-                                    <span class="badge bg-success ms-auto me-2" title="{{ $openPeriodsCount }} períodos abiertos">{{ $openPeriodsCount }} Abierto{{ $openPeriodsCount > 1 ? 's' : '' }}</span>
+                                    <span class="badge bg-success ms-auto me-2"
+                                        title="{{ $openPeriodsCount }} períodos abiertos">{{ $openPeriodsCount }}
+                                        Abierto{{ $openPeriodsCount > 1 ? 's' : '' }}</span>
                                 @endif
                                 <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
                             </a>
-                            <div class="collapse {{ $isAccountingGroup ? 'show' : '' }}"
-                                id="collapseAccounting" data-bs-parent="#accordionSidenav">
+                            <div class="collapse {{ $isAccountingGroup ? 'show' : '' }}" id="collapseAccounting"
+                                data-bs-parent="#accordionSidenav">
                                 <nav class="sidenav-menu-nested nav">
                                     <a class="nav-link {{ request()->routeIs('accounting.journal.*') ? 'active' : '' }}"
                                         href="{{ route('accounting.journal.index') }}">
@@ -877,7 +932,8 @@
                                         href="{{ route('treasury.reconciliations.index') }}">
                                         Conciliación Bancaria
                                         @if ($pendingReconciliationsCount > 0)
-                                            <span class="badge bg-warning text-dark ms-auto">{{ $pendingReconciliationsCount }}</span>
+                                            <span
+                                                class="badge bg-warning text-dark ms-auto">{{ $pendingReconciliationsCount }}</span>
                                         @endif
                                     </a>
                                     <a class="nav-link {{ request()->routeIs('treasury.transfers.*') ? 'active' : '' }}"
@@ -951,6 +1007,51 @@
                                 </nav>
                             </div>
                         @endif
+
+                        <!-- Sidenav Heading (Ayuda y Soporte) -->
+                        <div class="sidenav-menu-heading">Ayuda</div>
+                        @php
+                            $isManualGroup = request()->is('manuals*');
+                        @endphp
+                        <a class="nav-link {{ $isManualGroup ? '' : 'collapsed' }}"
+                            href="javascript:void(0);" data-bs-toggle="collapse"
+                            data-bs-target="#collapseManuals"
+                            aria-expanded="{{ $isManualGroup ? 'true' : 'false' }}"
+                            aria-controls="collapseManuals">
+                            <div class="nav-link-icon"><i data-feather="help-circle"></i></div>
+                            Manual de Usuario
+                            <span class="badge bg-primary ms-auto me-2">Guía</span>
+                            <div class="sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse {{ $isManualGroup ? 'show' : '' }}" id="collapseManuals"
+                            data-bs-parent="#accordionSidenav">
+                            <nav class="sidenav-menu-nested nav">
+                                <a class="nav-link {{ request()->routeIs('admin.manuals.index') && !request()->query('module') ? 'active' : '' }}"
+                                    href="{{ route('admin.manuals.index') }}">
+                                    Todos los Módulos
+                                </a>
+                                <a class="nav-link {{ request()->fullUrlIs('*manuals*module=ape*') || request()->is('manuals/module/ape') ? 'active' : '' }}"
+                                    href="{{ route('admin.manuals.module', 'ape') }}">
+                                    Actividades (APE)
+                                </a>
+                                <a class="nav-link {{ request()->fullUrlIs('*manuals*module=agreements*') || request()->is('manuals/module/agreements') ? 'active' : '' }}"
+                                    href="{{ route('admin.manuals.module', 'agreements') }}">
+                                    Convenios y Servicios
+                                </a>
+                                <a class="nav-link {{ request()->fullUrlIs('*manuals*module=production*') || request()->is('manuals/module/production') ? 'active' : '' }}"
+                                    href="{{ route('admin.manuals.module', 'production') }}">
+                                    Producción
+                                </a>
+                                <a class="nav-link {{ request()->fullUrlIs('*manuals*module=agrolivestock*') || request()->is('manuals/module/agrolivestock') ? 'active' : '' }}"
+                                    href="{{ route('admin.manuals.module', 'agrolivestock') }}">
+                                    Agro y Forestal
+                                </a>
+                                <a class="nav-link {{ request()->fullUrlIs('*manuals*module=accounting*') || request()->is('manuals/module/accounting') ? 'active' : '' }}"
+                                    href="{{ route('admin.manuals.module', 'accounting') }}">
+                                    Contabilidad y Tesorería
+                                </a>
+                            </nav>
+                        </div>
                     </div>
                 </div>
                 <!-- Sidenav Footer-->
