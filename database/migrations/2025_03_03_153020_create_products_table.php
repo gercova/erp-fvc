@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('idunidad')->nullable();
             $table->integer('idcategoria')->nullable();
             $table->integer('igv');
-            $table->foreignId('idcodigo_igv')->nullable()->constrained('igv_type_affections');
+            $table->unsignedBigInteger('idcodigo_igv')->nullable(); // FK to igv_type_affections added after that table is created
             $table->integer('opcion')->nullable();
             $table->decimal('precio_compra', 18, 2)->nullable();
             $table->decimal('precio_venta', 18, 2)->nullable();

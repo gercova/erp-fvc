@@ -32,7 +32,7 @@ return new class extends Migration
             $table->integer('idusuario');
             $table->integer('idarqueocaja');
             $table->integer('idfactura_anular')->nullable();
-            $table->foreignId('billing_id')->nullable()->constrained('billings')->nullOnDelete();
+            $table->unsignedBigInteger('billing_id')->nullable(); // FK to billings added after that table is created
             $table->decimal('vuelto', 18, 2)->nullable();
             $table->timestamps();
         });

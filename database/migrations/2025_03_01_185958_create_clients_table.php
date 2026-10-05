@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('iddoc')->nullable()->constrained('identity_document_types');
+            $table->unsignedBigInteger('iddoc')->nullable(); // FK to identity_document_types added after that table is created
             $table->string('nro_documento');
             $table->string('nombres');
             $table->string('direccion');

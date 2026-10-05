@@ -37,7 +37,7 @@ return new class extends Migration
             $table->integer('cdr')->nullable();
             $table->boolean('anulado')->default(false);
             $table->foreignId('id_tipo_nota_credito')->nullable()->constrained('credit_note_types');
-            $table->foreignId('id_tipo_nota_debito')->nullable()->constrained('debit_note_types');
+            $table->unsignedBigInteger('id_tipo_nota_debito')->nullable(); // FK to debit_note_types added after that table is created
             $table->foreignId('idfactura_anular')->nullable()->constrained('billings');
             $table->string('motivo')->nullable();
             $table->integer('estado_cpe')->nullable();
