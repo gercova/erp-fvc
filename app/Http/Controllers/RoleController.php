@@ -62,7 +62,19 @@ class RoleController extends Controller
             return;
         }
 
-        $role = Role::create(['name' => mb_strtoupper($request->name)]);
+        $nombre = mb_strtoupper(trim($request->name));
+
+        if (Role::where('name', $nombre)->exists()) {
+            echo json_encode([
+                'status' => false,
+                'msg'    => 'Ya existe un rol con esa descripción. Por favor, ingrese un nombre diferente.',
+                'type'   => 'warning',
+                'field'  => 'name',
+            ]);
+            return;
+        }
+
+        $role = Role::create(['name' => $nombre]);
         $role->permissions()->sync($request->permissions);
 
         echo json_encode([
@@ -109,8 +121,21 @@ class RoleController extends Controller
             return;
         }
 
-        $role = Role::where('id', $request->input('id'))->first();
-        $role->update($request->all());
+        $nombre = mb_strtoupper(trim($request->name));
+        $id     = $request->input('id');
+
+        if (Role::where('name', $nombre)->where('id', '!=', $id)->exists()) {
+            echo json_encode([
+                'status' => false,
+                'msg'    => 'Ya existe un rol con esa descripción. Por favor, ingrese un nombre diferente.',
+                'type'   => 'warning',
+                'field'  => 'name',
+            ]);
+            return;
+        }
+
+        $role = Role::where('id', $id)->first();
+        $role->update(['name' => $nombre]);
         $role->permissions()->sync($request->permissions);
 
         echo json_encode([

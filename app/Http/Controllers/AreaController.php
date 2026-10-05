@@ -27,6 +27,11 @@ class AreaController extends Controller
 
         return datatables()
             ->of($areas)
+            ->addColumn('checkbox', function (Area $area) {
+                return '<div class="form-check d-flex justify-content-center m-0">
+                            <input class="form-check-input check-area-row" type="checkbox" value="' . (int) $area->id . '" data-name="' . e((string) $area->name) . '">
+                        </div>';
+            })
             ->addColumn('codigo', function (Area $area) {
                 return '<span class="badge bg-primary-subtle text-primary font-monospace fw-bold">'
                     . e((string) $area->code)
@@ -89,7 +94,7 @@ class AreaController extends Controller
                             </div>
                         </div>';
             })
-            ->rawColumns(['codigo', 'nombre', 'tipo', 'parent', 'head', 'level', 'is_advisory', 'acciones'])
+            ->rawColumns(['checkbox', 'codigo', 'nombre', 'tipo', 'parent', 'head', 'level', 'is_advisory', 'acciones'])
             ->toJson();
     }
 
@@ -202,6 +207,110 @@ class AreaController extends Controller
             'status'    => true,
             'msg'       => 'Área eliminada correctamente.',
             'type'      => 'success',
+        ]);
+    }
+
+    public function bulkDelete(Request $request): JsonResponse {
+        if (! $request->ajax() && ! $request->wantsJson()) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'Intente de nuevo',
+                'type'   => 'warning'
+            ]);
+        }
+
+        $all = $request->boolean('all');
+        if ($all) {
+            $ids = Area::query()->pluck('id')->all();
+        } else {
+            $ids = $request->input('ids');
+        }
+
+        if (! is_array($ids) || empty($ids)) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'No se han seleccionado áreas para eliminar.',
+                'type'   => 'warning'
+            ], 422);
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'Identificadores inválidos.',
+                'type'   => 'warning'
+            ], 422);
+        }
+
+        $areas = Area::query()
+            ->whereIn('id', $ids)
+            ->orderByDesc('level')
+            ->get();
+
+        if ($areas->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'msg'    => 'No se encontraron las áreas seleccionadas.',
+                'type'   => 'warning'
+            ], 404);
+        }
+
+        $deletedCount = 0;
+        $skipped = [];
+
+        foreach ($areas as $area) {
+            // Check if it has active child areas that are NOT in the deletion list
+            if ($area->children()->whereNotIn('id', $ids)->exists()) {
+                $skipped[] = "{$area->name}: Tiene áreas dependientes no seleccionadas.";
+                continue;
+            }
+
+            // Check if it has assigned employees
+            if ($area->employeeDetails()->exists()) {
+                $skipped[] = "{$area->name}: Tiene usuarios asignados en su organigrama.";
+                continue;
+            }
+
+            // Check if it has assets assigned
+            if ($area->assets()->exists()) {
+                $skipped[] = "{$area->name}: Tiene bienes patrimoniales asignados.";
+                continue;
+            }
+
+            try {
+                $area->delete();
+                $deletedCount++;
+            } catch (\Throwable $e) {
+                $skipped[] = "{$area->name}: Restricción de base de datos.";
+            }
+        }
+
+        if ($deletedCount === 0) {
+            $msg = 'No se pudo eliminar ninguna de las áreas seleccionadas.';
+            if (! empty($skipped)) {
+                $msg .= ' ' . implode(' ', array_slice($skipped, 0, 3));
+            }
+            return response()->json([
+                'status'  => false,
+                'msg'     => $msg,
+                'skipped' => $skipped,
+                'type'    => 'warning'
+            ], 422);
+        }
+
+        $msg = "Se eliminaron {$deletedCount} área(s) correctamente.";
+        if (! empty($skipped)) {
+            $msg .= " (" . count($skipped) . " omitida(s) por dependencias o personal asignado).";
+        }
+
+        return response()->json([
+            'status'        => true,
+            'msg'           => $msg,
+            'deleted_count' => $deletedCount,
+            'skipped_count' => count($skipped),
+            'skipped'       => $skipped,
+            'type'          => 'success',
         ]);
     }
 

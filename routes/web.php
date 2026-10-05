@@ -375,6 +375,7 @@ Route::controller(AreaController::class)->prefix('areas')->middleware(['auth', '
     Route::post('/detail-area'                  , 'detail')->name('areas.detail');
     Route::post('/store-area'                   , 'store')->name('areas.store');
     Route::post('/delete-area'                  , 'delete')->name('areas.delete');
+    Route::post('/bulk-delete-areas'            , 'bulkDelete')->name('areas.bulk_delete');
 });
 
 Route::controller(RoleController::class)->prefix('roles')->middleware(['auth', 'can:admin.roles'])->group(function() {

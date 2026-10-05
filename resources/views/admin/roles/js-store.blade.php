@@ -34,10 +34,18 @@
                         $('.btn-save').prop('disabled', false);
                         $('.text-saving').addClass('d-none');
                         $('.text-save').removeClass('d-none');
+
+                        if (r.field === 'name') {
+                            name.addClass('is-invalid');
+                            name.siblings('.invalid-feedback').text(r.msg);
+                        }
+
 						toast_msg(r.msg, r.type);
                         return;
                     }
 
+                    name.removeClass('is-invalid');
+                    name.siblings('.invalid-feedback').text('El campo no debe estar vacio.');
                     $('#modalAddRole').modal('hide');
                     $('#form_save').trigger('reset');
                     $('.btn-save').prop('disabled', false);
@@ -131,10 +139,18 @@
                         $('.btn-store').prop('disabled', false);
                         $('.text-store').removeClass('d-none');
                         $('.text-storing').addClass('d-none');
+
+                        if (r.field === 'name') {
+                            name.addClass('is-invalid');
+                            name.siblings('.invalid-feedback').text(r.msg);
+                        }
+
                         toast_msg(r.msg, r.type);
                         return;
                     }
 
+                    name.removeClass('is-invalid');
+                    name.siblings('.invalid-feedback').text('El campo no debe estar vacio.');
                     $('.btn-store').prop('disabled', false);
                     $('.text-store').removeClass('d-none');
                     $('.text-storing').addClass('d-none');

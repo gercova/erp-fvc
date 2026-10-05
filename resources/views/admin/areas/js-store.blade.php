@@ -202,6 +202,12 @@
                     toast_msg(r.msg, r.type || 'success');
 
                     if (r.status) {
+                        if (window.selectedAreaIds) {
+                            window.selectedAreaIds.delete(id);
+                            if (typeof updateBulkToolbar === 'function') {
+                                updateBulkToolbar();
+                            }
+                        }
                         reload_table();
                     }
                 },
