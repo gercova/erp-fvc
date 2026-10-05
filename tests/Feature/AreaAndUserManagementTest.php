@@ -260,4 +260,43 @@ class AreaAndUserManagementTest extends TestCase
         $deleteParentRetry->assertStatus(200);
         $deleteParentRetry->assertJson(['status' => true]);
     }
+
+    public function test_users_datatable_search_works_without_sql_errors()
+    {
+        $response = $this->actingAs($this->adminUser)->getJson(route('users.get', [
+            'draw' => 1,
+            'columns' => [
+                ['data' => 'usuario_info', 'name' => 'users.nombres', 'searchable' => 'true', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'area_cargo', 'name' => 'primaryAreaDetail.area.name', 'searchable' => 'true', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'caja', 'name' => 'cash.descripcion', 'searchable' => 'true', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'rol', 'name' => 'roles.name', 'searchable' => 'false', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'almacenes', 'name' => 'warehouses.descripcion', 'searchable' => 'false', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'firma_status', 'name' => 'firma_status', 'searchable' => 'false', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'estado_badge', 'name' => 'users.estado', 'searchable' => 'false', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'acciones', 'name' => 'acciones', 'searchable' => 'false', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+            ],
+            'search' => ['value' => 'ger', 'regex' => 'false'],
+        ]));
+
+        $response->assertStatus(200);
+        $this->assertArrayNotHasKey('error', $response->json());
+        $this->assertGreaterThanOrEqual(1, $response->json('recordsFiltered'));
+    }
+
+    public function test_users_datatable_handles_legacy_cashes_descripcion_name()
+    {
+        $response = $this->actingAs($this->adminUser)->getJson(route('users.get', [
+            'draw' => 1,
+            'columns' => [
+                ['data' => 'usuario_info', 'name' => 'users.nombres', 'searchable' => 'true', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'area_cargo', 'name' => 'primaryAreaDetail.area.name', 'searchable' => 'true', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+                ['data' => 'caja', 'name' => 'cashes.descripcion', 'searchable' => 'true', 'orderable' => 'false', 'search' => ['value' => '', 'regex' => 'false']],
+            ],
+            'search' => ['value' => 'ger', 'regex' => 'false'],
+        ]));
+
+        $response->assertStatus(200);
+        $this->assertArrayNotHasKey('error', $response->json());
+        $this->assertGreaterThanOrEqual(1, $response->json('recordsFiltered'));
+    }
 }
