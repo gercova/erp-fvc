@@ -1,17 +1,17 @@
-# Graph Report - erp-fvc  (2026-10-04)
+# Graph Report - erp-fvc  (2026-10-05)
 
 ## Corpus Check
-- 881 files · ~994,667 words
+- 889 files · ~1,010,096 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 137 file(s) not represented in the graph (top: .xml 27, .ZIP 26, .XML 26)
 
 ## Summary
-- 9171 nodes · 22046 edges · 633 communities (226 shown, 407 thin omitted)
+- 9204 nodes · 22089 edges · 637 communities (217 shown, 420 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 1004 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0d96c329`
+- Built from commit: `9c82bd87`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,65 +23,65 @@
 - n
 - sb-customizer.js
 - chart.js
-- ReportService
-- Illuminate\Database\Eloquent\Relations\BelongsTo
-- Illuminate\Database\Eloquent\Model
+- Illuminate\Http\Request
+- Budget
+- Controller.php
 - Illuminate\Contracts\View\View
 - tn
 - User
-- FundSource
-- Product
+- DemoAccountingSeeder.php
+- ProductiveActivity
 - Illuminate\Database\Schema\Blueprint
-- Illuminate\Http\Request
+- Illuminate\Http\JsonResponse
 - web.php
 - public/js/jquery.dataTables.min.js
-- vu
+- .create
 - BillingReportController
 - Chart.min.js
-- subscribe
-- ArchingCash
+- .get
+- SaleNote
 - ProductionHarvest
-- DocumentApprovalController.php
-- Warehouse
+- AssetInventory
+- Product
 - .unsubscribe
-- o
+- .update
 - 1.10.22/js/jquery.dataTables.min.js
-- ProductionRawMaterial
-- .forEach
+- AgreementDataStructureTest.php
+- indexOf
 - all.min.js
 - AgriculturalPlot
 - s
 - FinancialStatementTemplate
-- JournalEntry
-- Budget
+- ShipmentGuideController
+- Warehouse
 - bl
 - tl
-- AssetLoan
+- FuelControlSlipController.php
 - call
-- Provider
+- Illuminate\Database\Eloquent\Factories\Factory
 - Illuminate\Database\Seeder
-- .update
-- AgingReportService.php
+- .getContext
+- Provider
 - jquery-3.6.4.min.js
 - n
 - BillingController
 - What You Must Do When Invoked
 - emit
-- BudgetService
+- _n
 - 2025_02_26_054416_create_businesses_table.php
-- br
-- .products
-- ShipmentGuideController.php
-- /graphify
+- wr
+- Illuminate\Database\Eloquent\Builder
+- .session
+- o
 - _typeof
 - ha
-- UserController
+- RequisitionController.php
 - Illuminate\Database\Migrations\Migration
 - ActivityDetailedReportExport.php
-- BillingController.php
+- Buy
 - formatValue
 - sn
-- Business
+- 4. ESPECIFICACIÓN DETALLADA DE MÓDULOS DEL SISTEMA
 - sweetalert2@11.js
 - ht
 - Pe
@@ -92,129 +92,128 @@
 - jt
 - XMLSecurityDSig
 - Gn
-- ActivityTransaction
+- Illuminate\Database\Eloquent\Relations\BelongsTo
 - Ae
 - popper.min.js
-- PosManagementTest
+- erp-block-runner/SKILL.md
 - bootstrap.min.js
-- ni
+- trigger
 - toastr.min.js
-- FuelControlSlipController.php
-- AgreementManagementTest
+- DocumentApprovalService
+- Billing
 - ProductionCampaign
-- QuoteController
-- .session
+- PosController
+- TransferOrderController
 - _createForOfIteratorHelperLoose
-- Controller
-- Illuminate\Queue\SerializesModels
+- Serie
+- RdrInternalLoan
 - Maatwebsite\Excel\Concerns\ShouldAutoSize
 - LivestockUnit
-- RequisitionController.php
-- SunatDispatchService
+- DocumentApproval
+- Business
 - i
-- AgreementValidate
-- Illuminate\Database\Eloquent\Builder
+- .rule
+- Id
 - PosController.php
-- WarehouseController
+- ProductsWarehouseExport
 - jszip.min.js
 - nu
-- ActivityOrder
-- ExitSlipController.php
-- ProductionInputMovement
+- manuals/index.blade.php
+- What You Must Do When Invoked
+- BillingController.php
 - VehicleExitSlipController.php
 - 5. Detalle por Modulo
-- I
+- ExitSlipController.php
 - fh
 - ServiceEngagement
-- AgreementInstallment
+- AgreementReportService.php
 - XMLSecurityKey
 - ProducedItem
 - jquery-ui.min.js
 - je
-- trigger
+- ArchingCashController
 - mt
-- dl
-- Buy
-- ServiceEngagementController.php
-- ProductsWarehouseImport.php
-- Illuminate\Support\Facades\Auth
+- Rh
+- ActivityOrder
+- Throwable
+- .hide
+- Area
 - InvoiceXmlBuilder
-- AccountingPostingFailure
-- WarehouseController.php
-- ServiceAttendee
+- p2
+- AgreementValidate
+- PayloadValidator
 - Illuminate\Foundation\Http\FormRequest
 - Illuminate\Support\ServiceProvider
 - wi
 - _regeneratorRuntime
 - AgriculturalNursery
-- PayloadValidator
-- DISEÑO DE ARQUITECTURA: MÓDULO DE CONTABILIDAD Y TESORERÍA INTEGRAL (ERP-FVC)
+- VacationExitSlipValidate
+- 4.1 Entidades Nucleares
 - XMLSecEnc
-- 4. MÁQUINAS DE ESTADO Y TRANSICIONES DEL CICLO DE VIDA
-- BudgetThresholdExceededNotification
+- AgreementInstallment
+- AccountingPostingFailure
 - V
-- Barryvdh\DomPDF\Facade\Pdf
+- Controller
 - DOCUMENTO DE DEFINICIÓN Y REQUISITOS DE PRODUCTO (PDR)
 - package.json
 - DOCUMENTO DE DEFINICIÓN Y REQUISITOS DE PRODUCTO (PDR)
-- oo
+- de
 - .billings
 - require
 - BrotliDecompress
 - select2.min.js
 - BillingManagementTest
-- RdrInternalLoan
 - EconomicReportHistoricalImport
-- ServiceSession
-- BillingFactory.php
+- ActivityOrderValidate
+- BillingFactory
 - MÓDULO DE CONVENIOS Y SERVICIOS TECNOLÓGICOS (ERP-FVC)
 - Be
 - $43d7963e56408b24$export$410364bbb673ddbc
-- ServiceEngagementTest
+- ProductionInputMovementValidate
 - HomeController.php
 - System Invariants — ERP-FVC
 - Z
 - end
-- ProductController.php
-- ParticipantImportService.php
+- ProductsWarehouseImport.php
+- ProductionLaborCostValidate
 - 2.3 Especificación Detallada de Casos de Uso
-- 7. DECISIONES DE ARQUITECTURA, RECOMENDACIONES Y ESCALABILIDAD
-- ProviderController
-- Throwable
-- VacationExitSlipController.php
+- BudgetService
+- ProviderValidate
+- AssetInventoryValidate
+- AssetLoanValidate
 - composer.json
 - PRD - Modulos Pendientes para Adecuacion Operativa y Facturacion Electronica
-- Vt
-- .handle
+- FuelControlSlipValidate
+- RdrInternalLoanValidate
 - Block Definitions & Gate Commands — ERP-FVC
 - ERP-FVC Block Runner
 - 2026_10_03_060000_enhance_revenue_and_obligations_tracking.php
-- 4.1 Entidades Nucleares
-- 3. MODELO DE DATOS DETALLADO (DDL, RELACIONES E ÍNDICES)
-- Billing
+- BudgetThresholdExceededNotification
+- .products
+- Vt
 - admin/products/list.blade.php
 - ReconciliationAuditCommand.php
-- AgroReportsController.php
-- KardexController
+- oo
+- Country
 - AccountingJournalPostingTest
-- 7. DECISIONES ABIERTAS Y RECOMENDACIONES TÉCNICAS
+- BuyFactory
 - graphify reference: extra exports and benchmark
 - graphify reference: extra exports and benchmark
-- SunatServer
-- Módulos y Componentes del Sistema
+- ProducedItemValidate
+- /graphify
 - email-decode.min.js
 - buttons.html5.min.js
 - e
 - docUsePattern
-- VoucherType
-- ServiceEngagementValidate
-- ServiceHourLog
-- RouteServiceProvider.php
+- RdrCutTransferValidate
+- /graphify
+- KardexController
+- ProducedItemController
 - require-dev
 - 2026_10_03_030000_create_agreements_tables.php
 - dataTables.buttons.min.js
 - send_bits
-- Instalación y Configuración Local
+- Módulos y Componentes del Sistema
 - buys/create.blade.php
 - categories/list.blade.php
 - quotes/create.blade.php
@@ -224,21 +223,21 @@
 - 2026_09_26_020000_create_ape_and_rdr_tables.php
 - EventServiceProvider.php
 - config
-- UserFactory
-- /graphify
-- What You Must Do When Invoked
+- ae
+- ActivityDetailedReportExport
+- ServiceEngagementValidate
 - 2026_10_03_010000_create_budget_management_tables.php
-- 5.3 Regla de Oro Anti-Duplicidad de Ingresos
+- AddendumValidate
 - feather.min.js
 - functions.js
 - slowToString
 - Kernel
-- ActivityDetailedReportExport
-- PayModeController
+- FundSource
+- 5.3 Regla de Oro Anti-Duplicidad de Ingresos
 - 2026_10_02_183000_create_financial_statements_and_closing_tables.php
 - 2026_09_27_201500_fix_activity_tracking_logs_schema.php
 - 2026_10_03_030001_create_technological_services_tables.php
-- ProductSeeder
+- Carbon\Carbon
 - graphify reference: query, path, explain
 - graphify reference: query, path, explain
 - Illuminate\Support\Facades\Schema
@@ -268,11 +267,8 @@
 - warehouses/products/list.blade.php
 - diagnostics.sh
 - run_gate.sh
-- Handler.php
-- ServiceReportService.php
+- AssetValidate
 - 2026_09_19_010100_create_expense_declarations_table.php
-- Step 3 - Extract entities and relationships
-- Step 3 - Extract entities and relationships
 - 2014_10_12_100000_create_password_reset_tokens_table.php
 - psr-4
 - scripts
@@ -292,8 +288,6 @@
 - 2026_10_02_170600_add_ledger_indexes_and_permissions.php
 - 2026_10_02_170000_create_accounting_periods_table.php
 - 2026_10_02_184500_alter_accounting_period_closures_status_to_string.php
-- .document
-- 5.9 Productos por Almacen
 - CreatesApplication.php
 - prism-autoloader.min.js
 - build_tree
@@ -302,6 +296,7 @@
 - credit_notes_list.blade.php
 - debit_notes_list.blade.php
 - transfer_orders/create.blade.php
+- Handler.php
 - TrustHosts
 - AuthServiceProvider
 - Signature
@@ -367,7 +362,7 @@
 - EncryptCookies.php
 - PreventRequestsDuringMaintenance.php
 - TrimStrings.php
-- Deflate
+- ProductionBatchValidate
 - ValidateSignature.php
 - VerifyCsrfToken.php
 - graphify reference: GitHub clone and cross-repo merge
@@ -482,6 +477,10 @@
 - reconciliations/show.blade.php
 - transfers/index.blade.php
 - DeflateRaw
+- Step 3 - Extract entities and relationships
+- Step 3 - Extract entities and relationships
+- .document
+- Deflate
 - flatten
 - pipe
 
@@ -493,13 +492,11 @@
 5. `Agreement` - 127 edges
 6. `tn` - 127 edges
 7. `Product` - 124 edges
-8. `Area` - 113 edges
+8. `Area` - 117 edges
 9. `Billing` - 112 edges
 10. `Warehouse` - 111 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `11.4 Carga Rápida de Cosechas en Campo` --references--> `AgroHarvestQuickEntryController`  [INFERRED]
-  docs/PDR.md → app/Http/Controllers/AgroHarvestQuickEntryController.php
 - `11.4 Carga Rápida de Cosechas en Campo` --references--> `AgroHarvestQuickEntryController`  [INFERRED]
   PDR.md → app/Http/Controllers/AgroHarvestQuickEntryController.php
 - `D2 — Asset Loans & Patrimonial Inventory` --references--> `AssetLoanController`  [INFERRED]
@@ -508,11 +505,13 @@
   docs/PDR.md → app/Http/Controllers/BillingReportController.php
 - `7.2 Reportes Tributarios SUNAT` --references--> `BillingReportController`  [INFERRED]
   PDR.md → app/Http/Controllers/BillingReportController.php
+- `3.2 Punto de Venta (POS)` --references--> `PosController`  [INFERRED]
+  docs/PDR.md → app/Http/Controllers/PosController.php
 
 ## Import Cycles
 - None detected.
 
-## Communities (633 total, 407 thin omitted)
+## Communities (637 total, 420 thin omitted)
 
 ### Community 0 - "pdfmake.min.js"
 Cohesion: 0.01
@@ -520,75 +519,75 @@ Nodes (48): arrayClone(), checkIEEE754(), checkWidth(), Data(), decodeTriplet(),
 
 ### Community 1 - "t"
 Cohesion: 0.02
-Nodes (14): co(), createComponent(), Fc(), Gp, Ja(), Jc, Mo, Ru (+6 more)
+Nodes (13): au, createComponent(), Fc(), Gp, Ja(), Jc, Lc(), t() (+5 more)
 
 ### Community 2 - "AccountingPeriod"
-Cohesion: 0.05
-Nodes (14): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), AccountingPeriod, ChartOfAccount, PeriodClosingService (+6 more)
+Cohesion: 0.02
+Nodes (40): A2 — Chart of Accounts & Accounting Periods, AccountingReopenPeriodCommand, AccountNature, AccountType, JournalStatus, VoucherType, {closure#1}(), {closure#2}() (+32 more)
 
 ### Community 3 - "Agreement"
-Cohesion: 0.02
-Nodes (42): AgreementDocumentType, AgreementStatus, InstallmentStatus, ObligationResponsibleParty, ObligationStatus, {closure#11}(), {closure#12}(), {closure#13}() (+34 more)
+Cohesion: 0.03
+Nodes (32): AddendumType, AgreementStatus, AgreementType, ObligationResponsibleParty, {closure#11}(), {closure#12}(), {closure#13}(), {closure#14}() (+24 more)
 
 ### Community 4 - "n"
-Cohesion: 0.05
-Nodes (52): Ad(), ai(), b(), g(), D(), c(), Cd(), cn() (+44 more)
+Cohesion: 0.03
+Nodes (55): an(), b(), g(), D(), Bt(), c(), cn(), d() (+47 more)
 
 ### Community 5 - "sb-customizer.js"
 Cohesion: 0.03
-Nodes (147): aa(), Ae(), af(), ah, an(), ao(), Ap(), at() (+139 more)
+Nodes (118): aa(), Ae(), af(), ah, Ap(), at(), Bd(), be() (+110 more)
 
 ### Community 6 - "chart.js"
 Cohesion: 0.03
-Nodes (66): ai(), at(), average(), b(), beforeDatasetDraw(), beforeDatasetsDraw(), beforeDraw(), beforeUpdate() (+58 more)
+Nodes (83): ai(), at(), average(), b(), beforeDatasetDraw(), beforeDatasetsDraw(), beforeDraw(), beforeLayout() (+75 more)
 
-### Community 7 - "ReportService"
+### Community 7 - "Illuminate\Http\Request"
 Cohesion: 0.04
-Nodes (10): ReportOperationsController, ReportPaymentController, ReportSalesController, ReportService, 7.1 Reportes Comerciales y Financieros, 7.2 Reportes Tributarios SUNAT, MÓDULO 7: REPORTES COMERCIALES Y CONTABLES, 7.1 Reportes Comerciales y Financieros (+2 more)
+Nodes (11): FinancialStatementController, GeneralJournalController, GeneralLedgerController, PayModeController, ReportOperationsController, ReportPaymentController, ReportSalesController, TrialBalanceController (+3 more)
 
-### Community 8 - "Illuminate\Database\Eloquent\Relations\BelongsTo"
-Cohesion: 0.02
-Nodes (26): {closure#18}(), AccountingPeriodAuditLog, AccountingPeriodClosure, {closure#1}(), ActivityPeriodClosure, {closure#1}(), ActivitySalesAttribution, ActivityTrackingLog (+18 more)
+### Community 8 - "Budget"
+Cohesion: 0.16
+Nodes (3): Budget, {closure#1}(), {closure#1}()
 
-### Community 9 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.02
-Nodes (24): AccountingAuditLog, AccountingRule, AccountingRuleLine, AgreementAlertLog, {closure#1}(), AgriculturalPlantation, {closure#1}(), {closure#1}() (+16 more)
+### Community 9 - "Controller.php"
+Cohesion: 0.13
+Nodes (5): BusinessController, {closure#1}(), Department, District, Province
 
 ### Community 10 - "Illuminate\Contracts\View\View"
-Cohesion: 0.04
-Nodes (28): AssetController, {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}(), {closure#7}() (+20 more)
+Cohesion: 0.03
+Nodes (36): AssetController, {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}(), {closure#7}() (+28 more)
 
 ### Community 11 - "tn"
-Cohesion: 0.04
-Nodes (13): d(), es(), generateLabels(), getPixelForTick(), Gs(), Ie(), ke(), kn() (+5 more)
+Cohesion: 0.03
+Nodes (25): aa(), addBox(), afterDatasetsUpdate(), beforeUpdate(), configure(), d(), da(), getBasePixel() (+17 more)
 
 ### Community 12 - "User"
-Cohesion: 0.03
-Nodes (43): ServiceEngagementStatus, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}() (+35 more)
-
-### Community 13 - "FundSource"
 Cohesion: 0.04
-Nodes (18): ActivityTransactionController, RdrModuleController, BankAccountController, BankReconciliationController, InternalTransferController, ActivityTransactionValidate, BankAccount, {closure#1}() (+10 more)
+Nodes (13): {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}(), {closure#16}(), {closure#17}() (+5 more)
 
-### Community 14 - "Product"
-Cohesion: 0.05
-Nodes (14): Product, StockProduct, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}() (+6 more)
+### Community 13 - "DemoAccountingSeeder.php"
+Cohesion: 0.06
+Nodes (12): InstallmentStatus, ServiceSessionStatus, BankMovement, {closure#1}(), BankReconciliationItem, BankReconciliationService, {closure#1}(), {closure#2}() (+4 more)
+
+### Community 14 - "ProductiveActivity"
+Cohesion: 0.07
+Nodes (14): AgroReportsController, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), ProductiveActivityController, ProductiveActivityValidate (+6 more)
 
 ### Community 15 - "Illuminate\Database\Schema\Blueprint"
 Cohesion: 0.05
 Nodes (47): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#1}(), {closure#2}(), {closure#3}() (+39 more)
 
-### Community 16 - "Illuminate\Http\Request"
+### Community 16 - "Illuminate\Http\JsonResponse"
 Cohesion: 0.04
-Nodes (12): BudgetController, FinancialStatementController, PeriodClosingController, AccountingPostingFailureController, ActivityOrderController, AgreementController, CategoryController, ChartOfAccountController (+4 more)
+Nodes (10): BudgetController, PeriodClosingController, AccountingPostingFailureController, AgreementController, CategoryController, ChartOfAccountController, ProductionBatchController, ServiceEngagementController (+2 more)
 
 ### Community 18 - "public/js/jquery.dataTables.min.js"
 Cohesion: 0.07
 Nodes (74): a(), ae(), at(), bt(), r(), C(), ce(), ct() (+66 more)
 
-### Community 19 - "vu"
+### Community 19 - ".create"
 Cohesion: 0.05
-Nodes (31): A(), Ar, as(), bs(), ce(), clear(), cs(), da() (+23 more)
+Nodes (47): A(), ai(), as(), bi(), ce(), clear(), cs(), da() (+39 more)
 
 ### Community 20 - "BillingReportController"
 Cohesion: 0.05
@@ -596,107 +595,107 @@ Nodes (28): BillingReportController, {closure#10}(), {closure#11}(), {closure#12
 
 ### Community 21 - "Chart.min.js"
 Cohesion: 0.04
-Nodes (41): a(), ae(), bt(), c(), ce(), d(), de(), di() (+33 more)
+Nodes (32): a(), bt(), c(), ce(), d(), de(), di(), h() (+24 more)
 
-### Community 23 - "subscribe"
+### Community 23 - ".get"
+Cohesion: 0.12
+Nodes (7): ao(), co(), ko(), Mo, Pc(), Rc(), uo()
+
+### Community 24 - "SaleNote"
 Cohesion: 0.06
-Nodes (11): Eh(), gc(), Ih, Jr(), kh, mc, qa, subscribe() (+3 more)
-
-### Community 24 - "ArchingCash"
-Cohesion: 0.04
-Nodes (8): ArchingCashController, SaleNoteController, ArchingCash, CashMovement, DetailPayment, DetailSaleNote, SaleNote, ArchingCashManagementTest
+Nodes (6): SaleNoteController, DetailPayment, DetailSaleNote, SaleNote, 3.5 Cotizaciones y Notas de Venta, 3.5 Cotizaciones y Notas de Venta
 
 ### Community 25 - "ProductionHarvest"
-Cohesion: 0.06
-Nodes (15): {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}(), {closure#16}(), {closure#17}(), {closure#10}(), {closure#11}() (+7 more)
+Cohesion: 0.05
+Nodes (18): AgroHarvestQuickEntryController, {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}(), {closure#16}(), {closure#17}(), {closure#10}() (+10 more)
 
-### Community 26 - "DocumentApprovalController.php"
-Cohesion: 0.04
-Nodes (16): DocumentApprovalController, ExpenseDeclarationController, ExpenseDeclaration, ExpenseDeclarationItem, 2.1 Cadena de Aprobación Jerárquica (`Area::approvalChain` & `DocumentApprovalService`), 2.2 Bandeja Centralizada de Aprobaciones (`/approvals`), 4. ESPECIFICACIÓN DETALLADA DE MÓDULOS DEL SISTEMA, 5.2 Multi-Almacén y Selector Activo (+8 more)
-
-### Community 27 - "Warehouse"
-Cohesion: 0.04
-Nodes (24): CashController, SerieController, {closure#1}(), Cash, Category, Client, IdentityDocumentType, IgvTypeAffection (+16 more)
+### Community 27 - "Product"
+Cohesion: 0.03
+Nodes (25): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), ProductController, {closure#2}(), {closure#3}(), {closure#4}() (+17 more)
 
 ### Community 28 - ".unsubscribe"
 Cohesion: 0.05
-Nodes (14): bc(), Cc(), emit(), f, g, j, L, Md() (+6 more)
+Nodes (16): bc(), Cc(), emit(), error(), f, g, j, L (+8 more)
 
-### Community 29 - "o"
-Cohesion: 0.06
-Nodes (23): Ae(), afterUpdate(), ao(), Bi(), Ci(), co(), da(), Do() (+15 more)
+### Community 29 - ".update"
+Cohesion: 0.07
+Nodes (20): afterDraw(), afterEvent(), afterUpdate(), Ba(), f(), ki(), ns(), Oi() (+12 more)
 
 ### Community 30 - "1.10.22/js/jquery.dataTables.min.js"
 Cohesion: 0.08
 Nodes (61): $a(), aa(), ac(), $b(), bc(), Cb(), cc(), Da() (+53 more)
 
-### Community 31 - "ProductionRawMaterial"
-Cohesion: 0.13
-Nodes (12): {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), ProductionRawMaterialController, ProductionRawMaterialValidate (+4 more)
+### Community 31 - "AgreementDataStructureTest.php"
+Cohesion: 0.08
+Nodes (7): AgreementDocumentType, AgreementDocumentController, AgreementDocument, {closure#1}(), {closure#1}(), ServiceDeliverable, AgreementFileService
 
-### Community 32 - ".forEach"
+### Community 32 - "indexOf"
 Cohesion: 0.05
-Nodes (15): bu, Fu, gu(), Hu(), indexOf(), ju, ka(), ko() (+7 more)
+Nodes (13): bu, Fu, Hu(), indexOf(), ju, Ku, Lu(), os() (+5 more)
 
 ### Community 33 - "all.min.js"
-Cohesion: 0.08
-Nodes (56): cn(), w(), g(), k(), $1(), a(), a1(), a2() (+48 more)
+Cohesion: 0.09
+Nodes (36): cn(), w(), g(), $1(), a1(), a2(), c(), C1() (+28 more)
 
 ### Community 34 - "AgriculturalPlot"
-Cohesion: 0.08
-Nodes (19): AgroPlotController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#8}(), {closure#9}() (+11 more)
+Cohesion: 0.07
+Nodes (20): AgroPlotController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#8}(), {closure#9}() (+12 more)
 
 ### Community 35 - "s"
-Cohesion: 0.05
-Nodes (40): Bn(), bo, _calculateBarIndexPixels(), _calculateBarValuePixels(), _getAxis(), _getAxisCount(), getBasePixel(), getFirstScaleIdForIndexAxis() (+32 more)
+Cohesion: 0.07
+Nodes (33): Bn(), buildTicks(), _calculateBarIndexPixels(), _calculateBarValuePixels(), _getAxis(), _getAxisCount(), getFirstScaleIdForIndexAxis(), getLabelAndValue() (+25 more)
 
 ### Community 36 - "FinancialStatementTemplate"
 Cohesion: 0.09
 Nodes (5): {closure#1}(), FinancialStatementTemplate, FinancialStatementTemplateLine, FinancialStatementService, FinancialStatementTemplateSeeder
 
-### Community 37 - "JournalEntry"
-Cohesion: 0.03
-Nodes (27): Block C — Financial Closing & Advanced Accounting, C1 — Journal Posting Service, C2 — Cash Register & Arching, C4 — Financial Statements & Ledger Reports, C5 — Agreements & Technological Services, INV-ACC-04: source_id Before JE Create, AccountingBackfillCommand, AccountingCheckIntegrityCommand (+19 more)
+### Community 37 - "ShipmentGuideController"
+Cohesion: 0.20
+Nodes (3): {closure#13}(), ShipmentGuideController, ShipmentGuide
+
+### Community 38 - "Warehouse"
+Cohesion: 0.05
+Nodes (29): CashController, {closure#3}(), {closure#4}(), {closure#5}(), {closure#1}(), UsersImport, ArchingCash, Cash (+21 more)
 
 ### Community 39 - "bl"
-Cohesion: 0.08
-Nodes (14): bl(), en(), get(), hl(), In(), jl, kl, Ll() (+6 more)
+Cohesion: 0.04
+Nodes (22): bl(), dl, ei(), get(), hl(), In(), jl, kl (+14 more)
 
 ### Community 40 - "tl"
-Cohesion: 0.05
-Nodes (20): _adjustIndex(), Al, Cl, createEmbeddedView(), detach(), ds(), el, Fl (+12 more)
+Cohesion: 0.04
+Nodes (21): _adjustIndex(), Al, bs(), createEmbeddedView(), detach(), ds(), el, Fl (+13 more)
 
-### Community 41 - "AssetLoan"
-Cohesion: 0.08
-Nodes (10): AssetLoanController, {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}(), {closure#9}() (+2 more)
+### Community 41 - "FuelControlSlipController.php"
+Cohesion: 0.10
+Nodes (3): FuelControlSlipController, FuelControlSlip, FuelControlSlipItem
 
 ### Community 42 - "call"
 Cohesion: 0.04
 Nodes (55): AFMFont(), _applyDecoratedDescriptor(), cache(), call(), CFFEncodingVersion(), CFFPointer(), CFFSubset(), _classCallCheck() (+47 more)
 
-### Community 43 - "Provider"
-Cohesion: 0.05
-Nodes (14): B3 — Purchases (Buys) & Providers, C3 — Bank Reconciliation, {closure#3}(), {closure#4}(), Provider, AgreementFactory, BankAccountFactory, BankMovementFactory (+6 more)
+### Community 43 - "Illuminate\Database\Eloquent\Factories\Factory"
+Cohesion: 0.07
+Nodes (11): C2 — Cash Register & Arching, C3 — Bank Reconciliation, AgreementFactory, AgreementInstallmentFactory, ArchingCashFactory, BankAccountFactory, BankMovementFactory, ClientFactory (+3 more)
 
 ### Community 44 - "Illuminate\Database\Seeder"
-Cohesion: 0.03
-Nodes (33): A1 — RBAC, Roles & Base Permissions, AccountNature, AccountType, AddendumType, AgreementType, JournalStatus, ServiceCategory, ServiceDeliverableStatus (+25 more)
+Cohesion: 0.04
+Nodes (23): ServiceCategory, AgreementRoleAndPermissionSeeder, ArchingCashSeeder, AreaHierarchySeeder, AreaSeeder, CashSeeder, CategorySeeder, CountrySeeder (+15 more)
 
-### Community 45 - ".update"
-Cohesion: 0.13
-Nodes (12): afterDraw(), afterEvent(), Ba(), f(), ki(), mt(), os(), Ta() (+4 more)
+### Community 45 - ".getContext"
+Cohesion: 0.07
+Nodes (14): Ae(), ao(), Bi(), bo, Ci(), co(), Do(), Fi() (+6 more)
+
+### Community 46 - "Provider"
+Cohesion: 0.04
+Nodes (15): B3 — Purchases (Buys) & Providers, ClientController, {closure#3}(), {closure#4}(), ProviderController, Provider, ProviderFactory, 3.1 Clientes y Proveedores Fiscales (+7 more)
 
 ### Community 47 - "jquery-3.6.4.min.js"
 Cohesion: 0.07
-Nodes (33): $e(), A(), b(), be(), ce(), ct(), _e(), Ee() (+25 more)
+Nodes (30): A(), b(), be(), ce(), ct(), _e(), Ee(), ft() (+22 more)
 
 ### Community 48 - "n"
-Cohesion: 0.06
-Nodes (20): Be(), e(), ei(), fn(), g(), gi(), gn(), je() (+12 more)
-
-### Community 50 - "BillingController"
-Cohesion: 0.09
-Nodes (8): BillingController, {closure#12}(), CreditNoteType, DebitNoteType, CreditNoteTypeSeeder, DebitNoteTypeSeeder, 3.3 Comprobantes Electrónicos SUNAT (Billings), 3.3 Comprobantes Electrónicos SUNAT (Billings)
+Cohesion: 0.07
+Nodes (10): Be(), fn(), gn(), n(), ne(), numeric(), Pn(), xn() (+2 more)
 
 ### Community 51 - "What You Must Do When Invoked"
 Cohesion: 0.20
@@ -706,25 +705,37 @@ Nodes (10): Step 0 - GitHub repos and multi-path merge (only if a URL or several
 Cohesion: 0.08
 Nodes (36): addChunk(), _addListener(), afterTransform(), afterWrite(), read(), callFinal(), checkListener(), clearBuffer() (+28 more)
 
-### Community 55 - "br"
-Cohesion: 0.08
-Nodes (11): br, Cr(), fr(), gr, le(), mr, qr(), Tr() (+3 more)
+### Community 53 - "_n"
+Cohesion: 0.24
+Nodes (11): bn(), dn(), hn(), mn(), _n(), parentInjector(), un(), vn() (+3 more)
 
-### Community 56 - ".products"
-Cohesion: 0.25
-Nodes (7): B1 — Products, Warehouses & Stock, B2 — Sales, POS & Billings (UBL 2.1), Block B — Transactional Modules, 3.6 Tabla: `technological_services` (Catálogo de Servicios Tecnológicos), 7.2 Decisión 2: Tarifario de Servicios Tecnológicos: Tarifa Estándar vs. Tarifa Subvencionada, 5. MODELO ENTIDAD-RELACIÓN Y ESTRUCTURA DE BASE DE DATOS, 5. MODELO ENTIDAD-RELACIÓN Y ESTRUCTURA DE BASE DE DATOS
+### Community 55 - "wr"
+Cohesion: 0.06
+Nodes (17): Ar, br, Cr(), fr(), gr, kr, le(), mr (+9 more)
 
-### Community 57 - "ShipmentGuideController.php"
-Cohesion: 0.04
-Nodes (20): {closure#1}(), ClientController, {closure#3}(), {closure#4}(), {closure#5}(), {closure#13}(), ShipmentGuideController, Department (+12 more)
+### Community 56 - "Illuminate\Database\Eloquent\Builder"
+Cohesion: 0.09
+Nodes (17): C4 — Financial Statements & Ledger Reports, AccountingRule, CashFlowMapping, {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#2}() (+9 more)
 
-### Community 58 - "/graphify"
-Cohesion: 0.20
-Nodes (9): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Usage (+1 more)
+### Community 57 - ".session"
+Cohesion: 0.11
+Nodes (3): QuoteController, DetailQuote, Quote
+
+### Community 58 - "o"
+Cohesion: 0.10
+Nodes (14): a(), determineDataLimits(), Di(), g(), g(), m(), o(), p() (+6 more)
 
 ### Community 59 - "_typeof"
 Cohesion: 0.07
 Nodes (44): AssertionError(), _assertThisInitialized(), checkIsPromise(), compare(), compareExceptionKey(), _construct(), copyError(), _createClass() (+36 more)
+
+### Community 60 - "ha"
+Cohesion: 0.08
+Nodes (4): ha(), no(), ro(), za
+
+### Community 61 - "RequisitionController.php"
+Cohesion: 0.10
+Nodes (3): RequisitionController, Requisition, RequisitionItem
 
 ### Community 62 - "Illuminate\Database\Migrations\Migration"
 Cohesion: 0.06
@@ -734,245 +745,221 @@ Nodes (8): {closure#1}(), CreatePermissionTables, {closure#1}(), {closure#1}(), 
 Cohesion: 0.12
 Nodes (4): ActivitySingleSheetExport, ActivityIncomeExpenseExport, AssetTemplateExport, UsersTemplateExport
 
-### Community 64 - "BillingController.php"
+### Community 64 - "Buy"
 Cohesion: 0.06
-Nodes (6): {closure#13}(), {closure#22}(), {closure#24}(), DetailBilling, BillingPayloadBuilder, {closure#1}()
+Nodes (9): BuyController, {closure#13}(), {closure#14}(), {closure#15}(), AccountPayable, Buy, DetailBuy, 4.1 Compras Fiscales (Buys) (+1 more)
 
 ### Community 65 - "formatValue"
 Cohesion: 0.14
 Nodes (21): copyStyle(), flattenStyleArray(), FontProvider(), formatError(), formatProperty(), formatValue(), hasOwnProperty(), inspect() (+13 more)
 
 ### Community 66 - "sn"
-Cohesion: 0.08
-Nodes (8): addBox(), addElements(), configure(), en, Nn(), sn, start(), wn()
+Cohesion: 0.13
+Nodes (3): addElements(), en, sn
 
-### Community 67 - "Business"
-Cohesion: 0.14
-Nodes (10): BusinessController, Business, BusinessStoragePath, BusineSeeder, 8.1 Perfil de Empresa Emisora, 8.2 Series, Correlativos y Organigrama, MÓDULO 8: CONFIGURACIÓN GENERAL Y PARAMETRIZACIÓN, 8.1 Perfil de Empresa Emisora (+2 more)
+### Community 67 - "4. ESPECIFICACIÓN DETALLADA DE MÓDULOS DEL SISTEMA"
+Cohesion: 0.17
+Nodes (12): 4.1 Compras Fiscales (Buys), 4. ESPECIFICACIÓN DETALLADA DE MÓDULOS DEL SISTEMA, 5.2 Multi-Almacén y Selector Activo, 7.1 Reportes Comerciales y Financieros, 7.2 Reportes Tributarios SUNAT, 8.1 Perfil de Empresa Emisora, 8.2 Series, Correlativos y Organigrama, MÓDULO 4: COMPRAS Y GESTIÓN DE PROVEEDORES (+4 more)
 
 ### Community 68 - "sweetalert2@11.js"
 Cohesion: 0.10
 Nodes (20): Rn(), dt(), e(), emit(), En, Ft(), _getHandlersByEventName(), _main() (+12 more)
 
 ### Community 71 - "ho"
-Cohesion: 0.04
-Nodes (29): a(), aa(), afterDatasetsUpdate(), beforeLayout(), buildLookupTable(), buildTicks(), determineDataLimits(), Di() (+21 more)
+Cohesion: 0.06
+Nodes (14): buildLookupTable(), Fs(), _generate(), getDecimalForValue(), _getTimestampsForTable(), getValueForPixel(), ho(), init() (+6 more)
 
 ### Community 72 - "xt"
 Cohesion: 0.09
 Nodes (7): an(), as(), ln(), on, rs(), ts(), xt
 
 ### Community 73 - "i"
-Cohesion: 0.08
-Nodes (16): bs(), cs, ct(), ge(), hs, is(), ks(), ms() (+8 more)
+Cohesion: 0.09
+Nodes (14): bs(), cs, ct(), ge(), hs, is(), ks(), ms() (+6 more)
 
 ### Community 74 - "from"
 Cohesion: 0.07
 Nodes (36): allocUnsafe(), arrayIndexOf(), asciiWrite(), assertSize(), base64ToBytes(), base64Write(), bidirectionalIndexOf(), blitBuffer() (+28 more)
 
 ### Community 75 - "jt"
-Cohesion: 0.09
-Nodes (12): Bt(), color(), Ft(), Gt(), It(), jt(), qt(), te() (+4 more)
+Cohesion: 0.08
+Nodes (16): Bt(), color(), Ee(), Ft(), Gt(), It(), jt(), kt() (+8 more)
 
-### Community 78 - "ActivityTransaction"
-Cohesion: 0.07
-Nodes (14): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), ActivityTransaction, {closure#1}(), ActivityTransactionCategory (+6 more)
+### Community 78 - "Illuminate\Database\Eloquent\Relations\BelongsTo"
+Cohesion: 0.02
+Nodes (44): {closure#18}(), AccountingAuditLog, AccountingPeriodClosure, {closure#1}(), AccountingRuleLine, ActivityPeriodClosure, {closure#1}(), ActivitySalesAttribution (+36 more)
 
 ### Community 80 - "popper.min.js"
 Cohesion: 0.21
 Nodes (25): b(), c(), d(), E(), f(), g(), h(), I() (+17 more)
 
+### Community 81 - "erp-block-runner/SKILL.md"
+Cohesion: 0.20
+Nodes (3): Block → PDR Section Map, How to Use, Quick PDR Scan Commands
+
 ### Community 82 - "bootstrap.min.js"
 Cohesion: 0.10
-Nodes (17): B(), D(), F(), getDataAttributes(), I(), j(), M(), N() (+9 more)
+Nodes (16): $e(), B(), D(), F(), I(), j(), M(), N() (+8 more)
+
+### Community 83 - "trigger"
+Cohesion: 0.11
+Nodes (6): e(), getDataAttributes(), ne, q(), remove(), trigger()
 
 ### Community 84 - "toastr.min.js"
 Cohesion: 0.16
 Nodes (27): a(), c(), f(), g(), a(), b(), c(), d() (+19 more)
 
-### Community 85 - "FuelControlSlipController.php"
-Cohesion: 0.10
-Nodes (3): FuelControlSlipController, FuelControlSlip, FuelControlSlipItem
+### Community 85 - "DocumentApprovalService"
+Cohesion: 0.03
+Nodes (14): AssetInventoryController, DocumentApprovalController, ExpenseDeclarationController, VacationExitSlipController, ExpenseDeclaration, ExpenseDeclarationItem, VacationExitSlip, DocumentApprovalService (+6 more)
+
+### Community 86 - "Billing"
+Cohesion: 0.08
+Nodes (6): SunatBillingPayloadController, {closure#22}(), {closure#24}(), Billing, BillingPayloadBuilder, {closure#1}()
 
 ### Community 87 - "ProductionCampaign"
-Cohesion: 0.05
-Nodes (26): ProductionHarvestController, ProductionInputMovementController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}() (+18 more)
+Cohesion: 0.03
+Nodes (49): {closure#10}(), {closure#11}(), {closure#12}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+41 more)
 
-### Community 88 - "QuoteController"
-Cohesion: 0.09
-Nodes (6): QuoteController, DetailQuote, Quote, 3.5 Cotizaciones y Notas de Venta, 3.5 Cotizaciones y Notas de Venta, QuoteManagementTest
-
-### Community 89 - ".session"
-Cohesion: 0.08
-Nodes (10): BuyController, {closure#7}(), TransferOrderController, WarehouseSelectorController, DetailTransferOrder, TransferOrder, 5.3 Órdenes de Traslado y Kardex, 5.2 Multi-Almacén y Selector Activo (+2 more)
+### Community 89 - "TransferOrderController"
+Cohesion: 0.14
+Nodes (6): TransferOrderController, TransferOrder, 5.3 Órdenes de Traslado y Kardex, 5.2 Multi-Almacén y Selector Activo, 5.3 Órdenes de Traslado y Kardex, MÓDULO 5: INVENTARIO, MULTI-ALMACÉN Y KARDEX
 
 ### Community 90 - "_createForOfIteratorHelperLoose"
 Cohesion: 0.09
 Nodes (28): _arrayLikeToArray(), CFFDict(), clearSubstitutionFlags(), CmapProcessor(), consonantPosition(), _createForOfIteratorHelper(), _createForOfIteratorHelperLoose(), DFont() (+20 more)
 
-### Community 91 - "Controller"
-Cohesion: 0.06
-Nodes (8): SunatBillingPayloadController, SunatDispatchController, SunatValidationController, AreaController, Controller, CountryController, Country, GET /user()
+### Community 91 - "Serie"
+Cohesion: 0.09
+Nodes (5): SerieController, DetailBilling, Serie, SerieSeeder, PosManagementTest
 
-### Community 92 - "Illuminate\Queue\SerializesModels"
-Cohesion: 0.17
-Nodes (12): ActivityTransactionRecorded, CashSessionClosed, CreditNoteIssued, CutTransferRegistered, DebitNoteIssued, InternalLoanDisbursed, PaymentReceived, PurchaseRecorded (+4 more)
+### Community 92 - "RdrInternalLoan"
+Cohesion: 0.09
+Nodes (18): ActivityTransactionRecorded, BillingVoided, CashSessionClosed, CreditNoteIssued, CutTransferRegistered, DebitNoteIssued, InternalLoanDisbursed, InternalLoanRepaid (+10 more)
 
 ### Community 93 - "Maatwebsite\Excel\Concerns\ShouldAutoSize"
 Cohesion: 0.12
 Nodes (6): BillingReportExport, BudgetExecutionExport, FinancialStatementExport, GeneralJournalExport, GeneralLedgerExport, TrialBalanceExport
 
 ### Community 94 - "LivestockUnit"
-Cohesion: 0.08
-Nodes (16): AgroLivestockController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+8 more)
+Cohesion: 0.09
+Nodes (17): AgroLivestockController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+9 more)
 
-### Community 96 - "SunatDispatchService"
-Cohesion: 0.13
-Nodes (6): CdrParser, XmlSigner, SunatDispatchService, BusinessCertificatePath, optionalDomNodeValue(), SunatSoapClient
+### Community 96 - "Business"
+Cohesion: 0.07
+Nodes (12): Business, CdrParser, XmlSigner, SunatDispatchService, BusinessCertificatePath, BusinessProfile, BusinessStoragePath, SunatEndpointResolver (+4 more)
 
 ### Community 97 - "i"
 Cohesion: 0.08
 Nodes (27): binarySearch(), boundsError(), callbackifyOnRejected(), checkBoxedPrimitive(), checkIntBI(), createIterResult(), decodeEntities(), errorListener() (+19 more)
 
-### Community 98 - "AgreementValidate"
-Cohesion: 0.06
-Nodes (6): AgreementValidate, {closure#1}(), AreaValidate, BuyValidate, ChartOfAccountRequest, UserValidate
+### Community 98 - ".rule"
+Cohesion: 0.09
+Nodes (3): BuyValidate, ChartOfAccountRequest, UserValidate
 
-### Community 99 - "Illuminate\Database\Eloquent\Builder"
-Cohesion: 0.07
-Nodes (17): CashFlowMapping, {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#2}(), {closure#3}(), {closure#4}() (+9 more)
+### Community 99 - "Id"
+Cohesion: 0.27
+Nodes (10): Ad(), Cd(), Ed(), Id(), kd(), Od(), Pd(), Sd() (+2 more)
 
 ### Community 100 - "PosController.php"
-Cohesion: 0.06
-Nodes (3): {closure#20}(), {closure#24}(), PosController
-
-### Community 101 - "WarehouseController"
-Cohesion: 0.13
-Nodes (3): WarehouseController, Authenticate, TrustProxies
+Cohesion: 0.04
+Nodes (5): {closure#24}(), {closure#7}(), DetailTransferOrder, {closure#2}(), TaxCalculator
 
 ### Community 102 - "jszip.min.js"
 Cohesion: 0.24
 Nodes (22): A(), c(), d(), i(), n(), f(), G(), h() (+14 more)
 
 ### Community 103 - "nu"
-Cohesion: 0.05
-Nodes (6): au, Lc(), nu, useDeprecatedSynchronousErrorHandling(), uu, Zc()
+Cohesion: 0.08
+Nodes (3): nu, useDeprecatedSynchronousErrorHandling(), Zc()
 
-### Community 104 - "ActivityOrder"
-Cohesion: 0.12
-Nodes (11): {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+3 more)
+### Community 104 - "manuals/index.blade.php"
+Cohesion: 0.29
+Nodes (6): admin.manuals.modules.accounting, admin.manuals.modules.agreements_services, admin.manuals.modules.agrolivestock, admin.manuals.modules.ape, admin.manuals.modules.production, admin.layout
 
-### Community 106 - "ProductionInputMovement"
-Cohesion: 0.12
-Nodes (11): {closure#10}(), {closure#11}(), {closure#12}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+3 more)
+### Community 105 - "What You Must Do When Invoked"
+Cohesion: 0.20
+Nodes (10): Step 0 - GitHub repos and multi-path merge (only if a URL or several paths), Step 1 - Ensure graphify is installed, Step 2.5 - Video and audio (only if video files detected), Step 4.5 - Graph health check (read-only integrity gate), Step 4 - Build graph, cluster, analyze, generate outputs, Step 5 - Label communities, Step 6 - Generate Obsidian vault (opt-in) + HTML, Step 9 - Save manifest, update cost tracker, clean up, and report (+2 more)
 
 ### Community 108 - "5. Detalle por Modulo"
-Cohesion: 0.08
-Nodes (25): 5.1 Proveedores, 5.2 Compras, 5.4 Comprobantes, 5.5 Notas de Venta, 5.6 Arqueo de Cajas, 5.7 Cotizaciones, 5. Detalle por Modulo, Alcance (+17 more)
-
-### Community 109 - "I"
-Cohesion: 0.07
-Nodes (14): E(), I, m(), ni(), nn(), os(), qe(), st() (+6 more)
+Cohesion: 0.06
+Nodes (34): 5.1 Proveedores, 5.2 Compras, 5.4 Comprobantes, 5.5 Notas de Venta, 5.6 Arqueo de Cajas, 5.7 Cotizaciones, 5.8 Reportes, 5.9 Productos por Almacen (+26 more)
 
 ### Community 110 - "fh"
-Cohesion: 0.12
-Nodes (6): fh, gh, ph, schedule(), vh, yh
+Cohesion: 0.10
+Nodes (7): Cl, fh, gh, ph, schedule(), vh, yh
 
-### Community 112 - "AgreementInstallment"
-Cohesion: 0.04
-Nodes (10): AgreementInstallment, AgreementObligation, {closure#1}(), TechnologicalService, AgreementInstallmentService, {closure#1}(), {closure#2}(), AgreementReportService (+2 more)
+### Community 111 - "ServiceEngagement"
+Cohesion: 0.03
+Nodes (29): ServiceDeliverableStatus, ServiceEngagementStatus, {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}() (+21 more)
 
 ### Community 114 - "ProducedItem"
-Cohesion: 0.08
-Nodes (15): AgroHarvestQuickEntryController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), ProducedItemController (+7 more)
+Cohesion: 0.06
+Nodes (15): {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), ActivityTransactionCategory, {closure#1}() (+7 more)
 
 ### Community 115 - "jquery-ui.min.js"
 Cohesion: 0.14
 Nodes (13): a(), h(), i(), ht(), i(), lt(), m(), n() (+5 more)
 
 ### Community 116 - "je"
-Cohesion: 0.20
-Nodes (4): Qe(), Ve(), je, Ye()
+Cohesion: 0.19
+Nodes (5): Qe(), Ve(), je, Ye(), Ke()
 
-### Community 117 - "trigger"
-Cohesion: 0.12
-Nodes (4): e(), ne, remove(), trigger()
+### Community 119 - "Rh"
+Cohesion: 0.17
+Nodes (3): kh, Mh(), Rh
 
-### Community 118 - "mt"
-Cohesion: 0.12
-Nodes (3): mt, kt(), _t()
+### Community 120 - "ActivityOrder"
+Cohesion: 0.06
+Nodes (13): {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+5 more)
 
-### Community 119 - "dl"
-Cohesion: 0.08
-Nodes (9): dl, ee, ei(), Mh(), Rh, Ue(), Wl(), ye() (+1 more)
-
-### Community 120 - "Buy"
+### Community 123 - "Area"
 Cohesion: 0.05
-Nodes (10): {closure#13}(), {closure#14}(), {closure#15}(), AccountPayable, Buy, DetailBuy, 4.1 Compras Fiscales (Buys), MÓDULO 4: COMPRAS Y GESTIÓN DE PROVEEDORES (+2 more)
+Nodes (28): AreaController, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}() (+20 more)
 
-### Community 121 - "ServiceEngagementController.php"
-Cohesion: 0.12
-Nodes (9): {closure#10}(), {closure#11}(), {closure#12}(), {closure#13}(), {closure#14}(), {closure#15}(), {closure#16}(), {closure#8}() (+1 more)
-
-### Community 122 - "ProductsWarehouseImport.php"
-Cohesion: 0.13
-Nodes (5): {closure#1}(), ProductsCatalogExport, {closure#1}(), {closure#1}(), ProductsWarehouseImport
-
-### Community 123 - "Illuminate\Support\Facades\Auth"
+### Community 126 - "p2"
 Cohesion: 0.18
-Nodes (3): CheckAccountingPeriodOpen, CheckAgreementAccess, RedirectIfAuthenticated
-
-### Community 126 - "AccountingPostingFailure"
-Cohesion: 0.29
-Nodes (5): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), AccountingPostingFailure
-
-### Community 127 - "WarehouseController.php"
-Cohesion: 0.11
-Nodes (4): ProductsWarehouseExport, {closure#2}(), {closure#3}(), {closure#4}()
-
-### Community 128 - "ServiceAttendee"
-Cohesion: 0.14
-Nodes (4): {closure#17}(), ServiceAttendee, CertificateService, {closure#1}()
+Nodes (20): k(), a(), d(), d1(), g2(), H(), k2(), M() (+12 more)
 
 ### Community 129 - "Illuminate\Foundation\Http\FormRequest"
-Cohesion: 0.03
-Nodes (14): ActivityOrderValidate, AgroHarvestQuickEntryValidate, AssetInventoryValidate, AssetLoanValidate, AssetValidate, FuelControlSlipValidate, ProducedItemValidate, ProductionBatchValidate (+6 more)
+Cohesion: 0.10
+Nodes (5): AgriculturalNurseryValidate, AgriculturalPlantationValidate, AgroHarvestQuickEntryValidate, ProductionHarvestValidate, ProductionPlanValidate
 
 ### Community 130 - "Illuminate\Support\ServiceProvider"
 Cohesion: 0.12
 Nodes (4): AppServiceProvider, BroadcastServiceProvider, {closure#1}(), GlobalVariablesServiceProvider
 
 ### Community 131 - "wi"
-Cohesion: 0.15
-Nodes (9): ir(), jn(), lt(), nr(), ro(), rt(), sr(), wi() (+1 more)
+Cohesion: 0.19
+Nodes (9): zi(), ir(), jn(), lt(), nr(), rt(), sr(), wi() (+1 more)
 
 ### Community 132 - "_regeneratorRuntime"
 Cohesion: 0.17
 Nodes (14): _regeneratorRuntime(), AsyncIterator(), callInvokeWithMethodAndArg(), invoke(), Context(), define(), defineIteratorMethods(), doneResult() (+6 more)
 
 ### Community 133 - "AgriculturalNursery"
-Cohesion: 0.12
-Nodes (12): AgroNurseryController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+4 more)
+Cohesion: 0.14
+Nodes (10): AgroNurseryController, {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}() (+2 more)
 
-### Community 135 - "DISEÑO DE ARQUITECTURA: MÓDULO DE CONTABILIDAD Y TESORERÍA INTEGRAL (ERP-FVC)"
-Cohesion: 0.11
-Nodes (17): 1. INTRODUCCIÓN Y CONTEXTO DEL SISTEMA, 2.1 Requisitos Funcionales (RF), 2.2 Requisitos No Funcionales (RNF), 2. REQUISITOS DEL SISTEMA, 3.1 Arquitectura de Componentes, 3.2 Diagrama de Secuencia del Flujo Contable (Mermaid), 3. DISEÑO DE ALTO NIVEL (COMPONENTES Y FLUJO DE DATOS), 4. ESPECIFICACIÓN DETALLADA DEL MODELO DE DATOS (+9 more)
+### Community 135 - "4.1 Entidades Nucleares"
+Cohesion: 0.06
+Nodes (32): 1. `accounting_periods` (Períodos Contables), 1. INTRODUCCIÓN Y CONTEXTO DEL SISTEMA, 2.1 Requisitos Funcionales (RF), 2.2 Requisitos No Funcionales (RNF), 2. `chart_of_accounts` (Plan Contable General Empresarial - PCGE), 2. REQUISITOS DEL SISTEMA, 3.1 Arquitectura de Componentes, 3.2 Diagrama de Secuencia del Flujo Contable (Mermaid) (+24 more)
 
-### Community 137 - "4. MÁQUINAS DE ESTADO Y TRANSICIONES DEL CICLO DE VIDA"
-Cohesion: 0.33
-Nodes (6): 4.1 Máquina de Estados: `Agreement` (Convenio), 4.2 Máquina de Estados: `AgreementObligation` (Obligación), 4.3 Máquina de Estados: `AgreementInstallment` (Cuota de Facturación), 4. MÁQUINAS DE ESTADO Y TRANSICIONES DEL CICLO DE VIDA, Matriz de Transiciones de Convenios:, Matriz de Transiciones de Obligaciones:
+### Community 137 - "AgreementInstallment"
+Cohesion: 0.04
+Nodes (18): CheckAgreementAlertsCommand, {closure#1}(), AgreementAlertLog, AgreementInstallment, {closure#1}(), AgreementObligation, {closure#1}(), AgreementInstallmentService (+10 more)
 
-### Community 138 - "BudgetThresholdExceededNotification"
-Cohesion: 0.18
-Nodes (3): AgreementDeadlineAlertNotification, BudgetThresholdExceededNotification, DocumentPendingApprovalNotification
+### Community 138 - "AccountingPostingFailure"
+Cohesion: 0.29
+Nodes (5): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), AccountingPostingFailure
 
-### Community 140 - "Barryvdh\DomPDF\Facade\Pdf"
-Cohesion: 0.09
-Nodes (5): CostCenterDashboardController, GeneralJournalController, GeneralLedgerController, TrialBalanceController, LedgerReportService
+### Community 140 - "Controller"
+Cohesion: 0.06
+Nodes (9): ActivityOrderController, SunatDispatchController, SunatValidationController, Controller, LoginController, {closure#1}(), RouteServiceProvider, 10.8 Comercialización: Preventas y Pedidos de Actividad (+1 more)
 
 ### Community 141 - "DOCUMENTO DE DEFINICIÓN Y REQUISITOS DE PRODUCTO (PDR)"
-Cohesion: 0.12
-Nodes (16): 1.1 Propósito, 1.2 Visión General, 1. INTRODUCCIÓN Y VISIÓN DEL PRODUCTO, 2.1 Especificación Tecnológica, 2. ARQUITECTURA TÉCNICA Y STACK TECNOLÓGICO, 6.1 Flujo de Préstamo y Devolución de Bienes Patrimoniales, 6.2 Flujo de Aprobación Jerárquica de Documentos Internos, 6.3 Flujo Integral de Producción, Transformación y Publicación Comercial (+8 more)
+Cohesion: 0.11
+Nodes (18): 1.1 Propósito, 1.2 Visión General, 1. INTRODUCCIÓN Y VISIÓN DEL PRODUCTO, 2.1 Especificación Tecnológica, 2. ARQUITECTURA TÉCNICA Y STACK TECNOLÓGICO, 3.1 Roles Predefinidos del Sistema (18 Roles), 3. GESTIÓN DE SEGURIDAD Y MATRIZ DE ROLES (RBAC), 6.1 Flujo de Préstamo y Devolución de Bienes Patrimoniales (+10 more)
 
 ### Community 142 - "package.json"
 Cohesion: 0.13
@@ -982,13 +969,13 @@ Nodes (12): devDependencies, axios, laravel-vite-plugin, vite, private, scripts,
 Cohesion: 0.11
 Nodes (18): 1.1 Propósito, 1.2 Visión General, 1. INTRODUCCIÓN Y VISIÓN DEL PRODUCTO, 2.1 Especificación Tecnológica, 2. ARQUITECTURA TÉCNICA Y STACK TECNOLÓGICO, 3.1 Roles Predefinidos del Sistema (18 Roles), 3. GESTIÓN DE SEGURIDAD Y MATRIZ DE ROLES (RBAC), 6.1 Flujo de Préstamo y Devolución de Bienes Patrimoniales (+10 more)
 
-### Community 144 - "oo"
-Cohesion: 0.08
-Nodes (13): ca, ce(), de, dt(), fa(), ga(), he(), ia() (+5 more)
+### Community 144 - "de"
+Cohesion: 0.21
+Nodes (4): ce(), de, dt(), he()
 
 ### Community 145 - ".billings"
 Cohesion: 0.12
-Nodes (16): 🔴 CRITICAL — Database Schema, INV-DB-01: buys.monto_credito NOT NULL, INV-DB-02: billings.monto_credito NOT NULL, INV-DB-03: detail_payments Columns, INV-DB-04: cash_movements Required Columns, INV-DB-05: Credit Note FK Ordering, UC-05: Facturación de Cuotas del Cronograma, 5.3 POS (+8 more)
+Nodes (17): B1 — Products, Warehouses & Stock, B2 — Sales, POS & Billings (UBL 2.1), Block B — Transactional Modules, 🔴 CRITICAL — Database Schema, INV-DB-01: buys.monto_credito NOT NULL, INV-DB-02: billings.monto_credito NOT NULL, INV-DB-03: detail_payments Columns, INV-DB-04: cash_movements Required Columns (+9 more)
 
 ### Community 146 - "require"
 Cohesion: 0.13
@@ -1002,17 +989,9 @@ Nodes (15): BrotliDecompress(), BrotliDecompressedSize(), DecodeBlockType(), Dec
 Cohesion: 0.22
 Nodes (10): A(), c(), D(), e(), l(), n(), r(), S() (+2 more)
 
-### Community 150 - "RdrInternalLoan"
-Cohesion: 0.22
-Nodes (3): InternalLoanRepaid, {closure#1}(), RdrInternalLoan
-
-### Community 152 - "ServiceSession"
-Cohesion: 0.19
-Nodes (6): {closure#1}(), {closure#1}(), {closure#2}(), {closure#3}(), ServiceSession, ServiceAttendeeFactory
-
 ### Community 154 - "MÓDULO DE CONVENIOS Y SERVICIOS TECNOLÓGICOS (ERP-FVC)"
-Cohesion: 0.18
-Nodes (10): 1. Visión General del Módulo, 2. Permisos y Roles (RBAC), 4. Auditoría de Cambios de Estado, 5. Contador de Convenios por Vencer en Sidebar, 7. Comandos y Verificación del Sistema, Asignación por Roles Institucionales, Ejecución de Evaluador de Alertas, Matriz de Permisos (+2 more)
+Cohesion: 0.14
+Nodes (13): 1. Visión General del Módulo, 2. Permisos y Roles (RBAC), 3. Cadena de Aprobación Oficial (`DocumentApprovalService`), 4. Auditoría de Cambios de Estado, 5. Contador de Convenios por Vencer en Sidebar, 7. Comandos y Verificación del Sistema, Asignación por Roles Institucionales, Bandeja de Aprobaciones (`/approvals`) (+5 more)
 
 ### Community 156 - "$43d7963e56408b24$export$410364bbb673ddbc"
 Cohesion: 0.14
@@ -1020,27 +999,19 @@ Nodes (14): $43d7963e56408b24$export$3c52dd84024ae72c(), $43d7963e56408b24$expor
 
 ### Community 159 - "System Invariants — ERP-FVC"
 Cohesion: 0.07
-Nodes (28): 🔴 CRITICAL — Accounting & Financial Integrity, 🔴 CRITICAL — Security & Authorization, 🟠 HIGH — Concurrency, 🟠 HIGH — Service Boundaries, INV-ACC-01: Double-Entry Balance, INV-ACC-02: Journal Entry Immutability, INV-ACC-03: Open Period Guard, INV-ACC-05: Bank Reconciliation Balance (+20 more)
+Nodes (29): 🔴 CRITICAL — Accounting & Financial Integrity, 🔴 CRITICAL — Security & Authorization, 🟠 HIGH — Concurrency, 🟠 HIGH — Service Boundaries, INV-ACC-01: Double-Entry Balance, INV-ACC-02: Journal Entry Immutability, INV-ACC-03: Open Period Guard, INV-ACC-04: source_id Before JE Create (+21 more)
 
 ### Community 161 - "end"
 Cohesion: 0.06
 Nodes (44): addPageBreaksIfNecessary(), attrib(), beginWhiteSpace(), charAt(), cleanup(), closeTag(), closeText(), createMetadata() (+36 more)
 
-### Community 162 - "ProductController.php"
-Cohesion: 0.12
-Nodes (6): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), ProductController, ProductsCatalogImport
+### Community 162 - "ProductsWarehouseImport.php"
+Cohesion: 0.13
+Nodes (5): {closure#1}(), ProductsCatalogExport, {closure#1}(), {closure#1}(), ProductsWarehouseImport
 
 ### Community 164 - "2.3 Especificación Detallada de Casos de Uso"
-Cohesion: 0.17
-Nodes (12): 2.1 Requisitos Funcionales (RF), 2.2 Requisitos No Funcionales (RNF), 2.3 Especificación Detallada de Casos de Uso, 2. REQUISITOS DEL SISTEMA Y CASOS DE USO, UC-01: Formulación y Registro de Convenio, UC-02: Aprobación Jerárquica del Convenio (`DocumentApprovalService`), UC-03: Emisión y Registro de Adendas, UC-04: Seguimiento de Obligaciones Bilaterales (+4 more)
-
-### Community 165 - "7. DECISIONES DE ARQUITECTURA, RECOMENDACIONES Y ESCALABILIDAD"
-Cohesion: 0.40
-Nodes (5): 7.1 Decisión 1: Reconocimiento Contable de Convenios Multianuales e Ingresos Diferidos, 7.3 Decisión 3: Integración de Participantes de Cursos con Certificados Académicos, 7.4 Decisión 4: Protocolo de Escalamiento ante Incumplimiento de la Contraparte, 7.5 Consideraciones para Escalabilidad Futura, 7. DECISIONES DE ARQUITECTURA, RECOMENDACIONES Y ESCALABILIDAD
-
-### Community 166 - "ProviderController"
-Cohesion: 0.14
-Nodes (3): ProviderController, {closure#2}(), ProviderValidate
+Cohesion: 0.22
+Nodes (9): 2.3 Especificación Detallada de Casos de Uso, UC-01: Formulación y Registro de Convenio, UC-02: Aprobación Jerárquica del Convenio (`DocumentApprovalService`), UC-03: Emisión y Registro de Adendas, UC-04: Seguimiento de Obligaciones Bilaterales, UC-06: Prestación de Servicios Tecnológicos (Dentro y Fuera de Convenio), UC-07: Control de Sesiones y Asistencia, UC-08: Gestión de Entregables y Conformidad (+1 more)
 
 ### Community 169 - "composer.json"
 Cohesion: 0.18
@@ -1050,13 +1021,9 @@ Nodes (10): autoload-dev, psr-4, description, keywords, license, minimum-stabili
 Cohesion: 0.18
 Nodes (10): 10. Texto Sugerido para Abrir el Siguiente Chat, 11. Forma Recomendada de Pedirme Cada Modulo, 1. Contexto, 2. Objetivo General, 3. Resultado Esperado, 4. Modulos Pendientes, 6. Orden Recomendado de Implementacion, 7. Dependencias (+2 more)
 
-### Community 172 - ".handle"
-Cohesion: 0.13
-Nodes (15): CheckAssetAccess, CheckProductiveActivityAccess, EnsureWarehouseSelection, 3.1 Roles Predefinidos del Sistema (18 Roles), 3.2.1 `CheckAssetAccess` (`asset.access`), 3.2.2 `CheckProductiveActivityAccess` (`activity.access`), 3.2.3 `EnsureWarehouseSelection`, 3.2 Middlewares Especializados de Seguridad (+7 more)
-
 ### Community 173 - "Block Definitions & Gate Commands — ERP-FVC"
-Cohesion: 0.09
-Nodes (19): Block D — Institutional Workflow, Block Definitions & Gate Commands — ERP-FVC, Block E — Productive Activities (APE/RDR), Block F — Agro & Livestock, Block Naming Convention, D1 — Requisitions & Expense Declarations, D2 — Asset Loans & Patrimonial Inventory, D3 — Exit Slips, Vacation & Fuel Vouchers (+11 more)
+Cohesion: 0.10
+Nodes (19): A1 — RBAC, Roles & Base Permissions, Block A — Core Infrastructure, Block D — Institutional Workflow, Block Definitions & Gate Commands — ERP-FVC, Block E — Productive Activities (APE/RDR), Block F — Agro & Livestock, Block Naming Convention, D1 — Requisitions & Expense Declarations (+11 more)
 
 ### Community 174 - "ERP-FVC Block Runner"
 Cohesion: 0.09
@@ -1066,29 +1033,25 @@ Nodes (22): 1.1 Route Inspection, 1.2 Schema Inspection, 1.3 Existing Test Statu
 Cohesion: 0.20
 Nodes (7): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}()
 
-### Community 176 - "4.1 Entidades Nucleares"
-Cohesion: 0.20
-Nodes (10): 1. `accounting_periods` (Períodos Contables), 2. `chart_of_accounts` (Plan Contable General Empresarial - PCGE), 3. `journal_entries` (Cabecera de Asientos Contables), 4.1 Entidades Nucleares, 4. `journal_entry_lines` (Líneas / Detalle del Asiento), 5. `accounting_rules` (Motor de Reglas y Plantillas Dinámicas), 6. `bank_accounts` (Cuentas Bancarias de Tesorería), 7. `bank_movements` (Movimientos de Extracto Bancario) (+2 more)
-
-### Community 177 - "3. MODELO DE DATOS DETALLADO (DDL, RELACIONES E ÍNDICES)"
-Cohesion: 0.12
-Nodes (15): 1.1 Objetivo del Módulo, 1.2 Componentes Reutilizados del Ecosistema ERP-FVC, 1. INTRODUCCIÓN Y CONTEXTO DEL SISTEMA, 3.10 Tabla: `service_deliverables` (Entregables e Informes de Conformidad), 3.1 Tabla: `agreements` (Convenios Marco y Específicos), 3.2 Tabla: `agreement_addenda` (Adendas Modificatorias de Convenio), 3.3 Tabla: `agreement_obligations` (Obligaciones y Compromisos Bilaterales), 3.4 Tabla: `agreement_installments` (Cronograma de Cuotas y Facturación) (+7 more)
+### Community 177 - ".products"
+Cohesion: 0.08
+Nodes (25): 1.1 Objetivo del Módulo, 1.2 Componentes Reutilizados del Ecosistema ERP-FVC, 1. INTRODUCCIÓN Y CONTEXTO DEL SISTEMA, 2.1 Requisitos Funcionales (RF), 2.2 Requisitos No Funcionales (RNF), 2. REQUISITOS DEL SISTEMA Y CASOS DE USO, 3.10 Tabla: `service_deliverables` (Entregables e Informes de Conformidad), 3.1 Tabla: `agreements` (Convenios Marco y Específicos) (+17 more)
 
 ### Community 179 - "admin/products/list.blade.php"
 Cohesion: 0.22
 Nodes (8): admin.products.js-datatable, admin.products.js-store, admin.products.modal-register, admin.products.modals, admin.categories.js-register, admin.categories.modal-register, admin.layout, admin.products.js-register
 
 ### Community 180 - "ReconciliationAuditCommand.php"
-Cohesion: 0.05
-Nodes (8): A2 — Chart of Accounts & Accounting Periods, Block A — Core Infrastructure, AccountingClosePeriodCommand, AccountingReopenPeriodCommand, CheckAgreementAlertsCommand, {closure#1}(), ImportHistoricalEconomicReport, ReconciliationAuditCommand
+Cohesion: 0.04
+Nodes (9): Block C — Financial Closing & Advanced Accounting, C1 — Journal Posting Service, C5 — Agreements & Technological Services, AccountingBackfillCommand, AccountingCheckIntegrityCommand, AccountingClosePeriodCommand, ImportHistoricalEconomicReport, ReconciliationAuditCommand (+1 more)
 
-### Community 181 - "AgroReportsController.php"
-Cohesion: 0.16
-Nodes (3): AgroReportsController, 11.5 Reportes Técnicos y Conciliaciones Agropecuarias, 11.5 Reportes Técnicos y Conciliaciones Agropecuarias
+### Community 181 - "oo"
+Cohesion: 0.24
+Nodes (3): io(), no(), oo
 
-### Community 184 - "7. DECISIONES ABIERTAS Y RECOMENDACIONES TÉCNICAS"
-Cohesion: 0.33
-Nodes (5): 7.1 Decisión 1: PCGE Completo vs. PCGE Reducido, 7.2 Decisión 2: Método de Flujos de Efectivo (Directo vs. Indirecto), 7.3 Decisión 3: Moneda Funcional y Tratamiento de Diferencia de Cambio, 7.4 Decisión 4: ¿El Cierre Contable debe utilizar `DocumentApprovalService`?, 7. DECISIONES ABIERTAS Y RECOMENDACIONES TÉCNICAS
+### Community 184 - "BuyFactory"
+Cohesion: 0.22
+Nodes (6): BuyFactory, 7.1 Decisión 1: PCGE Completo vs. PCGE Reducido, 7.2 Decisión 2: Método de Flujos de Efectivo (Directo vs. Indirecto), 7.3 Decisión 3: Moneda Funcional y Tratamiento de Diferencia de Cambio, 7.4 Decisión 4: ¿El Cierre Contable debe utilizar `DocumentApprovalService`?, 7. DECISIONES ABIERTAS Y RECOMENDACIONES TÉCNICAS
 
 ### Community 185 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
@@ -1098,13 +1061,9 @@ Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only
 Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
 
-### Community 187 - "SunatServer"
-Cohesion: 0.17
-Nodes (3): BusinessProfile, SunatEndpointResolver, SunatServer
-
-### Community 188 - "Módulos y Componentes del Sistema"
-Cohesion: 0.11
-Nodes (15): 10. Reportes y Contabilidad, 1. Bienes Patrimoniales y Activos Fijos, 2. Trámites Internos y Aprobaciones Jerárquicas, 3. Ventas y Facturación Electrónica (SUNAT), 4. Compras y Proveedores Fiscales, 6. Cajas y Tesorería, 8. Producción Industrial, Transformación y Comercialización, 9. Producción Agropecuaria, Forestal y Pecuaria (AgroLivestock) (+7 more)
+### Community 188 - "/graphify"
+Cohesion: 0.20
+Nodes (9): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Usage (+1 more)
 
 ### Community 189 - "email-decode.min.js"
 Cohesion: 0.56
@@ -1122,9 +1081,13 @@ Nodes (8): e(), a(), b(), c(), d(), f(), r(), u()
 Cohesion: 0.22
 Nodes (9): docFillColor(), docStrokeColor(), docUsePattern(), getGlobalMatrix(), getPageBBox(), inverseMatrix(), multiplyMatrix(), multiply() (+1 more)
 
-### Community 195 - "ServiceHourLog"
-Cohesion: 0.36
-Nodes (4): {closure#1}(), {closure#2}(), {closure#3}(), ServiceHourLog
+### Community 194 - "/graphify"
+Cohesion: 0.20
+Nodes (9): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Usage (+1 more)
+
+### Community 196 - "ProducedItemController"
+Cohesion: 0.33
+Nodes (3): ProducedItemController, 10.5 Productos Producidos y Publicación al Catálogo Central de Ventas, 10.5 Productos Producidos y Publicación al Catálogo Central de Ventas
 
 ### Community 197 - "require-dev"
 Cohesion: 0.25
@@ -1142,9 +1105,9 @@ Nodes (5): B(), e(), i(), k(), t()
 Cohesion: 0.39
 Nodes (8): bi_windup(), compress_block(), d_code(), put_short(), send_bits(), send_code(), send_tree(), _tr_stored_block()
 
-### Community 201 - "Instalación y Configuración Local"
-Cohesion: 0.25
-Nodes (8): 1. Clonar el Repositorio, 2. Instalar Dependencias de PHP, 3. Configurar el Entorno (`.env`), 4. Ejecutar Migraciones y Seeders, 5. Enlazar el Almacenamiento Público, 6. Instalar y Compilar Dependencias Frontend, 7. Iniciar el Servidor de Desarrollo, Instalación y Configuración Local
+### Community 201 - "Módulos y Componentes del Sistema"
+Cohesion: 0.09
+Nodes (23): 10. Reportes y Contabilidad, 1. Bienes Patrimoniales y Activos Fijos, 1. Clonar el Repositorio, 2. Instalar Dependencias de PHP, 2. Trámites Internos y Aprobaciones Jerárquicas, 3. Configurar el Entorno (`.env`), 3. Ventas y Facturación Electrónica (SUNAT), 4. Compras y Proveedores Fiscales (+15 more)
 
 ### Community 202 - "buys/create.blade.php"
 Cohesion: 0.29
@@ -1162,6 +1125,10 @@ Nodes (6): admin.quotes.js-create, admin.quotes.modals-create, admin.clients.js-
 Cohesion: 0.29
 Nodes (6): admin.quotes.js-edit, admin.quotes.modals-edit, admin.clients.js-register, admin.clients.modal-register, admin.layout, admin.products.modal-add-cart
 
+### Community 207 - "RoleController"
+Cohesion: 0.17
+Nodes (4): RoleController, 8.1 Perfil de Empresa Emisora, 8.2 Series, Correlativos y Organigrama, MÓDULO 8: CONFIGURACIÓN GENERAL Y PARAMETRIZACIÓN
+
 ### Community 208 - "2026_09_26_020000_create_ape_and_rdr_tables.php"
 Cohesion: 0.18
 Nodes (8): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), {closure#6}(), {closure#7}(), {closure#8}()
@@ -1170,21 +1137,17 @@ Nodes (8): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#
 Cohesion: 0.29
 Nodes (7): pestphp/pest-plugin, php-http/discovery, config, allow-plugins, optimize-autoloader, preferred-install, sort-packages
 
-### Community 212 - "/graphify"
-Cohesion: 0.20
-Nodes (9): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Usage (+1 more)
+### Community 211 - "ae"
+Cohesion: 0.28
+Nodes (9): ae(), ee(), i(), ie(), jt(), ne(), qt(), s() (+1 more)
 
-### Community 213 - "What You Must Do When Invoked"
-Cohesion: 0.20
-Nodes (10): Step 0 - GitHub repos and multi-path merge (only if a URL or several paths), Step 1 - Ensure graphify is installed, Step 2.5 - Video and audio (only if video files detected), Step 4.5 - Graph health check (read-only integrity gate), Step 4 - Build graph, cluster, analyze, generate outputs, Step 5 - Label communities, Step 6 - Generate Obsidian vault (opt-in) + HTML, Step 9 - Save manifest, update cost tracker, clean up, and report (+2 more)
+### Community 212 - "ActivityDetailedReportExport"
+Cohesion: 0.25
+Nodes (5): ActivityDetailedReportExport, 9.2 Tablero de Centro de Costos y Matriz Analítica, 9.4 Subsistema RDR y Tesorería Institucional, MÓDULO 9: ACTIVIDADES PRODUCTIVAS Y EMPRESARIALES (APE) Y CENTRO DE COSTOS, 7. Actividades Productivas y Empresariales (APE) & Centro de Costos
 
 ### Community 214 - "2026_10_03_010000_create_budget_management_tables.php"
 Cohesion: 0.29
 Nodes (4): {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}()
-
-### Community 215 - "5.3 Regla de Oro Anti-Duplicidad de Ingresos"
-Cohesion: 0.29
-Nodes (7): 5.1 Flujo Completo de Integración Financiera y Contable, 5.2 Dinámica de Cuentas Contables (PCGE 2019), 5.3 Regla de Oro Anti-Duplicidad de Ingresos, 5. INTEGRACIÓN DE INGRESOS CON TRACK B Y REGLA ANTI-DUPLICIDAD, El Problema, Garantías Técnicas de Anti-Duplicidad:, La Regla de Integración Única
 
 ### Community 217 - "functions.js"
 Cohesion: 0.38
@@ -1194,9 +1157,13 @@ Nodes (3): toast_msg(), touch_down(), touch_up()
 Cohesion: 0.29
 Nodes (7): asciiSlice(), base64Slice(), hexSlice(), latin1Slice(), slowToString(), utf16leSlice(), utf8Slice()
 
-### Community 220 - "ActivityDetailedReportExport"
-Cohesion: 0.22
-Nodes (6): ActivityDetailedReportExport, 9.1 Catálogo y Ficha de Actividades Productivas, 9.2 Tablero de Centro de Costos y Matriz Analítica, 9.4 Subsistema RDR y Tesorería Institucional, MÓDULO 9: ACTIVIDADES PRODUCTIVAS Y EMPRESARIALES (APE) Y CENTRO DE COSTOS, 7. Actividades Productivas y Empresariales (APE) & Centro de Costos
+### Community 220 - "FundSource"
+Cohesion: 0.03
+Nodes (28): ActivityTransactionController, {closure#1}(), {closure#2}(), {closure#3}(), {closure#4}(), {closure#5}(), CostCenterDashboardController, RdrModuleController (+20 more)
+
+### Community 221 - "5.3 Regla de Oro Anti-Duplicidad de Ingresos"
+Cohesion: 0.29
+Nodes (7): 5.1 Flujo Completo de Integración Financiera y Contable, 5.2 Dinámica de Cuentas Contables (PCGE 2019), 5.3 Regla de Oro Anti-Duplicidad de Ingresos, 5. INTEGRACIÓN DE INGRESOS CON TRACK B Y REGLA ANTI-DUPLICIDAD, El Problema, Garantías Técnicas de Anti-Duplicidad:, La Regla de Integración Única
 
 ### Community 222 - "2026_10_02_183000_create_financial_statements_and_closing_tables.php"
 Cohesion: 0.22
@@ -1326,14 +1293,6 @@ Nodes (4): check_routes(), check_table(), check_tests(), diagnostics.sh script
 Cohesion: 0.70
 Nodes (4): run_integrity(), run_routes(), run_tests(), run_gate.sh script
 
-### Community 258 - "Step 3 - Extract entities and relationships"
-Cohesion: 0.50
-Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
-
-### Community 259 - "Step 3 - Extract entities and relationships"
-Cohesion: 0.50
-Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
-
 ### Community 261 - "psr-4"
 Cohesion: 0.40
 Nodes (5): autoload, psr-4, App\\, Database\\Factories\\, Database\\Seeders\\
@@ -1341,10 +1300,6 @@ Nodes (5): autoload, psr-4, App\\, Database\\Factories\\, Database\\Seeders\\
 ### Community 262 - "scripts"
 Cohesion: 0.40
 Nodes (5): scripts, post-autoload-dump, post-create-project-cmd, post-root-package-install, post-update-cmd
-
-### Community 281 - "5.9 Productos por Almacen"
-Cohesion: 0.40
-Nodes (5): 5.9 Productos por Almacen, Criterios de aceptacion, Estado actual, Objetivo, Pendientes principales
 
 ### Community 283 - "prism-autoloader.min.js"
 Cohesion: 0.60
@@ -1418,25 +1373,33 @@ Nodes (3): extra, laravel, dont-discover
 Cohesion: 0.67
 Nodes (3): drawDecoration(), moveTo(), renderVector()
 
+### Community 497 - "Step 3 - Extract entities and relationships"
+Cohesion: 0.50
+Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
+
+### Community 498 - "Step 3 - Extract entities and relationships"
+Cohesion: 0.50
+Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
+
 ## Knowledge Gaps
-- **565 isolated node(s):** `name`, `type`, `description`, `keywords`, `license` (+560 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2905 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **407 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **571 isolated node(s):** `name`, `type`, `description`, `keywords`, `license` (+566 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2928 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **420 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `I` connect `I` to `.forEach`, `n`, `sb-customizer.js`, `ProducedItem`, `vu`?**
-  _High betweenness centrality (0.399) - this node is a cross-community bridge._
-- **Why does `ProducedItem` connect `ProducedItem` to `ActivityOrder`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `Illuminate\Database\Eloquent\Model`, `Illuminate\Database\Seeder`, `User`, `Illuminate\Http\Request`, `ProductionCampaign`, `ProductionHarvest`, `Warehouse`?**
-  _High betweenness centrality (0.232) - this node is a cross-community bridge._
-- **Why does `10.5 Productos Producidos y Publicación al Catálogo Central de Ventas` connect `ProducedItem` to `.products`, `ProductionCampaign`?**
-  _High betweenness centrality (0.203) - this node is a cross-community bridge._
+- **Why does `I` connect `n` to `indexOf`, `ProducedItemController`, `sb-customizer.js`, `.create`, `.get`?**
+  _High betweenness centrality (0.406) - this node is a cross-community bridge._
+- **Why does `ProducedItem` connect `ProducedItem` to `Buy`, `ProducedItemController`, `Warehouse`, `Controller`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `ProductionCampaign`, `ActivityOrder`, `ProductionHarvest`?**
+  _High betweenness centrality (0.227) - this node is a cross-community bridge._
+- **Why does `10.5 Productos Producidos y Publicación al Catálogo Central de Ventas` connect `ProducedItemController` to `.products`, `ProducedItem`, `ProductionCampaign`?**
+  _High betweenness centrality (0.206) - this node is a cross-community bridge._
 - **What connects `name`, `type`, `description` to the rest of the system?**
-  _565 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _571 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `pdfmake.min.js` be split into smaller, more focused modules?**
   _Cohesion score 0.006694916894022948 - nodes in this community are weakly interconnected._
 - **Should `t` be split into smaller, more focused modules?**
-  _Cohesion score 0.016001024065540194 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.01674196120116928 - nodes in this community are weakly interconnected._
 - **Should `AccountingPeriod` be split into smaller, more focused modules?**
-  _Cohesion score 0.04540540540540541 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.022827899488241044 - nodes in this community are weakly interconnected._
