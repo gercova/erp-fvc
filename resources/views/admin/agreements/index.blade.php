@@ -135,11 +135,11 @@
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 w-100" id="agreementsTable">
-                    <thead class="table-light text-secondary small text-uppercase">
+            <div class="table-responsive p-3">
+                <table class="table table-hover align-middle w-100" id="agreementsTable">
+                    <thead class="table-light">
                         <tr>
-                            <th class="ps-3">Código</th>
+                            <th>Código</th>
                             <th>Tipo / Alcance</th>
                             <th>Convenio / Propósito</th>
                             <th>Contraparte (RUC)</th>
@@ -148,10 +148,10 @@
                             <th>Monto</th>
                             <th>Compromisos</th>
                             <th>Estado</th>
-                            <th class="text-end pe-3">Acciones</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody class="small">
+                    <tbody>
                         <!-- Loaded dynamically via DataTables -->
                     </tbody>
                 </table>

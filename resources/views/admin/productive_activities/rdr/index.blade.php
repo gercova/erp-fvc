@@ -32,8 +32,8 @@
             </button>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.9rem;">
+            <div class="table-responsive p-3">
+                <table class="table table-hover align-middle w-100" style="font-size: 0.9rem;">
                     <thead class="table-light">
                         <tr>
                             <th>Fuente de Fondos / Cuenta</th>
@@ -84,8 +84,8 @@
                     <h6 class="m-0 fw-bold text-primary"><i class="fas fa-exchange-alt me-1"></i> Transferencias a la CUT (RDR)</h6>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 380px;">
-                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <div class="table-responsive p-3" style="max-height: 380px;">
+                        <table class="table table-hover align-middle w-100" style="font-size: 0.85rem;">
                             <thead class="table-light sticky-top">
                                 <tr>
                                     <th>Código</th>
@@ -127,8 +127,8 @@
                     <h6 class="m-0 fw-bold text-primary"><i class="fas fa-hand-holding-usd me-1"></i> Préstamos Internos / Habilitaciones</h6>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 380px;">
-                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <div class="table-responsive p-3" style="max-height: 380px;">
+                        <table class="table table-hover align-middle w-100" style="font-size: 0.85rem;">
                             <thead class="table-light sticky-top">
                                 <tr>
                                     <th>Código</th>
@@ -183,8 +183,8 @@
             </h6>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle mb-0" style="font-size: 0.88rem;">
+            <div class="table-responsive p-3">
+                <table class="table table-hover align-middle w-100" style="font-size: 0.88rem;">
                     <thead class="table-light">
                         <tr>
                             <th>Código Cierre</th>

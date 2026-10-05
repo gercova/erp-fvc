@@ -158,9 +158,9 @@
             </h6>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="harvests-table" style="width: 100%;">
-                    <thead class="table-light text-uppercase small text-muted">
+            <div class="table-responsive p-3">
+                <table class="table table-hover align-middle w-100" id="harvests-table">
+                    <thead class="table-light">
                         <tr>
                             <th>Fecha y Boleto</th>
                             <th>Procedencia (Parcela / Vivero)</th>
