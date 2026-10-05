@@ -43,6 +43,33 @@ class UserController extends Controller
 
         return datatables()
             ->of($users)
+            ->filterColumn('users.nombres', function ($query, $keyword) {
+                $query->where(function ($q) use ($keyword) {
+                    $cleanKeyword = ltrim($keyword, '@');
+                    $q->where('users.nombres', 'like', "%{$keyword}%")
+                        ->orWhere('users.user', 'like', "%{$cleanKeyword}%")
+                        ->orWhere('users.correo', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('primaryAreaDetail.area.name', function ($query, $keyword) {
+                $query->whereHas('primaryAreaDetail', function ($q) use ($keyword) {
+                    $q->where('cargo', 'like', "%{$keyword}%")
+                        ->orWhereHas('area', function ($qArea) use ($keyword) {
+                            $qArea->where('name', 'like', "%{$keyword}%")
+                                ->orWhere('code', 'like', "%{$keyword}%");
+                        });
+                });
+            })
+            ->filterColumn('cash.descripcion', function ($query, $keyword) {
+                $query->whereHas('cash', function ($q) use ($keyword) {
+                    $q->where('descripcion', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('cashes.descripcion', function ($query, $keyword) {
+                $query->whereHas('cash', function ($q) use ($keyword) {
+                    $q->where('descripcion', 'like', "%{$keyword}%");
+                });
+            })
             ->addColumn('usuario_info', function (User $user) {
                 return '<div class="user-name-cell">'
                     . '<div class="fw-semibold">' . e((string) $user->nombres) . '</div>'
