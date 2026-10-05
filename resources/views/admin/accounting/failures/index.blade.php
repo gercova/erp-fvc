@@ -1,7 +1,5 @@
 @extends('admin.layout')
-
 @section('title', 'Fallos de Contabilización Automática')
-
 @section('content')
 <div class="container-fluid px-4 py-3">
     <div class="row mb-3 align-items-center">
@@ -10,7 +8,7 @@
             <p class="text-muted small mb-0">Cola de reintentos y reprocesamiento de eventos que no pudieron asentarse en el Libro Diario.</p>
         </div>
         <div class="col-md-5 text-end">
-            <a href="{{ route('accounting.chart-of-accounts.index') }}" class="btn btn-outline-secondary btn-sm me-2">
+            <a href="{{ route('accounting.chart_of_accounts.index') }}" class="btn btn-outline-secondary btn-sm me-2">
                 <i class="fas fa-sitemap me-1"></i> Plan de Cuentas
             </a>
             <button id="btn-reprocess-all" class="btn btn-danger btn-sm">
@@ -18,7 +16,6 @@
             </button>
         </div>
     </div>
-
     <!-- KPI Cards -->
     <div class="row mb-4">
         <div class="col-md-4">
@@ -67,7 +64,6 @@
             </div>
         </div>
     </div>
-
     <!-- Table Card -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3">
